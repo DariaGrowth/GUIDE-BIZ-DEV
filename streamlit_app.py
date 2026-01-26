@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 import google.generativeai as genai
-import datetime
+import plotly.express as px
+from datetime import datetime, timedelta
 
-# --- 1. CONFIGURATION & STYLE (ДИЗАЙН) ---
+# --- 1. CONFIGURATION & DESIGN SYSTEM (EMERALD THEME) ---
 st.set_page_config(
     page_title="Ingood Growth CRM",
     page_icon="🌱",
@@ -12,39 +13,48 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS для стиля Emerald (зеленый) + скрытие лишнего
+# Custom CSS injection (Цвета бренда из ТЗ)
 st.markdown("""
     <style>
         :root {
-            --primary-color: #10b981;
-            --bg-color: #f8fafc;
+            --primary-color: #10b981; /* Emerald 500 */
+            --bg-color: #f8fafc; /* Slate 50 */
+            --secondary-bg: #ffffff;
+            --text-color: #0f172a;
         }
         .stApp {
             background-color: var(--bg-color);
         }
-        /* Кнопки */
+        /* Сайдбар */
+        section[data-testid="stSidebar"] {
+            background-color: #ffffff;
+            border-right: 1px solid #e2e8f0;
+        }
+        /* Кнопки (Emerald) */
         div.stButton > button:first-child {
-            background-color: #059669;
+            background-color: #10b981;
             color: white;
             border-radius: 8px;
-            border: none;
             font-weight: 600;
+            border: none;
         }
         div.stButton > button:first-child:hover {
-            background-color: #047857;
+            background-color: #059669; /* Darker Emerald */
         }
         /* Заголовки */
-        h1, h2, h3 {
-            color: #1e293b; 
+        h1, h2, h3 { color: #064e3b; font-family: 'Helvetica', sans-serif; }
+        
+        /* Карточки KPI */
+        div[data-testid="stMetric"] {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        /* Убираем отступы */
-        .block-container {padding-top: 2rem;}
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. CONNEXION (ПОДКЛЮЧЕНИЕ) ---
+# --- 2. CONNEXIONS ---
 @st.cache_resource
 def init_connections():
     try:
@@ -54,274 +64,260 @@ def init_connections():
         genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
         return supabase
     except Exception:
-        st.error("🚨 Erreur de connexion : Vérifiez les Secrets (Supabase/Google).")
+        st.error("🚨 Erreur de connexion. Vérifiez les secrets.")
         st.stop()
 
 supabase = init_connections()
 
-# --- 3. INTELLIGENCE ARTIFICIELLE (AI) ---
-def generate_hunter_email(company, segment, pain_point, product, lang):
-    """Génère un email de prospection (Hunter)"""
+# --- 3. FONCTIONS DATA (CRUD) ---
+
+def get_prospects():
+    """Получить всех клиентов"""
+    res = supabase.table("prospects").select("*").order("last_action_date", desc=True).execute()
+    return pd.DataFrame(res.data)
+
+def get_details(prospect_id, table):
+    """Получить контакты, сэмплы или активность"""
+    res = supabase.table(table).select("*").eq("prospect_id", prospect_id).order("id", desc=True).execute()
+    return pd.DataFrame(res.data)
+
+def update_last_action(prospect_id):
+    """Обновить дату последнего контакта на СЕГОДНЯ"""
+    now = datetime.now().strftime("%Y-%m-%d")
+    supabase.table("prospects").update({"last_action_date": now}).eq("id", prospect_id).execute()
+
+def add_activity(prospect_id, type_act, content):
+    """Добавить заметку и обновить дату"""
+    supabase.table("activities").insert({
+        "prospect_id": prospect_id,
+        "type": type_act,
+        "content": content,
+        "date": datetime.now().isoformat()
+    }).execute()
+    update_last_action(prospect_id)
+
+# --- 4. FONCTIONS AI (GÉNÉRATION) ---
+
+def process_audio(audio_file):
+    """Голос в Текст (Gemini)"""
     model = genai.GenerativeModel("gemini-1.5-flash")
-    prompt = f"""
-    Agis comme un expert Business Developer (Hunter). Rédige un email de prospection à froid pour le Directeur R&D de {company}.
-    Langue : {lang}.
-    Contexte : Ils sont dans le secteur {segment}.
-    Problème (Pain Point) : {pain_point}.
-    Solution : Présenter {product} (Ingood by Olga).
-    Proposition de valeur : Clean Label, Stabilité prix, Performance fonctionnelle.
-    Ton : Professionnel, expert, concis, impactant.
-    """
-    return model.generate_content(prompt).text
+    prompt = "Tu es un assistant commercial. Résume ce meeting en français. Structure: Client, Besoins, Prochaines étapes."
+    res = model.generate_content([prompt, {"mime_type": "audio/wav", "data": audio_file.read()}])
+    return res.text
 
-def generate_rd_brief(company, segment, product, tech_notes, lang):
-    """Génère un brief technique pour la R&D"""
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    prompt = f"""
-    Agis comme le "Cerveau Ingood". Génère un Brief Projet R&D technique structuré.
-    Langue : {lang}.
-    Client : {company}.
-    Produit Cible : {segment}.
-    Solution Ingood envisagée : {product}.
-    Contraintes Techniques / Notes : {tech_notes}.
-    Objectif : Remplacement d'œuf ou amélioration de texture.
-    Format : Liste structurée pour demande au labo.
-    """
-    return model.generate_content(prompt).text
+def get_hunter_prompt(company, segment, pain, product):
+    return f"""Act as Hunter AI. Write a cold email in French to the R&D Director of {company}.
+Context: Sector {segment}.
+Pain Point: {pain}.
+Solution: Introduce {product} from Ingood by Olga.
+Value Prop: Clean Label, Price Stability.
+Tone: Professional & Direct."""
 
-# --- 4. GESTION DES DONNÉES ---
-def load_data():
-    """Charge les données depuis Supabase"""
-    response = supabase.table("prospects").select("*").order("id", desc=True).execute()
-    return pd.DataFrame(response.data)
-
-def save_prospect(data, record_id=None):
-    """Sauvegarde ou met à jour un prospect"""
-    try:
-        if record_id:
-            supabase.table("prospects").update(data).eq("id", record_id).execute()
-        else:
-            supabase.table("prospects").insert(data).execute()
-        st.toast("✅ Projet sauvegardé avec succès !", icon="💾")
-        st.cache_data.clear()
-        return True
-    except Exception as e:
-        st.error(f"Erreur de sauvegarde : {e}")
-        return False
-
-# --- 5. INTERFACE UTILISATEUR (UI) ---
-
-# État de la navigation
-if 'page' not in st.session_state:
-    st.session_state.page = 'pipeline'
-if 'edit_id' not in st.session_state:
-    st.session_state.edit_id = None
-
-# --- BARRE LATÉRALE (SIDEBAR) ---
-with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/2921/2921222.png", width=40)
-    st.markdown("### **Ingood OS**")
+# --- 5. MODAL DIALOG (КАРТОЧКА ПРОЕКТА) ---
+# Новая фишка Streamlit для всплывающих окон
+@st.dialog("Fiche Projet 📁", width="large")
+def show_prospect_card(prospect_id, prospect_data):
+    # Вкладки внутри модального окна
+    tab1, tab2, tab3, tab4 = st.tabs(["📝 Contexte", "👥 Contacts", "🧪 Échantillons", "💬 Activité & AI"])
     
-    if st.button("➕ Nouveau Projet", use_container_width=True):
-        st.session_state.page = 'edit'
-        st.session_state.edit_id = None
-        st.rerun()
-    
-    st.markdown("---")
-    
-    if st.button("📊 Pipeline & Suivi", use_container_width=True):
-        st.session_state.page = 'pipeline'
-        st.rerun()
-
-    st.markdown("---")
-    st.caption("Export Données")
-    
-    # Bouton d'export Excel/CSV
-    df = load_data()
-    if not df.empty:
-        st.download_button(
-            label="📥 Télécharger (.csv)",
-            data=df.to_csv(index=False).encode('utf-8'),
-            file_name='pipeline_ingood.csv',
-            mime='text/csv',
-            use_container_width=True
-        )
-
-# --- PAGE 1: PIPELINE (TABLEAU) ---
-if st.session_state.page == 'pipeline':
-    # En-tête
-    c1, c2 = st.columns([3, 1])
-    c1.title("Pipeline Food & Ingrédients")
-    c1.caption("Suivi des projets R&D et opportunités commerciales")
-    c2.markdown("### <span style='background-color:#eff6ff; color:#1d4ed8; padding:5px 10px; border-radius:5px; border:1px solid #dbeafe;'>CFIA Ready 🚀</span>", unsafe_allow_html=True)
-    
-    # Filtres
-    with st.expander("🔍 Filtres (Produits, Statuts, Application)", expanded=False):
-        f1, f2, f3 = st.columns(3)
-        df = load_data()
-        if not df.empty:
-            prod_filter = f1.multiselect("Ingrédient", df["product_interest"].unique())
-            status_filter = f2.multiselect("Statut", df["status"].unique())
-            segment_filter = f3.multiselect("Application", df["segment"].unique())
+    # --- TAB 1: Contexte ---
+    with tab1:
+        with st.form("edit_main"):
+            c1, c2 = st.columns(2)
+            comp = c1.text_input("Société", value=prospect_data["company_name"])
+            status = c2.selectbox("Statut", ["Prospection", "Qualification", "Envoi Echantillon", "Test R&D", "Essai Industriel", "Négociation", "Client"], index=["Prospection", "Qualification", "Envoi Echantillon", "Test R&D", "Essai Industriel", "Négociation", "Client"].index(prospect_data["status"]))
             
-            # Appliquer les filtres
-            if prod_filter: df = df[df["product_interest"].isin(prod_filter)]
-            if status_filter: df = df[df["status"].isin(status_filter)]
-            if segment_filter: df = df[df["segment"].isin(segment_filter)]
+            c3, c4, c5 = st.columns(3)
+            segment = c3.selectbox("Segment", ["Boulangerie", "Sauces", "Nutraceutique", "Viande Végétale", "Autre"], index=0 if not prospect_data["segment"] else ["Boulangerie", "Sauces", "Nutraceutique", "Viande Végétale", "Autre"].index(prospect_data["segment"]))
+            product = c4.selectbox("Produit", ["LENGOOD", "PEPTIPEA", "SULFODYNE"], index=0 if not prospect_data["product_interest"] else ["LENGOOD", "PEPTIPEA", "SULFODYNE"].index(prospect_data["product_interest"]))
+            vol = c5.number_input("Volume (T)", value=float(prospect_data["potential_volume"] or 0))
+            
+            pain = st.text_area("Problématique R&D (Pain Points)", value=prospect_data["tech_pain_points"])
+            
+            cfia = st.checkbox("🔥 Priorité CFIA", value=prospect_data["cfia_priority"])
+            
+            if st.form_submit_button("💾 Sauvegarder les modifications"):
+                supabase.table("prospects").update({
+                    "company_name": comp, "status": status, "segment": segment,
+                    "product_interest": product, "potential_volume": vol,
+                    "tech_pain_points": pain, "cfia_priority": cfia
+                }).eq("id", prospect_id).execute()
+                st.rerun()
 
-    # Tableau Principal
+    # --- TAB 2: Contacts ---
+    with tab2:
+        contacts = get_details(prospect_id, "contacts")
+        if not contacts.empty:
+            st.dataframe(contacts[["name", "role", "email"]], hide_index=True)
+        
+        with st.expander("➕ Ajouter un contact"):
+            with st.form("add_contact"):
+                c_name = st.text_input("Nom")
+                c_role = st.text_input("Rôle")
+                c_email = st.text_input("Email")
+                if st.form_submit_button("Ajouter"):
+                    supabase.table("contacts").insert({"prospect_id": prospect_id, "name": c_name, "role": c_role, "email": c_email}).execute()
+                    st.rerun()
+
+    # --- TAB 3: Samples ---
+    with tab3:
+        samples = get_details(prospect_id, "samples")
+        if not samples.empty:
+            st.dataframe(samples[["product_name", "reference", "status", "date_sent"]], hide_index=True)
+        
+        with st.expander("📦 Nouvel Échantillon"):
+            with st.form("add_sample"):
+                s_prod = st.selectbox("Produit", ["LENGOOD", "PEPTIPEA"])
+                s_ref = st.text_input("Référence (Lot)")
+                if st.form_submit_button("Envoyer"):
+                    supabase.table("samples").insert({"prospect_id": prospect_id, "product_name": s_prod, "reference": s_ref}).execute()
+                    add_activity(prospect_id, "Sample", f"Échantillon envoyé: {s_prod} ({s_ref})")
+                    st.rerun()
+
+    # --- TAB 4: Activity & AI ---
+    with tab4:
+        st.write("#### 🤖 AI Tools")
+        col_ai1, col_ai2 = st.columns(2)
+        if col_ai1.button("📧 Hunter AI Prompt"):
+            prompt = get_hunter_prompt(prospect_data["company_name"], prospect_data["segment"], prospect_data["tech_pain_points"], prospect_data["product_interest"])
+            st.code(prompt, language="text")
+            st.caption("Copiez ce prompt dans ChatGPT/Claude")
+        
+        st.divider()
+        st.write("#### 🎙️ Compte-Rendu Vocal")
+        audio = st.audio_input("Enregistrer réunion")
+        if audio:
+            with st.spinner("Analyse..."):
+                text = process_audio(audio)
+                st.info(text)
+                if st.button("Sauvegarder ce CR"):
+                    add_activity(prospect_id, "Meeting", text)
+                    st.rerun()
+
+        st.divider()
+        st.write("#### 📜 Historique")
+        activities = get_details(prospect_id, "activities")
+        if not activities.empty:
+            for _, row in activities.iterrows():
+                st.caption(f"{row['date'][:10]} | {row['type']}")
+                st.info(row['content'])
+        
+        with st.form("new_note"):
+            note = st.text_area("Nouvelle note rapide")
+            if st.form_submit_button("Ajouter Note"):
+                add_activity(prospect_id, "Note", note)
+                st.rerun()
+
+# --- 6. MAIN APP STRUCTURE ---
+
+# Sidebar
+with st.sidebar:
+    st.title("Ingood Growth 🌿")
+    st.caption("Status: Cadre | Focus: Food")
+    
+    menu = st.radio("Navigation", ["📊 Dashboard", "🚀 Pipeline", "⚠️ À Relancer"])
+    
+    st.divider()
+    if st.button("➕ Nouveau Prospect", use_container_width=True):
+        # Создаем пустой проект и сразу открываем его
+        res = supabase.table("prospects").insert({"company_name": "NOUVEAU CLIENT"}).execute()
+        new_id = res.data[0]['id']
+        show_prospect_card(new_id, res.data[0])
+
+# Page: Dashboard
+if menu == "📊 Dashboard":
+    st.title("Tableau de Bord")
+    df = get_prospects()
+    
     if not df.empty:
+        # KPI
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Total Projets", len(df))
+        active_rd = len(df[df['status'] == 'Test R&D'])
+        c2.metric("Tests R&D Actifs", active_rd, "🧪")
+        total_vol = df['potential_volume'].sum()
+        c3.metric("Volume Potentiel", f"{total_vol:.0f} T")
+        
+        # Графики Plotly
+        c_chart1, c_chart2 = st.columns(2)
+        with c_chart1:
+            fig_pie = px.pie(df, names='segment', title='Répartition par Segment', color_discrete_sequence=px.colors.sequential.Teal)
+            st.plotly_chart(fig_pie, use_container_width=True)
+        with c_chart2:
+            fig_bar = px.bar(df, x='status', title='Projets par Statut', color_discrete_sequence=['#10b981'])
+            st.plotly_chart(fig_bar, use_container_width=True)
+
+# Page: Pipeline
+elif menu == "🚀 Pipeline":
+    c1, c2 = st.columns([3, 1])
+    c1.title("Pipeline Commercial")
+    c2.markdown("### <span style='color:#f59e0b'>CFIA Ready 🦁</span>", unsafe_allow_html=True)
+    
+    df = get_prospects()
+    if not df.empty:
+        # Фильтры
+        with st.expander("🔍 Filtres", expanded=False):
+            f1, f2 = st.columns(2)
+            sel_prod = f1.multiselect("Produit", df["product_interest"].unique())
+            sel_stat = f2.multiselect("Statut", df["status"].unique())
+            
+            if sel_prod: df = df[df["product_interest"].isin(sel_prod)]
+            if sel_stat: df = df[df["status"].isin(sel_stat)]
+
+        # Логика "Просрочки" (45 дней)
+        today = datetime.now().date()
+        df['last_action_date'] = pd.to_datetime(df['last_action_date']).dt.date
+        df['Alerte'] = df['last_action_date'].apply(lambda d: '⚠️' if d and (today - d).days > 45 else '')
+
+        # Таблица
         st.dataframe(
             df,
-            column_order=("company_name", "status", "product_interest", "segment", "cfia_priority", "last_salon", "id"),
+            column_order=("Alerte", "company_name", "country", "product_interest", "status", "last_action_date", "cfia_priority"),
             column_config={
-                "company_name": st.column_config.TextColumn("Société / Client", width="medium"),
-                "status": st.column_config.SelectboxColumn(
-                    "Statut",
-                    options=["Prospection", "Qualification", "Envoi Échantillon", "Test R&D", "Négociation", "Client", "Perdu"],
-                    width="medium"
-                ),
-                "product_interest": st.column_config.TextColumn("Produit", width="small"),
-                "segment": st.column_config.TextColumn("Appli", width="small"),
-                "cfia_priority": st.column_config.CheckboxColumn("Priorité CFIA", width="small"),
-                "last_salon": st.column_config.TextColumn("Source / Salon", width="small"),
-                "id": st.column_config.TextColumn("Réf", width="small"),
+                "Alerte": st.column_config.TextColumn("", width="small"),
+                "company_name": "Société",
+                "country": "Pays",
+                "product_interest": "Produit",
+                "status": st.column_config.SelectboxColumn("Statut", options=["Prospection", "Client"], disabled=True),
+                "last_action_date": "Dernier Contact",
+                "cfia_priority": st.column_config.CheckboxColumn("CFIA", disabled=True)
             },
             hide_index=True,
             use_container_width=True
         )
         
-        # Sélection pour ouvrir
-        st.markdown("---")
-        col_sel, col_btn = st.columns([3, 1])
-        company_list = df["company_name"].unique()
-        selected_company = col_sel.selectbox("📂 Sélectionner un dossier à ouvrir :", company_list)
-        
-        if col_btn.button("Ouvrir Fiche Projet >", type="primary"):
-            record = df[df["company_name"] == selected_company].iloc[0]
-            st.session_state.edit_id = int(record["id"])
-            st.session_state.page = 'edit'
-            st.rerun()
+        # Открытие карточки
+        st.caption("Sélectionnez un projet pour voir les détails")
+        selected_comp = st.selectbox("Ouvrir Dossier :", df["company_name"].unique(), key="pipe_sel")
+        if st.button("Ouvrir Fiche >"):
+            row = df[df["company_name"] == selected_comp].iloc[0]
+            show_prospect_card(row['id'], row)
 
-    else:
-        st.info("Aucun prospect dans la base. Commencez par 'Nouveau Projet' !")
-
-
-# --- PAGE 2: FICHE PROJET (ÉDITION) ---
-elif st.session_state.page == 'edit':
-    # Chargement des données
-    if st.session_state.edit_id:
-        res = supabase.table("prospects").select("*").eq("id", st.session_state.edit_id).execute()
-        if res.data:
-            record = res.data[0]
-            page_title = f"Fiche : {record['company_name']}"
-        else:
-            st.error("Erreur : Projet introuvable.")
-            st.stop()
-    else:
-        record = {}
-        page_title = "Nouveau Projet"
-
-    # Bouton Retour
-    if st.button("← Retour au Pipeline"):
-        st.session_state.page = 'pipeline'
-        st.rerun()
-
-    st.markdown(f"## {page_title}")
+# Page: À Relancer
+elif menu == "⚠️ À Relancer":
+    st.title("⚠️ Priorité Relance (> 45 jours)")
+    st.caption("Contacts 'dormants' à réactiver avant le salon.")
     
-    # FORMULAIRE
-    with st.form("prospect_form"):
-        # Bloc 1 : Infos Clés
-        c1, c2, c3 = st.columns(3)
-        company = c1.text_input("Société / Client *", value=record.get("company_name", ""))
-        status = c2.selectbox("Statut Pipeline", 
-            ["Prospection", "Qualification", "Envoi Échantillon", "Test R&D", "Négociation", "Client", "Perdu"],
-            index=["Prospection", "Qualification", "Envoi Échantillon", "Test R&D", "Négociation", "Client", "Perdu"].index(record.get("status", "Prospection"))
-        )
-        cfia = c3.checkbox("Cible Prioritaire CFIA ⭐️", value=record.get("cfia_priority", False))
-
-        c4, c5, c6 = st.columns(3)
-        contact = c4.text_input("Contact Clé (Nom)", value=record.get("contact_name", ""))
-        email = c5.text_input("Email", value=record.get("email", ""))
-        salon = c6.text_input("Dernier Salon / Source", value=record.get("last_salon", ""), placeholder="ex: CFIA 2026")
-
-        st.markdown("---")
-
-        # Onglets de Détails
-        tab1, tab2, tab3 = st.tabs(["🏗 Contexte & Technique", "🧪 Échantillons", "🤖 Assistants IA"])
-
-        with tab1:
-            col_t1, col_t2 = st.columns(2)
-            # Listes déroulantes
-            prod_opts = ["", "LENGOOD", "PEPTIPEA", "SULFODYNE", "Autre"]
-            seg_opts = ["", "Boulangerie", "Sauces", "Plats Cuisinés", "Nutraceutique", "Viande Végétale"]
-            
-            curr_prod = record.get("product_interest")
-            curr_seg = record.get("segment")
-
-            product = col_t1.selectbox("Ingrédient Ingood", prod_opts, index=prod_opts.index(curr_prod) if curr_prod in prod_opts else 0)
-            segment = col_t2.selectbox("Application Finale", seg_opts, index=seg_opts.index(curr_seg) if curr_seg in seg_opts else 0)
-            
-            pain = st.text_area("Problématique / Besoin (Pain Point)", value=record.get("pain_points", ""), placeholder="Ex: Volatilité prix œuf, Texture trop sèche...")
-            notes = st.text_area("Notes Techniques / Contexte", value=record.get("notes", ""), height=100)
-
-        with tab2:
-            st.info("ℹ️ Protocole R&D : Toujours valider la fiche technique avant envoi.")
-            
-            samp_opts = ["-", "À envoyer", "Envoyé", "Reçu", "En test", "Feedback reçu"]
-            curr_samp = record.get("sample_status")
-            sample_status = st.selectbox("Statut Échantillon actuel", samp_opts, index=samp_opts.index(curr_samp) if curr_samp in samp_opts else 0)
-            
-            tech_notes = st.text_area("Suivi Échantillons (Lots, Tracking, Feedback...)", value=record.get("tech_notes", ""))
-
-        with tab3:
-            st.markdown("### Générateurs de Contenu")
-            ai_lang = st.radio("Langue de génération", ["Français", "English"], horizontal=True)
-            
-            c_ai1, c_ai2 = st.columns(2)
-            with c_ai1:
-                st.caption("Pour les Commerciaux")
-                if st.form_submit_button("✨ Générer Email Hunter"):
-                    if company:
-                        res = generate_hunter_email(company, segment, pain, product, ai_lang)
-                        st.session_state.ai_result = res
-                    else:
-                        st.warning("Veuillez d'abord remplir le nom de la société.")
-            
-            with c_ai2:
-                st.caption("Pour l'équipe Technique")
-                if st.form_submit_button("🧪 Générer Brief R&D"):
-                    if company:
-                        res = generate_rd_brief(company, segment, product, notes, ai_lang)
-                        st.session_state.ai_result = res
-                    else:
-                        st.warning("Veuillez d'abord remplir le nom de la société.")
-
-            # Affichage du résultat IA
-            if 'ai_result' in st.session_state:
-                st.text_area("Résultat IA (À copier):", value=st.session_state.ai_result, height=300)
-
-        st.markdown("---")
-        # Bouton Sauvegarde
-        col_s1, col_s2 = st.columns([1, 1])
-        if col_s2.form_submit_button("💾 Enregistrer le Projet", type="primary"):
-            if not company:
-                st.error("Le nom de la société est obligatoire.")
-            else:
-                new_data = {
-                    "company_name": company,
-                    "status": status,
-                    "cfia_priority": cfia,
-                    "contact_name": contact,
-                    "email": email,
-                    "last_salon": salon,
-                    "product_interest": product,
-                    "segment": segment,
-                    "pain_points": pain,
-                    "notes": notes,
-                    "sample_status": sample_status,
-                    "tech_notes": tech_notes
-                }
-                if save_prospect(new_data, st.session_state.edit_id):
-                    st.session_state.page = 'pipeline'
-                    st.rerun()
+    df = get_prospects()
+    if not df.empty:
+        today = datetime.now().date()
+        df['last_action_date'] = pd.to_datetime(df['last_action_date']).dt.date
+        
+        # Фильтр: > 45 дней И НЕ Клиент
+        mask = df.apply(lambda x: (x['status'] != 'Client') and ((today - x['last_action_date']).days > 45), axis=1)
+        stale_df = df[mask]
+        
+        if not stale_df.empty:
+            st.dataframe(
+                stale_df[["company_name", "status", "last_action_date", "tech_pain_points"]],
+                use_container_width=True,
+                hide_index=True
+            )
+            # Быстрое действие
+            target = st.selectbox("Action Rapide sur :", stale_df["company_name"].unique())
+            if st.button("Générer Email Relance"):
+                row = stale_df[stale_df["company_name"] == target].iloc[0]
+                prompt = get_hunter_prompt(target, row['segment'], row['tech_pain_points'], row['product_interest'])
+                st.code(prompt, language="text")
+        else:
+            st.success("Aucun retard ! Tout est à jour. 🎉")
