@@ -4,15 +4,15 @@ from supabase import create_client
 import google.generativeai as genai
 import plotly.express as px
 
-# --- 1. CONFIGURATION DE LA PAGE (НАСТРОЙКИ) ---
+# --- 1. CONFIGURATION (НАСТРОЙКИ) ---
 st.set_page_config(
     page_title="Guide Biz Dev",
-    page_icon="🚀",
+    page_icon="🌍",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Убираем лишние отступы для красоты
+# Убираем лишние отступы сверху
 st.markdown("""
     <style>
         .block-container {padding-top: 1rem; padding-bottom: 0rem;}
@@ -24,63 +24,68 @@ st.markdown("""
 @st.cache_resource
 def init_connections():
     try:
-        # Supabase
         url = st.secrets["SUPABASE_URL"]
         key = st.secrets["SUPABASE_KEY"]
         supabase = create_client(url, key)
-        # Google AI
         genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
         return supabase
     except Exception:
-        st.error("🚨 Erreur de connexion. Vérifiez les Secrets.")
+        st.error("🚨 Erreur de connexion. Vérifiez les Secrets (Supabase/Google).")
         st.stop()
 
 supabase = init_connections()
 
-# --- 3. FONCTIONS (ФУНКЦИИ) ---
+# --- 3. FONCTIONS INTELLIGENTES (ФУНКЦИИ ИИ) ---
 
 def load_data():
-    """Загрузка данных из Supabase"""
+    """Загрузка базы из Supabase"""
     response = supabase.table("prospects").select("*").order("id", desc=True).execute()
     return pd.DataFrame(response.data)
 
-def generate_email(company, contact, notes, tone):
-    """ИИ пишет письмо на французском"""
+def generate_email(company, contact, notes, tone, lang):
+    """Генерация письма на выбранном языке"""
     model = genai.GenerativeModel("gemini-1.5-flash")
+    
+    # Промпт адаптируется под выбранный язык
     prompt = f"""
-    Tu es un expert en Business Development. Rédige un email de prospection en français.
-    Entreprise cible : {company}.
-    Contact : {contact}.
-    Contexte/Notes : {notes}.
-    Ton : {tone}.
-    Produit : Ingrédients végétaux Ingood (substituts d'œufs, texturants).
-    Objectif : Obtenir un rendez-vous ou envoyer des échantillons.
-    L'email doit être percutant, professionnel et personnalisé.
+    You are an expert Business Developer.
+    Task: Write a cold email in {lang} language.
+    
+    Details:
+    - Target Company: {company}
+    - Contact Person: {contact}
+    - Context/Notes: {notes}
+    - Tone: {tone}
+    - Product: Ingood plant-based ingredients (egg substitutes, texturizers).
+    
+    Goal: Secure a meeting or send samples.
+    Constraint: Keep it professional, concise, and persuasive.
     """
     response = model.generate_content(prompt)
     return response.text
 
-def process_audio(audio_file):
-    """ИИ обрабатывает аудио-отчет"""
+def process_audio(audio_file, output_lang):
+    """Обработка аудио и отчет на выбранном языке"""
     model = genai.GenerativeModel("gemini-1.5-flash")
-    prompt = """
-    Tu es mon assistant commercial. Écoute cette note vocale prise après un rendez-vous client.
-    Tâche :
-    1. Résume les points clés.
-    2. Identifie le Client, le Besoin (Pain point), et l'Action à suivre.
-    3. Rédige le compte-rendu en français, structuré avec des puces (bullets).
+    prompt = f"""
+    You are a sales assistant. Listen to this meeting recording.
+    The audio might be in English, French, or mixed.
+    
+    Task: Create a structured Meeting Report (Compte-Rendu) in {output_lang} language.
+    Structure:
+    1. Summary (Résumé)
+    2. Pain Points (Problèmes identifiés)
+    3. Action Items (Prochaines étapes)
     """
     response = model.generate_content([prompt, {"mime_type": "audio/wav", "data": audio_file.read()}])
     return response.text
 
-# --- 4. INTERFACE UTILISATEUR (UI) ---
+# --- 4. INTERFACE (ИНТЕРФЕЙС) ---
 
-# SIDEBAR (БОКОВОЕ МЕНЮ)
 with st.sidebar:
-    st.title("Guide Biz Dev 🚀")
-    st.caption("Plateforme de Croissance")
+    st.title("Guide Biz Dev 🌍")
+    st.caption("Growth OS | v2.0")
     
-    # Меню на французском
     menu = st.radio(
         "Navigation", 
         ["📊 Tableau de Bord", "➕ Nouveau Prospect", "🎙️ Dictaphone CR", "✉️ Assistant Email"]
@@ -89,22 +94,20 @@ with st.sidebar:
     st.divider()
     st.success("🟢 Système Connecté")
 
-# PAGE 1: DASHBOARD & BASE
+# --- PAGE 1: DASHBOARD ---
 if menu == "📊 Tableau de Bord":
     st.title("Vue d'ensemble Pipeline")
     
-    # Загрузка
     df = load_data()
     
     if not df.empty:
-        # KPI (Метрики)
+        # KPI Метрики
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Total Prospects", len(df))
         
-        # Считаем активные сделки (не закрытые и не потерянные)
-        active_count = len(df[df['status'].isin(['Contacté', 'RDV pris', 'Echantillon', 'Test R&D', 'Négociation'])])
+        # Считаем активные
+        active_count = len(df[df['status'].isin(['Contacté', 'RDV pris', 'Echantillon envoyé', 'Test R&D', 'Négociation'])])
         c2.metric("En cours (Actifs)", active_count, "🔥")
-        
         c3.metric("Clients Gagnés", len(df[df['status'] == 'Gagné']), "🏆")
         
         # Потенциал
@@ -113,11 +116,10 @@ if menu == "📊 Tableau de Bord":
         
         st.divider()
 
-        # TABLEAU (Таблица)
+        # Таблица (Редактируемая)
         st.subheader("📋 Gestion des Prospects")
-        st.caption("Double-cliquez sur une case pour modifier. Appuyez sur 'Sauvegarder' en bas.")
+        st.caption("Double-cliquez pour modifier. N'oubliez pas de sauvegarder !")
         
-        # Настройка колонок на французском
         edited_df = st.data_editor(
             df,
             num_rows="dynamic",
@@ -126,7 +128,6 @@ if menu == "📊 Tableau de Bord":
             column_config={
                 "id": st.column_config.NumberColumn("ID", disabled=True, width="small"),
                 "company_name": st.column_config.TextColumn("Entreprise", required=True),
-                "contact_name": st.column_config.TextColumn("Contact"),
                 "status": st.column_config.SelectboxColumn(
                     "Statut",
                     options=[
@@ -137,95 +138,102 @@ if menu == "📊 Tableau de Bord":
                         "Test R&D", 
                         "Négociation", 
                         "Gagné", 
-                        "Perdu/Abandonné"
+                        "Perdu"
                     ],
                     required=True
                 ),
                 "tier": st.column_config.SelectboxColumn("Priorité", options=["Tier 1", "Tier 2", "Tier 3"]),
                 "potential_volume": st.column_config.NumberColumn("Volume (T)"),
                 "website": st.column_config.LinkColumn("Site Web"),
-                "notes": st.column_config.TextColumn("Notes & Commentaires", width="large"),
+                "notes": st.column_config.TextColumn("Notes", width="large"),
             },
             hide_index=True
         )
 
-        # BOUTON SAUVEGARDER
+        # Кнопка сохранения
         if st.button("💾 Sauvegarder les modifications", type="primary"):
             try:
-                # Превращаем в словарь для Supabase
                 data_to_save = edited_df.to_dict(orient="records")
                 supabase.table("prospects").upsert(data_to_save).execute()
-                st.success("✅ Base de données mise à jour avec succès !")
+                st.success("✅ Base de données mise à jour !")
                 st.cache_data.clear()
             except Exception as e:
                 st.error(f"Erreur de sauvegarde : {e}")
 
     else:
-        st.info("La base est vide. Ajoutez votre premier prospect via le menu !")
+        st.info("La base est vide.")
 
-# PAGE 2: AJOUTER (НОВЫЙ КЛИЕНТ)
+# --- PAGE 2: NOUVEAU PROSPECT ---
 elif menu == "➕ Nouveau Prospect":
     st.title("Ajouter un Prospect")
-    with st.form("new_lead_form"):
+    with st.form("add_form"):
         c1, c2 = st.columns(2)
-        comp = c1.text_input("Nom de l'entreprise *")
-        name = c2.text_input("Personne de contact")
+        comp = c1.text_input("Entreprise *")
+        name = c2.text_input("Contact")
         
         c3, c4 = st.columns(2)
-        vol = c3.number_input("Potentiel (Tonnes)", min_value=0)
+        vol = c3.number_input("Potentiel (T)", min_value=0)
         tier = c4.selectbox("Priorité", ["Tier 1", "Tier 2", "Tier 3"])
         
-        note = st.text_area("Notes initiales / Contexte")
+        note = st.text_area("Notes initiales")
         
-        btn = st.form_submit_button("Créer la fiche")
-        
-        if btn and comp:
+        if st.form_submit_button("Créer la fiche") and comp:
             try:
                 new_data = {
                     "company_name": comp, 
                     "contact_name": name, 
-                    "potential_volume": vol,
-                    "tier": tier,
+                    "potential_volume": vol, 
+                    "tier": tier, 
                     "notes": note,
-                    "status": "À contacter" # Статус по умолчанию
+                    "status": "À contacter"
                 }
                 supabase.table("prospects").insert(new_data).execute()
-                st.success(f"L'entreprise {comp} a été ajoutée !")
+                st.success(f"Ajouté : {comp}")
                 st.cache_data.clear()
             except Exception as e:
                 st.error(f"Erreur : {e}")
 
-# PAGE 3: DICTAPHONE (ГОЛОС)
+# --- PAGE 3: DICTAPHONE (С ВЫБОРОМ ЯЗЫКА) ---
 elif menu == "🎙️ Dictaphone CR":
     st.title("🎙️ Compte-Rendu Vocal")
-    st.info("Enregistrez votre résumé de réunion. L'IA va le transcrire et le structurer.")
+    st.info("Enregistrez le résumé. L'IA rédige le rapport.")
+    
+    # Выбор языка отчета
+    lang_report = st.selectbox("Langue du rapport écrit :", ["Français", "English"])
     
     audio = st.audio_input("Enregistrer")
     
     if audio:
         with st.spinner("Analyse en cours..."):
-            res = process_audio(audio)
-            st.subheader("📝 Compte-Rendu généré :")
-            st.text_area("Résultat (Copiez-collez dans CRM)", res, height=400)
+            res = process_audio(audio, lang_report)
+            st.subheader(f"📝 Rapport ({lang_report}) :")
+            st.text_area("Résultat", res, height=400)
 
-# PAGE 4: EMAIL (ПИСЬМА)
+# --- PAGE 4: EMAILS (С ВЫБОРОМ ЯЗЫКА) ---
 elif menu == "✉️ Assistant Email":
     st.title("⚡ Générateur d'Emails IA")
     
     df = load_data()
     
     if not df.empty:
-        c1, c2 = st.columns(2)
-        comp_sel = c1.selectbox("Sélectionner l'entreprise", df["company_name"].unique())
-        tone_sel = c2.selectbox("Ton du message", ["Formel & Professionnel", "Amical & Direct", "Relance (Follow-up)", "Proposition d'échantillons"])
+        c1, c2, c3 = st.columns(3)
+        comp_sel = c1.selectbox("Entreprise", df["company_name"].unique())
+        tone_sel = c2.selectbox("Ton", ["Formel", "Amical", "Direct", "Relance"])
+        # ВЫБОР ЯЗЫКА ПИСЬМА
+        lang_sel = c3.selectbox("Langue de l'email", ["Français", "English"])
         
-        # Данные клиента
         row = df[df["company_name"] == comp_sel].iloc[0]
-        st.markdown(f"**Contexte :** {row.get('notes', 'Aucune note')}")
+        st.markdown(f"**Contexte :** {row.get('notes', 'N/A')}")
         
         if st.button("✨ Générer le brouillon"):
-            with st.spinner("Rédaction en cours..."):
-                res = generate_email(comp_sel, row.get("contact_name", ""), row.get("notes", ""), tone_sel)
-                st.text_area("Brouillon proposé :", res, height=400)
+            with st.spinner(f"Rédaction en {lang_sel}..."):
+                res = generate_email(
+                    comp_sel, 
+                    row.get("contact_name", "Sir/Madam"), 
+                    row.get("notes", ""), 
+                    tone_sel, 
+                    lang_sel
+                )
+                st.text_area("Brouillon :", res, height=400)
     else:
-        st.warning("Ajoutez d'abord des prospects dans la base !")
+        st.warning("Ajoutez d'abord des prospects !")
