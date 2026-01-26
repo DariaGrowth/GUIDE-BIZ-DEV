@@ -6,6 +6,8 @@ import plotly.express as px
 from datetime import datetime
 
 # --- 1. CSS & DESIGN SYSTEM ---
+st.set_page_config(page_title="Ingood Growth", page_icon="🌱", layout="wide")
+
 st.markdown("""
     <style>
         /* Общий фон */
@@ -66,6 +68,9 @@ st.markdown("""
             color: #0f172a;
             font-family: 'Inter', sans-serif;
         }
+        
+        /* Убираем отступы сверху */
+        .block-container { padding-top: 2rem; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -86,21 +91,22 @@ if not supabase: st.stop()
 def get_data():
     return pd.DataFrame(supabase.table("prospects").select("*").execute().data)
 
-# --- 4. UI ---
+# --- 4. UI (Сайдбар) ---
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2921/2921222.png", width=40)
     st.title("Ingood Growth")
+    # Используем переменную 'page' для навигации
     page = st.radio("Navigation", ["Dashboard", "Pipeline", "Contacts"])
     st.divider()
     if st.button("➕ Nouveau Prospect", use_container_width=True):
         st.toast("Fonction Nouveau Prospect")
 
 # --- PAGE: DASHBOARD ---
-if menu == "📊 Dashboard": # Убедитесь, что переменная menu совпадает с вашей
+if page == "Dashboard":  # Исправлено: используем page вместо menu
     st.title("Tableau de Bord")
     st.caption("Vue d'ensemble de la performance commerciale")
     
-    df = load_data() # Или get_prospects(), проверьте название вашей функции
+    df = get_data()
     
     if not df.empty:
         # 1. KPI CARDS (Считаем цифры)
@@ -177,32 +183,8 @@ if menu == "📊 Dashboard": # Убедитесь, что переменная m
             
     else:
         st.info("La base de données est vide. Ajoutez un prospect pour voir les statistiques.")
-    
-    if not df.empty:
-        # KPI CARDS
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Total Projets", len(df))
-        c2.metric("Tests R&D", len(df[df['status']=='Test R&D']), delta="Actifs")
-        vol = df['potential_volume'].sum() if 'potential_volume' in df.columns else 0
-        c3.metric("Potentiel (T)", f"{vol:.0f} T")
-        
-        st.markdown("---")
-        
-        # CHARTS (Светлая тема)
-        c_left, c_right = st.columns(2)
-        
-        # График 1
-        fig_pie = px.pie(df, names='segment', title='Répartition par Segment', 
-                         color_discrete_sequence=['#10b981', '#34d399', '#6ee7b7', '#a7f3d0'])
-        fig_pie.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        c_left.plotly_chart(fig_pie, use_container_width=True)
-        
-        # График 2
-        fig_bar = px.bar(df, x='status', title='Pipeline par Statut', 
-                         color_discrete_sequence=['#10b981'])
-        fig_bar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        c_right.plotly_chart(fig_bar, use_container_width=True)
 
+# --- PAGE: PIPELINE ---
 elif page == "Pipeline":
     st.title("Pipeline Commercial")
     df = get_data()
@@ -215,3 +197,8 @@ elif page == "Pipeline":
             },
             use_container_width=True, hide_index=True
         )
+
+# --- PAGE: CONTACTS (Заглушка) ---
+elif page == "Contacts":
+    st.title("Contacts")
+    st.info("Cette page est en construction.")
