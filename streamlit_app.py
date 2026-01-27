@@ -28,6 +28,10 @@ st.markdown("""
         }
         div[data-testid="stMetricValue"] { color: #046c4e; font-weight: 800; }
         h1, h2, h3 { color: #1e293b; font-weight: 700; }
+        
+        /* Скрываем индекс в таблицах для красоты */
+        thead tr th:first-child { display:none }
+        tbody tr td:first-child { display:none }
     </style>
 """, unsafe_allow_html=True)
 
@@ -52,6 +56,7 @@ def get_sub_data(table, prospect_id):
     data = supabase.table(table).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
     df = pd.DataFrame(data)
     
+    # Создаем каркас, если пусто
     if df.empty:
         if table == "contacts":
             df = pd.DataFrame(columns=["id", "name", "role", "email"])
@@ -60,12 +65,13 @@ def get_sub_data(table, prospect_id):
         elif table == "activities":
             return pd.DataFrame(columns=["id", "date", "type", "content"])
             
+    # ЧИСТКА ДАННЫХ КОНТАКТОВ
     if table == "contacts":
-        # Гарантируем строковый формат для редактора
         for col in ["name", "role", "email"]:
             if col not in df.columns: df[col] = ""
-            df[col] = df[col].astype(str).replace({"nan": "", "None": ""})
-
+            # Превращаем в строки, убираем NaN и 'None'
+            df[col] = df[col].astype(str).replace({"nan": "", "None": "", "none": ""})
+            
     return df
 
 def get_all_contacts():
@@ -139,25 +145,28 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             st.markdown("**CONTACTS** (Ajoutez des lignes ici 👇)")
             
+            # 1. Загрузка
             contacts_df = get_sub_data("contacts", pid)
             
+            # 2. РЕДАКТОР С ПРОСТОЙ КОНФИГУРАЦИЕЙ
+            # Убрали сложный column_config для Email, чтобы не мешал
             edited_contacts = st.data_editor(
                 contacts_df,
                 column_config={
-                    "id": None, 
-                    "name": st.column_config.TextColumn("Nom", required=True),
-                    "role": st.column_config.TextColumn("Rôle"),
-                    "email": st.column_config.TextColumn("Email")
+                    "id": None, # Скрываем ID
+                    "name": "Nom",
+                    "role": "Rôle",
+                    "email": "Email"
                 },
                 column_order=("name", "role", "email"), 
                 num_rows="dynamic",
                 use_container_width=True,
-                key=f"editor_{pid}"
+                key=f"editor_{pid}" # Уникальный ключ для сброса кэша
             )
 
             if st.form_submit_button("💾 Enregistrer Tout", type="primary"):
-                with st.spinner("Sauvegarde en cours..."):
-                    # 1. Update Prospect
+                with st.spinner("Sauvegarde..."):
+                    # 1. Сохраняем карточку
                     supabase.table("prospects").update({
                         "status": stat, "country": pays, "potential_volume": vol,
                         "last_salon": salon, "cfia_priority": cfia,
@@ -165,19 +174,24 @@ def show_prospect_card(pid, data):
                         "tech_pain_points": pain, "tech_notes": notes
                     }).eq("id", pid).execute()
                     
-                    # 2. Update Contacts (ИСПРАВЛЕННАЯ ЛОГИКА)
+                    # 2. Сохраняем контакты (НОВЫЙ МЕТОД: to_dict)
                     if not edited_contacts.empty:
-                        for index, row in edited_contacts.iterrows():
-                            # Прямое приведение к строке, минуя Pandas типы
+                        # Конвертируем в список словарей - это самый надежный способ
+                        records = edited_contacts.to_dict('records')
+                        
+                        count = 0
+                        for row in records:
+                            # Извлекаем данные максимально безопасно
                             name_val = str(row.get("name", "")).strip()
                             role_val = str(row.get("role", "")).strip()
-                            email_val = str(row.get("email", "")).strip()
+                            email_val = str(row.get("email", "")).strip() # Здесь теперь точно будет значение
                             
-                            # Убираем "nan" и "None" если они пришли как текст
-                            if role_val.lower() in ["nan", "none"]: role_val = ""
-                            if email_val.lower() in ["nan", "none"]: email_val = ""
+                            # Убираем мусор
+                            if role_val.lower() == "nan": role_val = ""
+                            if email_val.lower() == "nan": email_val = ""
 
-                            if name_val:
+                            # Сохраняем только валидные строки
+                            if name_val and name_val != "nan":
                                 contact_data = {
                                     "prospect_id": pid,
                                     "name": name_val,
@@ -185,17 +199,23 @@ def show_prospect_card(pid, data):
                                     "email": email_val
                                 }
                                 
-                                # Upsert по ID
+                                # Если это существующий контакт (есть ID) -> обновляем
                                 raw_id = row.get("id")
-                                if raw_id and pd.notna(raw_id) and str(raw_id).strip() != "":
-                                     contact_data["id"] = int(float(raw_id)) # int(float()) для безопасности
-                                     supabase.table("contacts").upsert(contact_data).execute()
+                                if raw_id and pd.notna(raw_id) and str(raw_id) != "":
+                                     try:
+                                        contact_data["id"] = int(float(raw_id))
+                                        supabase.table("contacts").upsert(contact_data).execute()
+                                     except:
+                                        # Если ID битый, пробуем вставить как новый (редкий случай)
+                                        supabase.table("contacts").insert(contact_data).execute()
                                 else:
+                                     # Новый контакт
                                      supabase.table("contacts").insert(contact_data).execute()
+                                count += 1
                     
-                    time.sleep(1.2)
+                    time.sleep(1.2) # Важная пауза для базы данных
                     
-                st.toast("✅ Sauvegardé !")
+                st.toast(f"✅ Sauvegardé !")
                 st.rerun()
 
     with tab2:
@@ -287,21 +307,21 @@ elif page == "Pipeline":
 
         df['company_name'] = df['company_name'].str.upper()
         
-        # --- НОВАЯ ТАБЛИЦА С ВЫБОРОМ (КЛИК = ОТКРЫТИЕ) ---
-        event = st.dataframe(
+        # --- НОВАЯ ИНТЕРАКТИВНАЯ ТАБЛИЦА (КЛИК = ОТКРЫТИЕ) ---
+        selection = st.dataframe(
             df,
             column_order=("company_name", "country", "product_interest", "status", "last_action_date", "cfia_priority"),
             hide_index=True,
             use_container_width=True,
-            on_select="rerun", # Перезагрузка при клике
-            selection_mode="single-row" # Можно выбрать только одну строку
+            on_select="rerun",  # <-- Вот магия: перезагрузка при клике
+            selection_mode="single-row"
         )
         
-        # Если строка выбрана - открываем карточку
-        if len(event.selection.rows) > 0:
-            selected_row_index = event.selection.rows[0]
-            # Берем ID из отфильтрованного датафрейма по индексу
-            row = df.iloc[selected_row_index]
+        # Если строка выбрана, открываем карточку
+        if selection.selection.rows:
+            idx = selection.selection.rows[0]
+            # Берем данные по правильному индексу (даже после фильтрации)
+            row = df.iloc[idx]
             show_prospect_card(int(row['id']), row)
 
 elif page == "Contacts":
