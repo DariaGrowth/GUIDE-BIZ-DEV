@@ -47,11 +47,12 @@ def get_data():
     return pd.DataFrame(supabase.table("prospects").select("*").order("last_action_date", desc=True).execute().data)
 
 def get_sub_data(table, prospect_id):
-    """Получает данные и ГАРАНТИРУЕТ наличие колонок"""
+    """Получает данные и ЧИСТИТ типы данных, чтобы редактор не ломался"""
     pid = int(prospect_id)
     data = supabase.table(table).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
     df = pd.DataFrame(data)
     
+    # 1. Если таблица пустая - создаем каркас
     if df.empty:
         if table == "contacts":
             return pd.DataFrame(columns=["id", "name", "role", "email"])
@@ -59,6 +60,17 @@ def get_sub_data(table, prospect_id):
             return pd.DataFrame(columns=["id", "date_sent", "product_name", "reference", "status", "feedback"])
         elif table == "activities":
             return pd.DataFrame(columns=["id", "date", "type", "content"])
+            
+    # 2. ВАЖНО: Если данные есть, чистим пустоты (превращаем NaN в пустые строки)
+    # Это решает проблему, когда роль/email не сохранялись
+    if table == "contacts":
+        if "role" in df.columns:
+            df["role"] = df["role"].fillna("").astype(str)
+            df["role"] = df["role"].replace("None", "") # Убираем слово None если оно стало строкой
+        if "email" in df.columns:
+            df["email"] = df["email"].fillna("").astype(str)
+            df["email"] = df["email"].replace("None", "")
+
     return df
 
 def get_all_contacts():
@@ -133,7 +145,7 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             st.markdown("**CONTACTS** (Ajoutez des lignes ici 👇)")
             
-            # Контакты: Загрузка
+            # Контакты: Загрузка с принудительной очисткой
             contacts_df = get_sub_data("contacts", pid)
             
             # Редактор таблицы
@@ -145,7 +157,7 @@ def show_prospect_card(pid, data):
                     "role": st.column_config.TextColumn("Rôle"),
                     "email": st.column_config.TextColumn("Email")
                 },
-                column_order=("name", "role", "email"), # Порядок колонок
+                column_order=("name", "role", "email"), 
                 num_rows="dynamic",
                 use_container_width=True,
                 key="contact_editor"
@@ -160,23 +172,28 @@ def show_prospect_card(pid, data):
                     "tech_pain_points": pain, "tech_notes": notes
                 }).eq("id", pid).execute()
                 
-                # 2. Сохраняем Контакты (ИСПРАВЛЕННАЯ ЛОГИКА)
+                # 2. Сохраняем Контакты (НОВАЯ СТРОГАЯ ЛОГИКА)
                 if not edited_contacts.empty:
-                    # Заменяем все NaN (пустоты) на None, чтобы Python не ругался
-                    edited_contacts = edited_contacts.replace({np.nan: None})
-                    
                     for index, row in edited_contacts.iterrows():
-                        # Проверяем, что имя не пустое (защита от пустых строк)
-                        if row["name"]:
+                        # Принудительно превращаем в строки и убираем пробелы
+                        name_val = str(row["name"]).strip()
+                        role_val = str(row["role"]).strip()
+                        email_val = str(row["email"]).strip()
+                        
+                        # Если роль стала "nan" или "None" (как текст), делаем её пустой
+                        if role_val.lower() in ["nan", "none"]: role_val = ""
+                        if email_val.lower() in ["nan", "none"]: email_val = ""
+
+                        if name_val: # Сохраняем только если есть имя
                             contact_data = {
                                 "prospect_id": pid,
-                                "name": row["name"],
-                                "role": row["role"] if row["role"] else "", # Если пусто, пишем пустую строку
-                                "email": row["email"] if row["email"] else ""
+                                "name": name_val,
+                                "role": role_val,
+                                "email": email_val
                             }
                             
                             # Если есть ID (старый контакт) -> обновляем
-                            if row.get("id") and row["id"] is not None:
+                            if row.get("id") and pd.notna(row["id"]):
                                  contact_data["id"] = int(row["id"])
                                  supabase.table("contacts").upsert(contact_data).execute()
                             # Если нет ID (новый контакт) -> вставляем
