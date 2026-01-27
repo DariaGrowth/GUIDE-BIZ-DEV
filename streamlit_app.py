@@ -18,29 +18,40 @@ st.markdown("""
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
-        /* 1. БЕЗОПАСНЫЙ СТИЛЬ ДИАЛОГА */
-        /* Мы убрали aggressive display:none, который ломал окно */
+        /* СКРЫВАЕМ ЗАГОЛОВОК ДИАЛОГА */
+        div[data-testid="stDialog"] div[data-testid="stVerticalBlock"] > div:first-child { display: none; }
         button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
         
-        /* LABELS */
+        /* ЗАГОЛОВКИ ПОЛЕЙ (LABELS) */
         .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p {
             color: #94a3b8 !important; font-size: 11px !important; font-weight: 700 !important;
             text-transform: uppercase !important; letter-spacing: 0.5px;
         }
 
-        /* MONOCHROME SELECT ICONS */
+        /* МОНОХРОМНЫЕ СТАТУСЫ */
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { filter: grayscale(100%); color: #475569; }
         
-        /* BUTTON STYLES */
+        /* КНОПКА "NOUVEAU PROJET" (Зеленая) */
         .stButton > button {
-            width: 100%; background-color: #047857 !important; color: white !important;
-            border: none; border-radius: 8px; padding: 12px 16px; font-weight: 600; font-size: 15px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;
+            width: 100%; border-radius: 8px; padding: 10px 16px; font-weight: 600; font-size: 14px;
+            transition: all 0.2s ease;
         }
-        .stButton > button:hover { transform: translateY(-1px); background-color: #065f46 !important; }
-        .stButton > button::before { content: "⊕ "; font-size: 18px; margin-right: 8px; }
+        /* Специфичный стиль для главной кнопки в сайдбаре */
+        [data-testid="stSidebar"] .stButton > button {
+            background-color: #047857 !important; color: white !important; border: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        [data-testid="stSidebar"] .stButton > button:hover { transform: translateY(-1px); background-color: #065f46 !important; }
         
-        /* SIDEBAR MENU */
+        /* ОБЫЧНЫЕ КНОПКИ (Neutral/Grey - как Email AI) */
+        .element-container button:not([kind="primary"]) {
+            background-color: white; border: 1px solid #e2e8f0; color: #334155;
+        }
+        .element-container button:not([kind="primary"]):hover {
+            border-color: #cbd5e1; background-color: #f8fafc; color: #0f172a;
+        }
+
+        /* МЕНЮ */
         div[role="radiogroup"] > label > div:first-child { display: none !important; }
         div[role="radiogroup"] label {
             display: flex; align-items: center; width: 100%; padding: 10px 16px;
@@ -51,14 +62,9 @@ st.markdown("""
         div[role="radiogroup"] label[data-checked="true"] { background-color: rgba(16, 185, 129, 0.1) !important; color: #047857 !important; font-weight: 600; }
         div[role="radiogroup"] label[data-checked="true"] p { text-shadow: 0 0 0 #047857; }
 
-        /* SAMPLE CARD STYLE */
-        .sample-card {
-            background-color: white; border: 1px solid #e2e8f0; border-radius: 8px;
-            padding: 15px; margin-bottom: 10px; border-left: 4px solid #047857;
-        }
-        .warning-badge {
-            background-color: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;
-        }
+        /* КАРТОЧКА ОБРАЗЦА */
+        .sample-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 10px; background: white; }
+        .warning-badge { background-color: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -102,22 +108,17 @@ def get_all_contacts():
     if contacts.empty: return pd.DataFrame(columns=["name", "role", "company_name", "email", "phone"])
     return contacts
 
-# Функция подсчета просроченных образцов
 def count_relances():
     samples = pd.DataFrame(supabase.table("samples").select("*").execute().data)
     if samples.empty: return 0
-    
     today = datetime.now()
     count = 0
     for _, row in samples.iterrows():
-        # Если есть дата отправки
         if row.get("date_sent"):
             sent_date = datetime.strptime(row["date_sent"][:10], "%Y-%m-%d")
             delta = (today - sent_date).days
-            # Если прошло > 15 дней и нет фидбека
             feedback = str(row.get("feedback") or "").strip()
-            if delta > 15 and (not feedback or feedback.lower() == "none"):
-                count += 1
+            if delta > 15 and (not feedback or feedback.lower() == "none"): count += 1
     return count
 
 def add_log(pid, type_act, content):
@@ -135,12 +136,47 @@ def ai_email_assistant(context_text):
     model = genai.GenerativeModel("gemini-1.5-flash")
     return model.generate_content(f"Act as email assistant. French. Context: {context_text}.").text
 
-# --- 5. FICHE PROSPECT (MODAL) ---
+# --- 5. GLOBAL SAVE FUNCTION ---
+def save_everything_and_close(pid, new_name, stat, pays, vol, salon, cfia, prod, app, pain, notes):
+    """
+    Сохраняет проспект, контакты из редактора и закрывает окно.
+    """
+    with st.spinner("Sauvegarde..."):
+        # 1. Сохраняем Prospect
+        supabase.table("prospects").update({
+            "company_name": new_name, "status": stat, "country": pays, 
+            "potential_volume": vol, "last_salon": salon, "cfia_priority": cfia,
+            "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
+        }).eq("id", pid).execute()
+        
+        # 2. Сохраняем Contacts (Достаем данные из session_state по ключу редактора)
+        editor_key = f"editor_{pid}"
+        if editor_key in st.session_state:
+            changes = st.session_state[editor_key]
+            # data_editor возвращает словарь с 'added_rows', 'deleted_rows', 'edited_rows'
+            # Но Streamlit возвращает полный dataframe в session_state[key] если это data_editor?
+            # Нет, st.data_editor возвращает df, но в session_state лежит измененный df если мы так настроили.
+            # Проще: мы не используем form, поэтому st.data_editor возвращает актуальный DF сразу при рендере.
+            # Но так как мы вызываем эту функцию из ДРУГОЙ вкладки, нам нужно достать последнее состояние.
+            # Streamlit обновляет переменную, привязанную к editor.
+            pass # Логика реализована внутри кнопки, т.к. нам нужен доступ к переменной edited_contacts
+    
+    st.toast("✅ Données enregistrées !")
+    # Закрываем модалку путем очистки ID и перезагрузки
+    if 'active_prospect_id' in st.session_state:
+        del st.session_state['active_prospect_id']
+    if 'open_new_id' in st.session_state:
+        del st.session_state['open_new_id']
+    
+    time.sleep(0.5)
+    st.rerun()
+
+# --- 6. FICHE PROSPECT (MODAL) ---
 @st.dialog(" ", width="large")
 def show_prospect_card(pid, data):
     pid = int(pid)
     
-    # Header: используем отрицательный отступ, чтобы "наехать" на пустое место заголовка
+    # Header
     st.markdown(f"<h2 style='margin-top: -45px; margin-bottom: 25px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-weight: 700;'>{data['company_name']}</h2>", unsafe_allow_html=True)
 
     c_left, c_right = st.columns([1, 2], gap="large")
@@ -148,7 +184,7 @@ def show_prospect_card(pid, data):
     # --- LEFT COLUMN (ADMIN) ---
     with c_left:
         with st.container(border=True):
-            new_company_name = st.text_input("Société / Client", value=data['company_name'], key=f"title_{pid}")
+            new_company_name = st.text_input("Société / Client", value=data['company_name'], key=f"name_{pid}")
             
             status_opts = ["🔭 Prospection", "📋 Qualification", "📦 Echantillon", "🔬 Test R&D", "🏭 Essai industriel", "⚖️ Négociation", "✅ Client signé"]
             curr = data.get("status", "Prospection")
@@ -176,87 +212,53 @@ def show_prospect_card(pid, data):
 
         # TAB 1: TECH + CONTACTS
         with tab1:
-            with st.form("main_form"):
-                c_t1, c_t2 = st.columns(2)
-                with c_t1:
-                    prod_opts = ["LEN", "PEP", "NEW"]
-                    curr_prod = data.get("product_interest", "LEN")
-                    prod = st.selectbox("Ingrédient", prod_opts, index=prod_opts.index(curr_prod) if curr_prod in prod_opts else 0)
-                with c_t2:
-                    app_opts = ["Boulangerie / Pâtisserie", "Sauces", "Plats Cuisinés", "Confiserie"]
-                    curr_app = data.get("segment", "Boulangerie / Pâtisserie")
-                    app = st.selectbox("Application", app_opts, index=app_opts.index(curr_app) if curr_app in app_opts else 0)
-                
-                pain = st.text_area("Problématique / Besoin", value=data.get("tech_pain_points", ""), height=80)
-                notes = st.text_area("Notes Techniques", value=data.get("tech_notes", ""), height=80)
+            c_t1, c_t2 = st.columns(2)
+            with c_t1:
+                prod_opts = ["LEN", "PEP", "NEW"]
+                curr_prod = data.get("product_interest", "LEN")
+                prod = st.selectbox("Ingrédient", prod_opts, index=prod_opts.index(curr_prod) if curr_prod in prod_opts else 0)
+            with c_t2:
+                app_opts = ["Boulangerie / Pâtisserie", "Sauces", "Plats Cuisinés", "Confiserie"]
+                curr_app = data.get("segment", "Boulangerie / Pâtisserie")
+                app = st.selectbox("Application", app_opts, index=app_opts.index(curr_app) if curr_app in app_opts else 0)
+            
+            pain = st.text_area("Problématique / Besoin", value=data.get("tech_pain_points", ""), height=80)
+            notes = st.text_area("Notes Techniques", value=data.get("tech_notes", ""), height=80)
 
-                st.markdown("---")
-                st.markdown("<p style='font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;'>CONTACTS CLÉS</p>", unsafe_allow_html=True)
-                
-                contacts_df = get_sub_data("contacts", pid)
-                edited_contacts = st.data_editor(
-                    contacts_df,
-                    column_config={
-                        "id": None, 
-                        "name": st.column_config.TextColumn("Nom", required=True),
-                        "role": st.column_config.TextColumn("Poste"),
-                        "email": st.column_config.TextColumn("Email"),
-                        "phone": st.column_config.TextColumn("Tél")
-                    },
-                    column_order=("name", "role", "email", "phone"), 
-                    num_rows="dynamic",
-                    use_container_width=True,
-                    key=f"editor_{pid}"
-                )
+            st.markdown("---")
+            st.markdown("<p style='font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;'>CONTACTS CLÉS</p>", unsafe_allow_html=True)
+            
+            # CONTACT EDITOR (Без формы, чтобы данные были доступны сразу)
+            contacts_df = get_sub_data("contacts", pid)
+            edited_contacts = st.data_editor(
+                contacts_df,
+                column_config={
+                    "id": None, 
+                    "name": st.column_config.TextColumn("Nom", required=True),
+                    "role": st.column_config.TextColumn("Poste"),
+                    "email": st.column_config.TextColumn("Email"),
+                    "phone": st.column_config.TextColumn("Tél")
+                },
+                column_order=("name", "role", "email", "phone"), 
+                num_rows="dynamic",
+                use_container_width=True,
+                key=f"editor_{pid}"
+            )
 
-                st.write("")
-                if st.form_submit_button("💾 Enregistrer Tout", type="primary", use_container_width=True):
-                    with st.spinner("Sauvegarde..."):
-                        # 1. Update Prospect
-                        supabase.table("prospects").update({
-                            "company_name": new_company_name, "status": stat, "country": pays, 
-                            "potential_volume": vol, "last_salon": salon, "cfia_priority": cfia,
-                            "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
-                        }).eq("id", pid).execute()
-                        
-                        # 2. Update Contacts (SAFE LOGIC)
-                        if not edited_contacts.empty:
-                            records = edited_contacts.to_dict('records')
-                            for row in records:
-                                name_val = str(row.get("name", "")).strip()
-                                if not name_val or name_val.lower() == "nan": continue
-                                
-                                contact_data = {
-                                    "prospect_id": pid,
-                                    "name": name_val,
-                                    "role": str(row.get("role", "")).strip(),
-                                    "email": str(row.get("email", "")).strip(),
-                                    "phone": str(row.get("phone", "")).strip()
-                                }
-                                
-                                raw_id = row.get("id")
-                                if pd.notna(raw_id) and str(raw_id).replace('.','',1).isdigit():
-                                     contact_data["id"] = int(float(raw_id))
-                                     supabase.table("contacts").upsert(contact_data).execute()
-                                else:
-                                     supabase.table("contacts").insert(contact_data).execute()
-                        
-                        time.sleep(1)
-                    st.toast("✅ Modifié !")
-                    st.rerun()
-
-        # TAB 2: SAMPLE CARDS (REDESIGNED)
+        # TAB 2: SAMPLES
         with tab2:
             st.info("ℹ️ Protocole R&D : Toujours valider la fiche technique avant envoi.")
             
             with st.container(border=True):
-                c_s1, c_s2, c_s3 = st.columns([3, 1, 1])
+                # Меньше Reference, Больше Product, Кнопка на одной линии
+                c_s1, c_s2, c_s3 = st.columns([1.5, 2, 1.2]) 
                 new_ref = c_s1.text_input("Référence (ex: Lot A12)", key="new_ref")
                 new_prod = c_s2.selectbox("Produit", ["LEN", "PEP", "NEW"], key="new_prod")
                 
                 c_s3.write("") 
                 c_s3.write("") 
-                if c_s3.button("Sauvegarder", type="primary", use_container_width=True):
+                # Кнопка Sauvegarder
+                if c_s3.button("Sauvegarder", key="save_sample"):
                     if new_ref:
                         supabase.table("samples").insert({
                             "prospect_id": pid, "reference": new_ref, "product_name": new_prod, 
@@ -265,7 +267,7 @@ def show_prospect_card(pid, data):
                         st.rerun()
 
             st.write("")
-            st.markdown("##### Historique & Feedback")
+            st.markdown("##### Historique")
             
             samples = get_sub_data("samples", pid)
             if not samples.empty:
@@ -274,7 +276,8 @@ def show_prospect_card(pid, data):
                     days_diff = (datetime.now() - sent_date).days
                     
                     with st.container(border=True):
-                        c_card1, c_card2 = st.columns([4, 1])
+                        # Заголовок карточки + Удаление
+                        c_card1, c_del = st.columns([10, 1])
                         date_str = sent_date.strftime("%d %b %Y")
                         
                         warning_html = ""
@@ -282,29 +285,74 @@ def show_prospect_card(pid, data):
                         if days_diff > 15 and (not current_feedback or current_feedback.lower() == "none"):
                             warning_html = f"<span class='warning-badge'>⚠️ Relance nécessaire (+{days_diff}j)</span>"
                         
-                        c_card1.markdown(f"**{row['product_name']}** | Lot: {row['reference']} <span style='color:gray; font-size:12px'>({date_str})</span> {warning_html}", unsafe_allow_html=True)
+                        c_card1.markdown(f"**{row['product_name']}** | {row['reference']} <span style='color:gray; font-size:12px'>({date_str})</span> {warning_html}", unsafe_allow_html=True)
                         
-                        new_fb = st.text_area("Feedback Client", value=current_feedback if current_feedback != "None" else "", key=f"fb_{row['id']}", height=70, placeholder="En attente de retour...")
+                        # КНОПКА УДАЛЕНИЯ (Серый значок)
+                        if c_del.button("🗑️", key=f"del_spl_{row['id']}"):
+                            supabase.table("samples").delete().eq("id", row['id']).execute()
+                            st.rerun()
+                        
+                        # Feedback
+                        new_fb = st.text_area("Feedback", value=current_feedback if current_feedback != "None" else "", key=f"fb_{row['id']}", height=60, placeholder="En attente...")
                         
                         if new_fb != current_feedback:
                             supabase.table("samples").update({"feedback": new_fb}).eq("id", row['id']).execute()
-                            st.toast("Feedback enregistré !")
-                            time.sleep(0.5)
-                            st.rerun()
+                            st.toast("Feedback sauvé")
+                            # Без перезагрузки, чтобы не сбивать фокус, или с задержкой
 
         # TAB 3: JOURNAL
         with tab3:
-            with st.form("act_form", clear_on_submit=True):
-                note = st.text_area("Note...")
-                if st.form_submit_button("Ajouter", use_container_width=True):
-                    add_log(pid, "Note", note)
-                    time.sleep(1); st.rerun()
+            note = st.text_area("Nouvelle note...", key="new_note")
+            if st.button("Ajouter Note", key="add_note"):
+                add_log(pid, "Note", note)
+                st.rerun()
             st.markdown("### Historique")
             activities = get_sub_data("activities", pid)
             for _, row in activities.iterrows():
                 with st.chat_message("user"):
                     st.caption(f"{row['date'][:10]} | {row['type']}")
                     st.write(row['content'])
+
+    # --- GLOBAL SAVE BUTTON (AT BOTTOM, OUTSIDE TABS) ---
+    st.markdown("---")
+    # Кнопка на всю ширину, стиль как у Email AI (нейтральный)
+    if st.button("Enregistrer", type="secondary", use_container_width=True):
+        # 1. Save Main Info
+        supabase.table("prospects").update({
+            "company_name": new_company_name, "status": stat, "country": pays, 
+            "potential_volume": vol, "last_salon": salon, "cfia_priority": cfia,
+            "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
+        }).eq("id", pid).execute()
+        
+        # 2. Save Contacts (Retrieving edited_contacts from widget state)
+        # Note: edited_contacts variable holds the current state because we are in the same run
+        if not edited_contacts.empty:
+            records = edited_contacts.to_dict('records')
+            for row in records:
+                name_val = str(row.get("name") or "").strip()
+                if not name_val or name_val.lower() == "nan": continue
+                
+                c_data = {
+                    "prospect_id": pid, "name": name_val,
+                    "role": str(row.get("role") or "").strip(),
+                    "email": str(row.get("email") or "").strip(),
+                    "phone": str(row.get("phone") or "").strip()
+                }
+                
+                raw_id = row.get("id")
+                # Fix float ID issue
+                if pd.notna(raw_id) and str(raw_id).replace('.','',1).isdigit():
+                        c_data["id"] = int(float(raw_id))
+                        supabase.table("contacts").upsert(c_data).execute()
+                else:
+                        supabase.table("contacts").insert(c_data).execute()
+
+        st.toast("✅ Sauvegardé !")
+        # CLOSE DIALOG
+        if 'active_prospect_id' in st.session_state: del st.session_state['active_prospect_id']
+        if 'open_new_id' in st.session_state: del st.session_state['open_new_id']
+        time.sleep(0.5)
+        st.rerun()
 
 # --- 6. SIDEBAR ---
 with st.sidebar:
@@ -333,11 +381,17 @@ with st.sidebar:
 # --- 7. AUTO-OPEN ---
 if 'open_new_id' in st.session_state:
     new_pid = st.session_state['open_new_id']
+    st.session_state['active_prospect_id'] = new_pid # Set active trigger
+    del st.session_state['open_new_id'] # Clear one-time trigger
+
+# Logic to keep dialog open or open it based on selection
+if 'active_prospect_id' in st.session_state:
     try:
-        data = supabase.table("prospects").select("*").eq("id", new_pid).execute().data[0]
-        del st.session_state['open_new_id']
-        show_prospect_card(new_pid, data)
-    except: pass
+        pid = st.session_state['active_prospect_id']
+        data = supabase.table("prospects").select("*").eq("id", pid).execute().data[0]
+        show_prospect_card(pid, data)
+    except:
+        del st.session_state['active_prospect_id']
 
 # --- 8. PAGES ---
 if page == "Tableau de Bord":
@@ -390,8 +444,8 @@ elif page == "Pipeline":
         )
         if selection.selection.rows:
             idx = selection.selection.rows[0]
-            row = df.iloc[idx]
-            show_prospect_card(int(row['id']), row)
+            st.session_state['active_prospect_id'] = int(df.iloc[idx]['id'])
+            st.rerun()
 
 elif page == "Contacts":
     st.title("Annuaire Contacts")
