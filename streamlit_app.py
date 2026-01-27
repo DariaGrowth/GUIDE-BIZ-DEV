@@ -22,7 +22,7 @@ st.markdown("""
         button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
         
         /* ЗАГОЛОВКИ ПОЛЕЙ (ГРАФИТ) */
-        .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p {
+        .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p, .stDateInput label p {
             color: #64748b !important; font-size: 11px !important; font-weight: 700 !important;
             text-transform: uppercase !important; letter-spacing: 0.5px;
         }
@@ -117,7 +117,6 @@ def get_sub_data(table, prospect_id):
             return pd.DataFrame(columns=["id", "date", "type", "content"])
             
     if table == "contacts":
-        # Гарантируем наличие колонок, чтобы не падал редактор
         for col in ["name", "role", "email", "phone"]:
             if col not in df.columns: df[col] = ""
             df[col] = df[col].astype(str).replace({"nan": "", "None": "", "none": ""})
@@ -161,7 +160,7 @@ def ai_email_assistant(context_text):
 def show_prospect_card(pid, data):
     pid = int(pid)
     
-    # Custom Header (отрицательный отступ вверх)
+    # Custom Header
     st.markdown(f"<h2 style='margin-top: -30px; margin-bottom: 25px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-weight: 700;'>{data['company_name']}</h2>", unsafe_allow_html=True)
 
     c_left, c_right = st.columns([1, 2], gap="large")
@@ -183,8 +182,22 @@ def show_prospect_card(pid, data):
             with c_l2: vol = st.number_input("Potentiel (T)", value=float(data.get("potential_volume") or 0))
             
             salon = st.text_input("Source / Salon", value=data.get("last_salon", ""))
+            
             st.write("")
-            cfia = st.checkbox("🔥 Prio CFIA", value=data.get("cfia_priority", False))
+            # НОВОЕ: Поля маркетинга вместо Prio CFIA
+            c_m1, c_m2 = st.columns([1.5, 1])
+            with c_m1:
+                # Поле для названия акции (нужна колонка marketing_campaign в Supabase!)
+                marketing_camp = st.text_input("Dernière Action", value=data.get("marketing_campaign", ""), placeholder="Ex: Promo, Emailing...")
+            with c_m2:
+                # Поле даты (обновляет last_action_date)
+                raw_date = data.get("last_action_date")
+                default_date = datetime.now().date()
+                if raw_date:
+                    try:
+                        default_date = datetime.strptime(str(raw_date)[:10], "%Y-%m-%d").date()
+                    except: pass
+                marketing_date = st.date_input("Date", value=default_date, format="DD/MM/YYYY")
 
             st.markdown("---")
             if st.button("📧 Email AI", use_container_width=True):
@@ -234,7 +247,6 @@ def show_prospect_card(pid, data):
             st.info("ℹ️ Protocole R&D : Toujours valider la fiche technique avant envoi.")
             
             with st.container(border=True):
-                # Сетка: Ref (1.5), Product (2), Spacer, Button (1.2)
                 c_s1, c_s2, c_sp, c_s3 = st.columns([1.5, 2, 0.1, 1.2]) 
                 
                 with c_s1:
@@ -242,7 +254,7 @@ def show_prospect_card(pid, data):
                 with c_s2:
                     new_prod = st.selectbox("Produit", ["LEN", "PEP", "NEW"], key="new_prod")
                 with c_s3:
-                    st.write("") # Spacer
+                    st.write("") 
                     st.write("") 
                     if st.button("Sauvegarder", key="save_sample"):
                         if new_ref:
@@ -262,7 +274,6 @@ def show_prospect_card(pid, data):
                     days_diff = (datetime.now() - sent_date).days
                     
                     with st.container(border=True):
-                        # Карточка + Мусорка
                         c_card_info, c_card_del = st.columns([9, 1])
                         
                         date_str = sent_date.strftime("%d %b %Y")
@@ -277,12 +288,10 @@ def show_prospect_card(pid, data):
                         
                         with c_card_del:
                             st.write("")
-                            # Кнопка удаления (type="secondary" делает её серой по CSS)
                             if st.button("🗑️", key=f"del_spl_{row['id']}", type="secondary"):
                                 supabase.table("samples").delete().eq("id", row['id']).execute()
                                 st.rerun()
                         
-                        # Автосохранение фидбека
                         if new_fb != current_feedback:
                             supabase.table("samples").update({"feedback": new_fb}).eq("id", row['id']).execute()
                             st.toast("Feedback sauvé")
@@ -302,26 +311,26 @@ def show_prospect_card(pid, data):
 
     # --- GLOBAL SAVE BUTTON ---
     st.markdown("---")
-    # ГЛАВНАЯ КНОПКА СОХРАНЕНИЯ
     if st.button("Enregistrer & Fermer", use_container_width=True):
         with st.spinner("Sauvegarde en cours..."):
             try:
-                # 1. Проспект
+                # 1. Проспект (Включая новые поля маркетинга)
                 supabase.table("prospects").update({
                     "company_name": new_company_name, "status": stat, "country": pays, 
-                    "potential_volume": vol, "last_salon": salon, "cfia_priority": cfia,
+                    "potential_volume": vol, "last_salon": salon, 
+                    # НОВЫЕ ПОЛЯ:
+                    "marketing_campaign": marketing_camp,
+                    "last_action_date": marketing_date.isoformat(),
                     "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
                 }).eq("id", pid).execute()
                 
-                # 2. Контакты (С БЕЗОПАСНОЙ ПРОВЕРКОЙ)
+                # 2. Контакты
                 if not edited_contacts.empty:
                     records = edited_contacts.to_dict('records')
                     for row in records:
                         name_val = str(row.get("name") or "").strip()
-                        # Игнорируем пустые строки
                         if not name_val or name_val.lower() == "nan": continue
                         
-                        # Собираем данные. ВАЖНО: phone должен быть в базе!
                         c_data = {
                             "prospect_id": pid, "name": name_val,
                             "role": str(row.get("role") or "").strip(),
@@ -330,17 +339,12 @@ def show_prospect_card(pid, data):
                         }
                         
                         raw_id = row.get("id")
-                        
-                        # Логика: Если ID есть и валиден -> Upsert, иначе -> Insert
                         has_valid_id = False
                         if pd.notna(raw_id) and str(raw_id).strip() != "":
                             try:
-                                # Пытаемся привести к int
                                 c_data["id"] = int(float(raw_id))
                                 has_valid_id = True
-                            except:
-                                # Если ID строковый (редко)
-                                pass
+                            except: pass
                         
                         if has_valid_id:
                             supabase.table("contacts").upsert(c_data).execute()
@@ -348,15 +352,14 @@ def show_prospect_card(pid, data):
                             supabase.table("contacts").insert(c_data).execute()
 
                 st.toast("✅ Sauvegardé !")
-                # Закрываем
                 if 'active_prospect_id' in st.session_state: del st.session_state['active_prospect_id']
                 if 'open_new_id' in st.session_state: del st.session_state['open_new_id']
                 time.sleep(0.5)
                 st.rerun()
                 
             except Exception as e:
-                st.error(f"Erreur lors de la sauvegarde: {e}")
-                st.warning("Vérifiez que la colonne 'phone' existe bien dans votre table 'contacts' sur Supabase.")
+                st.error(f"Erreur: {e}")
+                st.warning("Ajoutez la colonne 'marketing_campaign' (text) dans Supabase !")
 
 # --- 6. SIDEBAR ---
 with st.sidebar:
