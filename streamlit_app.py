@@ -18,8 +18,8 @@ st.markdown("""
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
-        /* HIDE DIALOG HEADER */
-        div[data-testid="stDialog"] div[data-testid="stVerticalBlock"] > div:first-child { display: none; }
+        /* 1. БЕЗОПАСНЫЙ СТИЛЬ ДИАЛОГА */
+        /* Мы убрали aggressive display:none, который ломал окно */
         button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
         
         /* LABELS */
@@ -38,6 +38,7 @@ st.markdown("""
             box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;
         }
         .stButton > button:hover { transform: translateY(-1px); background-color: #065f46 !important; }
+        .stButton > button::before { content: "⊕ "; font-size: 18px; margin-right: 8px; }
         
         /* SIDEBAR MENU */
         div[role="radiogroup"] > label > div:first-child { display: none !important; }
@@ -113,7 +114,7 @@ def count_relances():
         if row.get("date_sent"):
             sent_date = datetime.strptime(row["date_sent"][:10], "%Y-%m-%d")
             delta = (today - sent_date).days
-            # Если прошло > 15 дней и нет фидбека (или он пустой)
+            # Если прошло > 15 дней и нет фидбека
             feedback = str(row.get("feedback") or "").strip()
             if delta > 15 and (not feedback or feedback.lower() == "none"):
                 count += 1
@@ -139,7 +140,7 @@ def ai_email_assistant(context_text):
 def show_prospect_card(pid, data):
     pid = int(pid)
     
-    # Header
+    # Header: используем отрицательный отступ, чтобы "наехать" на пустое место заголовка
     st.markdown(f"<h2 style='margin-top: -45px; margin-bottom: 25px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-weight: 700;'>{data['company_name']}</h2>", unsafe_allow_html=True)
 
     c_left, c_right = st.columns([1, 2], gap="large")
@@ -218,15 +219,11 @@ def show_prospect_card(pid, data):
                             "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
                         }).eq("id", pid).execute()
                         
-                        # 2. Update Contacts (FIXED)
+                        # 2. Update Contacts (SAFE LOGIC)
                         if not edited_contacts.empty:
-                            # Convert to list of dicts to handle easily
                             records = edited_contacts.to_dict('records')
-                            
                             for row in records:
                                 name_val = str(row.get("name", "")).strip()
-                                
-                                # Skip empty rows
                                 if not name_val or name_val.lower() == "nan": continue
                                 
                                 contact_data = {
@@ -238,12 +235,10 @@ def show_prospect_card(pid, data):
                                 }
                                 
                                 raw_id = row.get("id")
-                                # If ID exists (float or int or string number) -> Upsert
                                 if pd.notna(raw_id) and str(raw_id).replace('.','',1).isdigit():
                                      contact_data["id"] = int(float(raw_id))
                                      supabase.table("contacts").upsert(contact_data).execute()
                                 else:
-                                     # Insert new
                                      supabase.table("contacts").insert(contact_data).execute()
                         
                         time.sleep(1)
@@ -254,13 +249,11 @@ def show_prospect_card(pid, data):
         with tab2:
             st.info("ℹ️ Protocole R&D : Toujours valider la fiche technique avant envoi.")
             
-            # Formulaire d'envoi
             with st.container(border=True):
                 c_s1, c_s2, c_s3 = st.columns([3, 1, 1])
                 new_ref = c_s1.text_input("Référence (ex: Lot A12)", key="new_ref")
                 new_prod = c_s2.selectbox("Produit", ["LEN", "PEP", "NEW"], key="new_prod")
                 
-                # Aligning button
                 c_s3.write("") 
                 c_s3.write("") 
                 if c_s3.button("Sauvegarder", type="primary", use_container_width=True):
@@ -274,21 +267,16 @@ def show_prospect_card(pid, data):
             st.write("")
             st.markdown("##### Historique & Feedback")
             
-            # Список образцов (Карточки)
             samples = get_sub_data("samples", pid)
             if not samples.empty:
                 for idx, row in samples.iterrows():
-                    # Calculate delay
                     sent_date = datetime.strptime(row['date_sent'][:10], "%Y-%m-%d")
                     days_diff = (datetime.now() - sent_date).days
                     
-                    # Card Container
                     with st.container(border=True):
-                        # Header line
                         c_card1, c_card2 = st.columns([4, 1])
                         date_str = sent_date.strftime("%d %b %Y")
                         
-                        # Warning Badge Logic
                         warning_html = ""
                         current_feedback = str(row['feedback'] or "")
                         if days_diff > 15 and (not current_feedback or current_feedback.lower() == "none"):
@@ -296,16 +284,8 @@ def show_prospect_card(pid, data):
                         
                         c_card1.markdown(f"**{row['product_name']}** | Lot: {row['reference']} <span style='color:gray; font-size:12px'>({date_str})</span> {warning_html}", unsafe_allow_html=True)
                         
-                        # Feedback input that saves automatically on blur/enter
-                        new_fb = st.text_area(
-                            "Feedback Client", 
-                            value=current_feedback if current_feedback != "None" else "", 
-                            key=f"fb_{row['id']}", 
-                            height=70,
-                            placeholder="En attente de retour..."
-                        )
+                        new_fb = st.text_area("Feedback Client", value=current_feedback if current_feedback != "None" else "", key=f"fb_{row['id']}", height=70, placeholder="En attente de retour...")
                         
-                        # Save feedback if changed
                         if new_fb != current_feedback:
                             supabase.table("samples").update({"feedback": new_fb}).eq("id", row['id']).execute()
                             st.toast("Feedback enregistré !")
@@ -337,10 +317,7 @@ with st.sidebar:
             st.rerun()
     
     st.write("") 
-    
-    # Calculate relance count
     relance_count = count_relances()
-    
     icons = {"Tableau de Bord": "⊞", "Pipeline": "≡", "Contacts": "👤", "Kanban": "☷", "Échantillons": "⚗", "À Relancer": "🔔"}
     
     def format_func(option):
@@ -350,7 +327,6 @@ with st.sidebar:
 
     menu_options = ["Tableau de Bord", "Pipeline", "Contacts", "Kanban", "Échantillons", "À Relancer"]
     page = st.radio("Navigation", menu_options, format_func=format_func, label_visibility="collapsed")
-    
     st.markdown("---")
     st.caption("👤 Daria Growth")
 
@@ -430,39 +406,25 @@ elif page == "Contacts":
 
 elif page == "À Relancer":
     st.title("À Relancer 🔔")
-    
-    # Advanced logic for Relance page
     samples = pd.DataFrame(supabase.table("samples").select("*").execute().data)
     if not samples.empty:
         today = datetime.now()
         alerts = []
-        
         for _, row in samples.iterrows():
             if row.get("date_sent"):
                 sent_date = datetime.strptime(row["date_sent"][:10], "%Y-%m-%d")
                 delta = (today - sent_date).days
                 feedback = str(row.get("feedback") or "").strip()
-                
                 if delta > 15 and (not feedback or feedback.lower() == "none"):
-                    # Get prospect name
                     p_data = supabase.table("prospects").select("company_name").eq("id", row['prospect_id']).execute().data
                     p_name = p_data[0]['company_name'] if p_data else "Inconnu"
-                    
-                    alerts.append({
-                        "Société": p_name,
-                        "Produit": row['product_name'],
-                        "Ref": row['reference'],
-                        "Envoyé le": row['date_sent'][:10],
-                        "Retard": f"+{delta} jours"
-                    })
+                    alerts.append({"Société": p_name, "Produit": row['product_name'], "Ref": row['reference'], "Envoyé le": row['date_sent'][:10], "Retard": f"+{delta} jours"})
         
         if alerts:
             st.warning(f"Vous avez {len(alerts)} échantillon(s) sans feedback depuis plus de 15 jours.")
             st.dataframe(pd.DataFrame(alerts), use_container_width=True)
-        else:
-            st.success("Aucune relance nécessaire. Tout est à jour ! 🎉")
-    else:
-        st.info("Aucun échantillon envoyé.")
+        else: st.success("Aucune relance nécessaire. Tout est à jour ! 🎉")
+    else: st.info("Aucun échantillon envoyé.")
 
 else:
     st.title("En construction 🚧")
