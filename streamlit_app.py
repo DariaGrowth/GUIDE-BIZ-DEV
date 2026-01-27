@@ -52,7 +52,6 @@ def get_sub_data(table, prospect_id):
     data = supabase.table(table).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
     df = pd.DataFrame(data)
     
-    # Каркас для пустых таблиц
     if df.empty:
         if table == "contacts":
             df = pd.DataFrame(columns=["id", "name", "role", "email"])
@@ -61,22 +60,11 @@ def get_sub_data(table, prospect_id):
         elif table == "activities":
             return pd.DataFrame(columns=["id", "date", "type", "content"])
             
-    # СПЕЦИАЛЬНАЯ ПОДГОТОВКА КОНТАКТОВ
     if table == "contacts":
-        # Гарантируем наличие колонок
+        # Гарантируем строковый формат для редактора
         for col in ["name", "role", "email"]:
-            if col not in df.columns:
-                df[col] = ""
-        
-        # Превращаем все данные в строки, чтобы редактор не путался
-        # fillna("") убирает NaN, astype(str) делает текстом
-        df["name"] = df["name"].fillna("").astype(str)
-        df["role"] = df["role"].fillna("").astype(str)
-        df["email"] = df["email"].fillna("").astype(str)
-        
-        # Чистим артефакты, если база вернула слово "None" как текст
-        df["role"] = df["role"].replace("None", "")
-        df["email"] = df["email"].replace("None", "")
+            if col not in df.columns: df[col] = ""
+            df[col] = df[col].astype(str).replace({"nan": "", "None": ""})
 
     return df
 
@@ -151,10 +139,8 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             st.markdown("**CONTACTS** (Ajoutez des lignes ici 👇)")
             
-            # Загрузка
             contacts_df = get_sub_data("contacts", pid)
             
-            # Редактор таблицы с динамическим ключом
             edited_contacts = st.data_editor(
                 contacts_df,
                 column_config={
@@ -179,20 +165,18 @@ def show_prospect_card(pid, data):
                         "tech_pain_points": pain, "tech_notes": notes
                     }).eq("id", pid).execute()
                     
-                    # 2. Update Contacts (SAFE MODE)
+                    # 2. Update Contacts (ИСПРАВЛЕННАЯ ЛОГИКА)
                     if not edited_contacts.empty:
-                        # Обрабатываем каждую строку вручную, чтобы точно взять данные
                         for index, row in edited_contacts.iterrows():
-                            # Безопасное извлечение строк. "or ''" спасает от None
-                            name_val = str(row["name"] or "").strip()
-                            role_val = str(row["role"] or "").strip()
-                            email_val = str(row["email"] or "").strip()
+                            # Прямое приведение к строке, минуя Pandas типы
+                            name_val = str(row.get("name", "")).strip()
+                            role_val = str(row.get("role", "")).strip()
+                            email_val = str(row.get("email", "")).strip()
                             
-                            # Дополнительная очистка от слов-паразитов
-                            if role_val.lower() == "nan": role_val = ""
-                            if email_val.lower() == "nan": email_val = ""
+                            # Убираем "nan" и "None" если они пришли как текст
+                            if role_val.lower() in ["nan", "none"]: role_val = ""
+                            if email_val.lower() in ["nan", "none"]: email_val = ""
 
-                            # Сохраняем только если есть имя
                             if name_val:
                                 contact_data = {
                                     "prospect_id": pid,
@@ -201,15 +185,15 @@ def show_prospect_card(pid, data):
                                     "email": email_val
                                 }
                                 
-                                # Логика Upsert
-                                # Проверяем, есть ли ID и оно не NaN
-                                if "id" in row and pd.notna(row["id"]) and row["id"] != "":
-                                     contact_data["id"] = int(row["id"])
+                                # Upsert по ID
+                                raw_id = row.get("id")
+                                if raw_id and pd.notna(raw_id) and str(raw_id).strip() != "":
+                                     contact_data["id"] = int(float(raw_id)) # int(float()) для безопасности
                                      supabase.table("contacts").upsert(contact_data).execute()
                                 else:
                                      supabase.table("contacts").insert(contact_data).execute()
                     
-                    time.sleep(1.2) # Пауза для синхронизации
+                    time.sleep(1.2)
                     
                 st.toast("✅ Sauvegardé !")
                 st.rerun()
@@ -302,13 +286,22 @@ elif page == "Pipeline":
         if c: df = df[df["country"].isin(c)]
 
         df['company_name'] = df['company_name'].str.upper()
-        st.dataframe(df, column_order=("company_name", "country", "product_interest", "status", "last_action_date", "cfia_priority"), hide_index=True, use_container_width=True)
         
-        st.markdown("---")
-        c_sel, c_btn = st.columns([3, 1])
-        sel = c_sel.selectbox("Dossier", df["company_name"].unique(), label_visibility="collapsed")
-        if c_btn.button("Ouvrir", type="primary", use_container_width=True):
-            row = df[df["company_name"] == sel].iloc[0]
+        # --- НОВАЯ ТАБЛИЦА С ВЫБОРОМ (КЛИК = ОТКРЫТИЕ) ---
+        event = st.dataframe(
+            df,
+            column_order=("company_name", "country", "product_interest", "status", "last_action_date", "cfia_priority"),
+            hide_index=True,
+            use_container_width=True,
+            on_select="rerun", # Перезагрузка при клике
+            selection_mode="single-row" # Можно выбрать только одну строку
+        )
+        
+        # Если строка выбрана - открываем карточку
+        if len(event.selection.rows) > 0:
+            selected_row_index = event.selection.rows[0]
+            # Берем ID из отфильтрованного датафрейма по индексу
+            row = df.iloc[selected_row_index]
             show_prospect_card(int(row['id']), row)
 
 elif page == "Contacts":
