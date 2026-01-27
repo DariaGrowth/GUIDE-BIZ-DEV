@@ -6,6 +6,7 @@ import plotly.express as px
 from datetime import datetime
 import io
 import numpy as np
+import time  # <--- ДОБАВЛЕНО ДЛЯ ИСПРАВЛЕНИЯ ЗАДЕРЖКИ
 
 # --- 1. CONFIGURATION & DESIGN SYSTEM ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
@@ -47,12 +48,10 @@ def get_data():
     return pd.DataFrame(supabase.table("prospects").select("*").order("last_action_date", desc=True).execute().data)
 
 def get_sub_data(table, prospect_id):
-    """Получает данные и ЧИСТИТ типы данных, чтобы редактор не ломался"""
     pid = int(prospect_id)
     data = supabase.table(table).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
     df = pd.DataFrame(data)
     
-    # 1. Если таблица пустая - создаем каркас
     if df.empty:
         if table == "contacts":
             return pd.DataFrame(columns=["id", "name", "role", "email"])
@@ -61,15 +60,11 @@ def get_sub_data(table, prospect_id):
         elif table == "activities":
             return pd.DataFrame(columns=["id", "date", "type", "content"])
             
-    # 2. ВАЖНО: Если данные есть, чистим пустоты (превращаем NaN в пустые строки)
-    # Это решает проблему, когда роль/email не сохранялись
     if table == "contacts":
         if "role" in df.columns:
-            df["role"] = df["role"].fillna("").astype(str)
-            df["role"] = df["role"].replace("None", "") # Убираем слово None если оно стало строкой
+            df["role"] = df["role"].fillna("").astype(str).replace("None", "")
         if "email" in df.columns:
-            df["email"] = df["email"].fillna("").astype(str)
-            df["email"] = df["email"].replace("None", "")
+            df["email"] = df["email"].fillna("").astype(str).replace("None", "")
 
     return df
 
@@ -122,7 +117,6 @@ def show_prospect_card(pid, data):
 
     tab1, tab2, tab3 = st.tabs(["Contexte", "Échantillons", "Journal"])
 
-    # TAB 1: Contexte + Contacts
     with tab1:
         with st.form("main_form"):
             c1, c2 = st.columns([1, 2])
@@ -145,14 +139,12 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             st.markdown("**CONTACTS** (Ajoutez des lignes ici 👇)")
             
-            # Контакты: Загрузка с принудительной очисткой
             contacts_df = get_sub_data("contacts", pid)
             
-            # Редактор таблицы
             edited_contacts = st.data_editor(
                 contacts_df,
                 column_config={
-                    "id": None, # Скрываем ID
+                    "id": None,
                     "name": st.column_config.TextColumn("Nom", required=True),
                     "role": st.column_config.TextColumn("Rôle"),
                     "email": st.column_config.TextColumn("Email")
@@ -164,46 +156,43 @@ def show_prospect_card(pid, data):
             )
 
             if st.form_submit_button("💾 Enregistrer Tout", type="primary"):
-                # 1. Сохраняем Проспект
-                supabase.table("prospects").update({
-                    "status": stat, "country": pays, "potential_volume": vol,
-                    "last_salon": salon, "cfia_priority": cfia,
-                    "product_interest": prod, "segment": app,
-                    "tech_pain_points": pain, "tech_notes": notes
-                }).eq("id", pid).execute()
-                
-                # 2. Сохраняем Контакты (НОВАЯ СТРОГАЯ ЛОГИКА)
-                if not edited_contacts.empty:
-                    for index, row in edited_contacts.iterrows():
-                        # Принудительно превращаем в строки и убираем пробелы
-                        name_val = str(row["name"]).strip()
-                        role_val = str(row["role"]).strip()
-                        email_val = str(row["email"]).strip()
-                        
-                        # Если роль стала "nan" или "None" (как текст), делаем её пустой
-                        if role_val.lower() in ["nan", "none"]: role_val = ""
-                        if email_val.lower() in ["nan", "none"]: email_val = ""
-
-                        if name_val: # Сохраняем только если есть имя
-                            contact_data = {
-                                "prospect_id": pid,
-                                "name": name_val,
-                                "role": role_val,
-                                "email": email_val
-                            }
+                with st.spinner("Sauvegarde en cours..."): # Анимация загрузки
+                    # 1. Update Prospect
+                    supabase.table("prospects").update({
+                        "status": stat, "country": pays, "potential_volume": vol,
+                        "last_salon": salon, "cfia_priority": cfia,
+                        "product_interest": prod, "segment": app,
+                        "tech_pain_points": pain, "tech_notes": notes
+                    }).eq("id", pid).execute()
+                    
+                    # 2. Update Contacts
+                    if not edited_contacts.empty:
+                        edited_contacts = edited_contacts.replace({np.nan: None})
+                        for index, row in edited_contacts.iterrows():
+                            name_val = str(row["name"]).strip()
+                            role_val = str(row["role"]).strip()
+                            email_val = str(row["email"]).strip()
                             
-                            # Если есть ID (старый контакт) -> обновляем
-                            if row.get("id") and pd.notna(row["id"]):
-                                 contact_data["id"] = int(row["id"])
-                                 supabase.table("contacts").upsert(contact_data).execute()
-                            # Если нет ID (новый контакт) -> вставляем
-                            else:
-                                 supabase.table("contacts").insert(contact_data).execute()
-                
+                            if role_val.lower() in ["nan", "none"]: role_val = ""
+                            if email_val.lower() in ["nan", "none"]: email_val = ""
+
+                            if name_val:
+                                contact_data = {
+                                    "prospect_id": pid, "name": name_val,
+                                    "role": role_val, "email": email_val
+                                }
+                                if row.get("id") and pd.notna(row["id"]):
+                                     contact_data["id"] = int(row["id"])
+                                     supabase.table("contacts").upsert(contact_data).execute()
+                                else:
+                                     supabase.table("contacts").insert(contact_data).execute()
+                    
+                    # 3. ИСКУССТВЕННАЯ ПАУЗА ДЛЯ СИНХРОНИЗАЦИИ
+                    time.sleep(1.2) # Ждем 1.2 секунды, чтобы база точно обновилась
+                    
                 st.toast("✅ Données sauvegardées !")
                 st.rerun()
 
-    # TAB 2
     with tab2:
         with st.form("sample_form", clear_on_submit=True):
             c_s1, c_s2, c_s3 = st.columns([2, 1, 1])
@@ -212,17 +201,18 @@ def show_prospect_card(pid, data):
             if c_s3.form_submit_button("Envoyer 🚀"):
                 supabase.table("samples").insert({"prospect_id": pid, "reference": ref, "product_name": s_prod, "status": "Envoyé"}).execute()
                 add_log(pid, "Sample", f"Envoi échantillon {s_prod} ({ref})")
+                time.sleep(1) # Пауза здесь тоже полезна
                 st.rerun()
         
         samples = get_sub_data("samples", pid)
         st.dataframe(samples[["date_sent", "product_name", "reference", "status", "feedback"]], use_container_width=True, hide_index=True)
 
-    # TAB 3
     with tab3:
         with st.form("act_form", clear_on_submit=True):
             note = st.text_area("Note...")
             if st.form_submit_button("Ajouter"):
                 add_log(pid, "Note", note)
+                time.sleep(1)
                 st.rerun()
         
         with st.expander("🎙️ Dictaphone IA"):
@@ -233,6 +223,7 @@ def show_prospect_card(pid, data):
                     st.success("OK")
                     if st.button("Sauvegarder"):
                         add_log(pid, "Meeting", text)
+                        time.sleep(1)
                         st.rerun()
 
         st.markdown("### Timeline")
