@@ -8,7 +8,7 @@ import io
 import numpy as np
 import time
 
-# --- 1. CONFIGURATION & VISUAL IDENTITY (PIXEL-PERFECT CSS) ---
+# --- 1. CONFIGURATION & VISUAL IDENTITY (GRAPHITE THEME) ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
 st.markdown("""
@@ -26,7 +26,6 @@ st.markdown("""
         section[data-testid="stSidebar"] { 
             background-color: #ffffff; 
             border-right: 1px solid #e2e8f0;
-            padding-top: 10px;
         }
         
         /* 3. КНОПКА "NOUVEAU PROJET" */
@@ -56,7 +55,7 @@ st.markdown("""
             font-weight: 400;
         }
 
-        /* 4. МЕНЮ НАВИГАЦИИ */
+        /* 4. МЕНЮ НАВИГАЦИИ (GRAPHITE STYLE) */
         div[role="radiogroup"] > label > div:first-child {
             display: none !important;
         }
@@ -71,74 +70,61 @@ st.markdown("""
             border: none;
             cursor: pointer;
             transition: all 0.2s;
-            color: #64748b; /* Серый цвет иконок и текста */
+            color: #475569; /* ГРАФИТОВЫЙ ЦВЕТ ТЕКСТА (Slate 600) */
             font-weight: 500;
             font-size: 15px;
         }
         
-        /* Стиль для текста иконок */
+        /* СТИЛЬ ИКОНОК (CSS Filter для превращения эмодзи в ГРАФИТ) */
         div[role="radiogroup"] label p {
-            font-size: 18px; /* Чуть крупнее для иконок */
+            font-size: 18px;
             margin: 0;
             display: flex;
             align-items: center;
             gap: 12px;
+            /* ВОТ ЭТА МАГИЯ ДЕЛАЕТ ИКОНКИ МОНОХРОМНЫМИ И ТЕМНО-СЕРЫМИ */
+            filter: grayscale(100%) brightness(30%); 
         }
         
-        /* АКТИВНЫЙ пункт меню */
+        /* АКТИВНЫЙ ПУНКТ (СВЕТЛО-ЗЕЛЕНЫЙ ПОЛУПРОЗРАЧНЫЙ ФОН) */
         div[role="radiogroup"] label[data-checked="true"] {
-            background-color: #ecfdf5 !important; /* Светло-зеленый фон */
-            color: #047857 !important; /* Зеленый текст */
+            background-color: rgba(16, 185, 129, 0.1) !important; /* Зеленый 10% прозрачности */
+            color: #047857 !important; /* Темно-зеленый текст */
             font-weight: 600;
+        }
+        /* При активном пункте иконка становится зеленой */
+        div[role="radiogroup"] label[data-checked="true"] p {
+             filter: none; /* Возвращаем цвет (или делаем зеленым фильтром, но none проще) */
+             color: #047857; 
         }
 
         div[role="radiogroup"] label:hover {
-            background-color: #f1f5f9;
-            color: #334155;
+            background-color: #f8fafc;
+            color: #1e293b;
         }
 
-        /* 5. ТАБЛИЦА (PIPELINE) */
+        /* 5. ТАБЛИЦА */
         div[data-testid="stDataFrame"] {
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             overflow: hidden;
             background: white;
         }
-        
         thead tr th {
             background-color: #f8fafc !important;
             color: #64748b !important;
             font-weight: 600 !important;
             font-size: 13px !important;
-            text-transform: none !important;
             border-bottom: 1px solid #e2e8f0 !important;
-            padding: 12px 16px !important;
         }
-        
         tbody tr td {
             color: #334155 !important;
             font-size: 14px !important;
-            font-weight: 500 !important;
-            padding: 12px 16px !important;
-            border-bottom: 1px solid #f1f5f9 !important;
         }
-        
         thead tr th:first-child, tbody tr td:first-child { display: none; }
 
-        h1 { color: #0f172a; font-weight: 700; font-size: 28px; margin-bottom: 0.5rem; }
+        h1 { color: #0f172a; font-weight: 700; font-size: 28px; }
         .caption { color: #64748b; font-size: 14px; }
-        
-        /* Красный бейдж для уведомлений */
-        .notification-badge {
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 10px;
-            font-weight: bold;
-            margin-left: 8px;
-            vertical-align: middle;
-        }
 
     </style>
 """, unsafe_allow_html=True)
@@ -181,9 +167,7 @@ def get_sub_data(table, prospect_id):
 def get_all_contacts():
     contacts = pd.DataFrame(supabase.table("contacts").select("*").execute().data)
     prospects = pd.DataFrame(supabase.table("prospects").select("id, company_name").execute().data)
-    
-    if contacts.empty:
-        return pd.DataFrame(columns=["name", "role", "company_name", "email"])
+    if contacts.empty: return pd.DataFrame(columns=["name", "role", "company_name", "email"])
     if not prospects.empty:
         merged = pd.merge(contacts, prospects, left_on='prospect_id', right_on='id', how='left')
         return merged
@@ -206,14 +190,30 @@ def ai_email_assistant(context_text):
     prompt = f"Act as an email assistant. French language. Context: {context_text}."
     return model.generate_content(prompt).text
 
-# --- 5. FICHE PROSPECT (MODAL) ---
+# --- 5. MODALS (DIALOGS) ---
+
+# ДИАЛОГ СОЗДАНИЯ (Теперь можно ввести имя сразу!)
+@st.dialog("Nouveau Projet")
+def create_prospect_dialog():
+    new_name = st.text_input("Nom de l'entreprise", placeholder="Ex: Danone...")
+    if st.button("Créer la fiche", type="primary"):
+        if new_name:
+            res = supabase.table("prospects").insert({"company_name": new_name}).execute()
+            # Сохраняем ID нового клиента в session_state, чтобы открыть его после перезагрузки
+            st.session_state['open_new_id'] = res.data[0]['id']
+            st.rerun()
+        else:
+            st.warning("Veuillez entrer un nom.")
+
+# ДИАЛОГ КАРТОЧКИ КЛИЕНТА
 @st.dialog("Fiche Prospect", width="large")
 def show_prospect_card(pid, data):
     pid = int(pid)
     
+    # ЗАГОЛОВОК ТЕПЕРЬ РЕДАКТИРУЕМЫЙ
     c_head1, c_head2 = st.columns([3, 1])
-    c_head1.subheader(f"🏢 {data['company_name']}")
-    c_head1.caption("Gestion et Suivi R&D")
+    # Поле ввода для названия компании
+    new_company_name = c_head1.text_input("Société / Client", value=data['company_name'], key=f"name_{pid}")
     
     with c_head2:
         with st.popover("✨ AI Assistant"):
@@ -249,7 +249,6 @@ def show_prospect_card(pid, data):
             st.markdown("**CONTACTS** (Ajoutez des lignes ici 👇)")
             
             contacts_df = get_sub_data("contacts", pid)
-            
             edited_contacts = st.data_editor(
                 contacts_df,
                 column_config={"id": None, "name": "Nom", "role": "Rôle", "email": "Email"},
@@ -261,7 +260,9 @@ def show_prospect_card(pid, data):
 
             if st.form_submit_button("💾 Enregistrer Tout", type="primary"):
                 with st.spinner("Sauvegarde..."):
+                    # Сохраняем и имя компании тоже!
                     supabase.table("prospects").update({
+                        "company_name": new_company_name, # <-- Обновление имени
                         "status": stat, "country": pays, "potential_volume": vol,
                         "last_salon": salon, "cfia_priority": cfia,
                         "product_interest": prod, "segment": app,
@@ -328,51 +329,49 @@ def show_prospect_card(pid, data):
                 st.caption(f"{row['date'][:10]} | {row['type']}")
                 st.write(row['content'])
 
-# --- 6. MAIN SIDEBAR & NAVIGATION (PERFECT MONOCHROME ICONS) ---
+# --- 6. MAIN SIDEBAR & NAVIGATION ---
 with st.sidebar:
     st.image("favicon.png", width=65)
     
+    # Кнопка теперь открывает диалог
     if st.button("Nouveau Projet", use_container_width=True):
-        res = supabase.table("prospects").insert({"company_name": "NOUVEAU CLIENT"}).execute()
-        show_prospect_card(int(res.data[0]['id']), res.data[0])
+        create_prospect_dialog()
     
-    st.write("") # Отступ
+    st.write("") 
     
-    # ИКОНКИ (Строгий монохром, подобранный под макет)
+    # ИКОНКИ (Графитовые благодаря CSS фильтру)
     icons = {
-        "Tableau de Bord": "⊞",   # Сетка / Окно
-        "Pipeline": "≡",          # Список линий
-        "Kanban": "☷",            # Триграмма (похожа на колонки)
-        "Échantillons": "⚗",      # Алембик (Монохромная колба!)
-        "À Relancer": "⍾"         # Контурный колокольчик
+        "Tableau de Bord": "⊞",
+        "Pipeline": "≡",
+        "Contacts": "👤",
+        "Kanban": "☷",
+        "Échantillons": "🧪", # Колба (станет графитовой из-за фильтра)
+        "À Relancer": "🔔"   # Колокольчик (станет графитовым)
     }
 
-    # Меню с новой опцией "À Relancer"
-    menu_options = [
-        "Tableau de Bord", 
-        "Pipeline", 
-        "Contacts", 
-        "Kanban", 
-        "Échantillons",
-        "À Relancer"
-    ]
+    menu_options = ["Tableau de Bord", "Pipeline", "Contacts", "Kanban", "Échantillons", "À Relancer"]
     
     def format_func(option):
-        # Добавляем красный индикатор (текстом) для "À Relancer"
-        if option == "À Relancer":
-             return f"{icons[option]}  {option} (1)" # Имитация бейджа
-        return f"{icons.get(option, '•')}  {option}"
+        return f"{icons[option]}  {option}"
 
     page = st.radio("Navigation", menu_options, format_func=format_func, label_visibility="collapsed")
     
     st.markdown("---")
     c_prof1, c_prof2 = st.columns([1, 4])
-    with c_prof1:
-        st.write("👤")
-    with c_prof2:
-        st.caption("Daria Growth\nAdmin")
+    with c_prof1: st.write("👤")
+    with c_prof2: st.caption("Daria Growth\nAdmin")
 
-# --- 7. PAGES LOGIC ---
+# --- 7. LOGIC TO OPEN NEW PROSPECT ---
+if 'open_new_id' in st.session_state:
+    # Если мы только что создали клиента, открываем его карточку
+    new_pid = st.session_state['open_new_id']
+    # Получаем данные
+    data = supabase.table("prospects").select("*").eq("id", new_pid).execute().data[0]
+    # Очищаем state чтобы не открывалось вечно
+    del st.session_state['open_new_id']
+    show_prospect_card(new_pid, data)
+
+# --- 8. PAGES ---
 
 if page == "Tableau de Bord":
     st.title("Tableau de Bord")
@@ -460,7 +459,7 @@ elif page == "Contacts":
 
 elif page == "À Relancer":
     st.title("À Relancer")
-    st.info("Cette section affichera automatiquement les clients qui nécessitent un suivi (ex: 14 jours après envoi d'échantillon).")
+    st.info("Cette section affichera automatiquement les clients qui nécessitent un suivi.")
 
 else:
     st.title("En construction 🚧")
