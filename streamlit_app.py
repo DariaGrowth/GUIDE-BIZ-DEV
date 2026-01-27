@@ -8,7 +8,7 @@ import io
 import numpy as np
 import time
 
-# --- 1. CONFIGURATION & STYLE (GREY & COMPACT) ---
+# --- 1. CONFIGURATION & STYLE ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
 st.markdown("""
@@ -18,36 +18,22 @@ st.markdown("""
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
-        /* 1. КОМПАКТНОСТЬ МОДАЛЬНОГО ОКНА */
-        /* Скрываем стандартный заголовок диалога */
-        div[data-testid="stDialog"] div[data-testid="stVerticalBlock"] > div:first-child {
-            display: none;
-        }
-        /* Убираем отступы сверху */
-        div[data-testid="stDialog"] section {
-            padding-top: 20px !important;
-        }
-        /* Уменьшаем отступы между блоками */
-        .block-container { padding-top: 1rem; padding-bottom: 1rem; }
-        div[data-testid="stVerticalBlock"] { gap: 0.5rem; }
-
-        /* 2. СТИЛЬ ЗАГОЛОВКОВ ПОЛЕЙ (LABELS) - КАК НА СКРИНЕ */
+        /* 1. СТИЛЬ ЗАГОЛОВКОВ ПОЛЕЙ (LABELS) */
         .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p {
-            color: #94a3b8 !important; /* Светло-серый (Slate 400) */
+            color: #94a3b8 !important; /* Slate 400 */
             font-size: 11px !important;
             font-weight: 700 !important;
             text-transform: uppercase !important;
             letter-spacing: 0.5px;
         }
 
-        /* 3. МОНОХРОМНЫЕ СТАТУСЫ (CSS FILTER) */
-        /* Превращает цветные эмодзи в выпадающем списке в серые */
+        /* 2. МОНОХРОМНЫЕ СТАТУСЫ */
         div[data-testid="stSelectbox"] div[data-baseweb="select"] {
             filter: grayscale(100%); 
-            color: #475569; /* Текст темно-серый */
+            color: #475569;
         }
         
-        /* 4. КНОПКА "NOUVEAU PROJET" */
+        /* 3. КНОПКА "NOUVEAU PROJET" */
         .stButton > button {
             width: 100%;
             background-color: #047857 !important;
@@ -60,7 +46,7 @@ st.markdown("""
         .stButton > button:hover { transform: translateY(-1px); background-color: #065f46 !important; }
         .stButton > button::before { content: "⊕ "; font-size: 18px; margin-right: 8px; }
 
-        /* 5. МЕНЮ (Серые иконки) */
+        /* 4. МЕНЮ (Серые иконки) */
         div[role="radiogroup"] > label > div:first-child { display: none !important; }
         div[role="radiogroup"] label {
             display: flex; align-items: center; width: 100%; padding: 10px 16px;
@@ -76,7 +62,7 @@ st.markdown("""
         }
         div[role="radiogroup"] label[data-checked="true"] p { text-shadow: 0 0 0 #047857; }
 
-        /* 6. ТАБЛИЦА */
+        /* 5. ТАБЛИЦА */
         div[data-testid="stDataFrame"] { border: 1px solid #e2e8f0; border-radius: 8px; background: white; }
         thead tr th { background-color: #f8fafc !important; color: #64748b !important; font-size: 12px !important; border-bottom: 1px solid #e2e8f0 !important; text-transform: uppercase; }
         tbody tr td { color: #334155 !important; font-size: 14px !important; }
@@ -116,7 +102,6 @@ def get_sub_data(table, prospect_id):
             return pd.DataFrame(columns=["id", "date", "type", "content"])
             
     if table == "contacts":
-        # Гарантируем наличие колонки phone и других
         for col in ["name", "role", "email", "phone"]:
             if col not in df.columns: df[col] = ""
             df[col] = df[col].astype(str).replace({"nan": "", "None": "", "none": ""})
@@ -148,31 +133,26 @@ def ai_email_assistant(context_text):
     prompt = f"Act as an email assistant. French language. Context: {context_text}."
     return model.generate_content(prompt).text
 
-# --- 5. FICHE PROSPECT (CUSTOM HEADER & COMPACT) ---
-@st.dialog(" ", width="large") # Заголовок диалога пустой (пробел), скрываем его CSS
+# --- 5. FICHE PROSPECT ---
+@st.dialog("Fiche Prospect", width="large")
 def show_prospect_card(pid, data):
     pid = int(pid)
     
-    # КАСТОМНЫЙ ЗАГОЛОВОК (ВМЕСТО "FICHE PROSPECT")
-    # Мы используем HTML, чтобы это выглядело как название компании
+    # Заголовок (Имя компании)
     company_name = data['company_name']
     st.markdown(f"""
-        <h2 style='margin-top: -30px; margin-bottom: 20px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;'>
+        <h2 style='margin-top: -20px; margin-bottom: 20px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;'>
             {company_name}
         </h2>
     """, unsafe_allow_html=True)
 
-    # РАЗДЕЛЕНИЕ ЭКРАНА
     c_left, c_right = st.columns([1, 2], gap="large")
 
-    # --- ЛЕВАЯ КОЛОНКА (АДМИН) ---
+    # --- ЛЕВАЯ КОЛОНКА ---
     with c_left:
         with st.container(border=True):
+            new_company_name = st.text_input("Société / Client", value=data['company_name'], key=f"title_{pid}")
             
-            # 1. Редактирование имени (если нужно поменять)
-            new_company_name = st.text_input("Nom Société", value=data['company_name'], key=f"title_{pid}")
-            
-            # 2. Статус (Монохромный благодаря CSS)
             status_opts = [
                 "🔮 Prospection", "🧐 Qualification", "📦 Echantillon", 
                 "🧪 Test R&D", "🏭 Essai industriel", "🤝 Négociation", "✅ Client signé"
@@ -183,20 +163,14 @@ def show_prospect_card(pid, data):
                 if curr in s: idx = i; break
             stat = st.selectbox("Statut Pipeline", status_opts, index=idx)
             
-            # 3. Страна и Потенциал
             c_l1, c_l2 = st.columns(2)
-            with c_l1:
-                pays = st.text_input("Pays", value=data.get("country", ""))
-            with c_l2:
-                vol = st.number_input("Potentiel (T)", value=float(data.get("potential_volume") or 0))
+            with c_l1: pays = st.text_input("Pays", value=data.get("country", ""))
+            with c_l2: vol = st.number_input("Potentiel (T)", value=float(data.get("potential_volume") or 0))
             
-            # 4. Источник
             salon = st.text_input("Source / Salon", value=data.get("last_salon", ""))
-            
             st.write("")
             cfia = st.checkbox("🔥 Prio CFIA", value=data.get("cfia_priority", False))
 
-            # AI Кнопки (Компактно)
             st.markdown("---")
             c_ai1, c_ai2 = st.columns(2)
             if c_ai1.button("📧 Email AI", use_container_width=True):
@@ -204,14 +178,12 @@ def show_prospect_card(pid, data):
                  st.toast("Email généré !")
                  st.code(res)
 
-    # --- ПРАВАЯ КОЛОНКА (РАБОТА) ---
+    # --- ПРАВАЯ КОЛОНКА ---
     with c_right:
         tab1, tab2, tab3 = st.tabs(["Contexte & Technique", "Suivi Échantillons", "Journal"])
 
-        # TAB 1: ТЕХНИКА + КОНТАКТЫ
         with tab1:
             with st.form("main_form"):
-                # Техника
                 c_t1, c_t2 = st.columns(2)
                 with c_t1:
                     prod_opts = ["LEN", "PEP", "NEW"]
@@ -228,9 +200,8 @@ def show_prospect_card(pid, data):
                 notes = st.text_area("Notes Techniques", value=data.get("tech_notes", ""), height=80)
 
                 st.markdown("---")
-                
-                # КОНТАКТЫ (ИСПРАВЛЕННОЕ СОХРАНЕНИЕ)
                 st.markdown("<p style='font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;'>CONTACTS CLÉS</p>", unsafe_allow_html=True)
+                
                 contacts_df = get_sub_data("contacts", pid)
                 edited_contacts = st.data_editor(
                     contacts_df,
@@ -250,7 +221,6 @@ def show_prospect_card(pid, data):
                 st.write("")
                 if st.form_submit_button("💾 Enregistrer Tout", type="primary", use_container_width=True):
                     with st.spinner("Sauvegarde..."):
-                        # 1. Update Prospect
                         supabase.table("prospects").update({
                             "company_name": new_company_name,
                             "status": stat, "country": pays, "potential_volume": vol,
@@ -259,17 +229,14 @@ def show_prospect_card(pid, data):
                             "tech_pain_points": pain, "tech_notes": notes
                         }).eq("id", pid).execute()
                         
-                        # 2. Update Contacts (FIXED)
                         if not edited_contacts.empty:
                             records = edited_contacts.to_dict('records')
                             for row in records:
-                                # Safe extraction
                                 name_val = str(row.get("name", "")).strip()
                                 role_val = str(row.get("role", "")).strip()
                                 email_val = str(row.get("email", "")).strip()
                                 phone_val = str(row.get("phone", "")).strip()
                                 
-                                # Cleanup bad values
                                 if role_val.lower() == "nan": role_val = ""
                                 if email_val.lower() == "nan": email_val = ""
                                 if phone_val.lower() == "nan": phone_val = ""
@@ -279,23 +246,17 @@ def show_prospect_card(pid, data):
                                         "prospect_id": pid, "name": name_val, "role": role_val, 
                                         "email": email_val, "phone": phone_val
                                     }
-                                    
-                                    # Handle ID safely
                                     raw_id = row.get("id")
-                                    # Превращаем 12.0 в 12, или создаем новый если пусто
                                     if raw_id and pd.notna(raw_id) and str(raw_id).strip() != "":
                                          try:
                                             contact_data["id"] = int(float(raw_id))
                                             supabase.table("contacts").upsert(contact_data).execute()
-                                         except:
-                                            supabase.table("contacts").insert(contact_data).execute()
-                                    else:
-                                         supabase.table("contacts").insert(contact_data).execute()
+                                         except: supabase.table("contacts").insert(contact_data).execute()
+                                    else: supabase.table("contacts").insert(contact_data).execute()
                         time.sleep(1)
                     st.toast("✅ Modifié !")
                     st.rerun()
 
-        # TAB 2
         with tab2:
             with st.form("sample_form", clear_on_submit=True):
                 c_s1, c_s2, c_s3 = st.columns([2, 1, 1])
@@ -307,7 +268,6 @@ def show_prospect_card(pid, data):
             samples = get_sub_data("samples", pid)
             st.dataframe(samples[["date_sent", "product_name", "reference", "status", "feedback"]], use_container_width=True, hide_index=True)
 
-        # TAB 3
         with tab3:
             with st.form("act_form", clear_on_submit=True):
                 note = st.text_area("Note...")
@@ -372,6 +332,7 @@ if page == "Tableau de Bord":
 
 elif page == "Pipeline":
     st.title("Pipeline")
+    st.markdown("<p class='caption'>Suivi des projets R&D et commerciaux.</p>", unsafe_allow_html=True)
     df = get_data()
     if not df.empty:
         c_search, c_space = st.columns([1, 3])
@@ -379,6 +340,10 @@ elif page == "Pipeline":
         if search: df = df[df.apply(lambda x: search.lower() in str(x.values).lower(), axis=1)]
         df['company_name'] = df['company_name'].str.upper()
         df['actions'] = "›" 
+        
+        # FIX: Reset Index for correct selection
+        df = df.reset_index(drop=True)
+        
         st.write("")
         selection = st.dataframe(
             df,
