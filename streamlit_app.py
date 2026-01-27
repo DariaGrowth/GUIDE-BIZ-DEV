@@ -3,7 +3,7 @@ import pandas as pd
 from supabase import create_client
 import google.generativeai as genai
 import plotly.express as px
-from datetime import datetime, timedelta
+from datetime import datetime
 import io
 import numpy as np
 import time
@@ -18,9 +18,8 @@ st.markdown("""
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
-        /* СКРЫВАЕМ ЗАГОЛОВОК ДИАЛОГА */
-        div[data-testid="stDialog"] div[data-testid="stVerticalBlock"] > div:first-child { display: none; }
-        button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
+        /* КНОПКА ЗАКРЫТИЯ ОКНА */
+        button[aria-label="Close"] { margin-top: 4px; margin-right: 4px; }
         
         /* ЗАГОЛОВКИ ПОЛЕЙ (LABELS) */
         .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p {
@@ -31,24 +30,24 @@ st.markdown("""
         /* МОНОХРОМНЫЕ СТАТУСЫ */
         div[data-testid="stSelectbox"] div[data-baseweb="select"] { filter: grayscale(100%); color: #475569; }
         
-        /* КНОПКА "NOUVEAU PROJET" (Зеленая) */
+        /* КНОПКА "NOUVEAU PROJET" */
         .stButton > button {
-            width: 100%; border-radius: 8px; padding: 10px 16px; font-weight: 600; font-size: 14px;
-            transition: all 0.2s ease;
+            width: 100%; background-color: #047857 !important; color: white !important;
+            border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; font-size: 14px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;
         }
-        /* Специфичный стиль для главной кнопки в сайдбаре */
-        [data-testid="stSidebar"] .stButton > button {
-            background-color: #047857 !important; color: white !important; border: none;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        [data-testid="stSidebar"] .stButton > button:hover { transform: translateY(-1px); background-color: #065f46 !important; }
+        .stButton > button:hover { transform: translateY(-1px); background-color: #065f46 !important; }
         
-        /* ОБЫЧНЫЕ КНОПКИ (Neutral/Grey - как Email AI) */
-        .element-container button:not([kind="primary"]) {
-            background-color: white; border: 1px solid #e2e8f0; color: #334155;
+        /* КНОПКИ ВНУТРИ (Secondary) */
+        div[data-testid="stDialog"] .stButton > button {
+            background-color: #f1f5f9 !important; color: #334155 !important; border: 1px solid #e2e8f0 !important;
         }
-        .element-container button:not([kind="primary"]):hover {
-            border-color: #cbd5e1; background-color: #f8fafc; color: #0f172a;
+        div[data-testid="stDialog"] .stButton > button:hover {
+            background-color: #e2e8f0 !important; border-color: #cbd5e1 !important;
+        }
+        /* Исключение для кнопки Sauvegarder (Primary внизу) */
+        div[data-testid="stDialog"] .stButton > button[kind="secondary"] {
+             background-color: white !important;
         }
 
         /* МЕНЮ */
@@ -136,48 +135,14 @@ def ai_email_assistant(context_text):
     model = genai.GenerativeModel("gemini-1.5-flash")
     return model.generate_content(f"Act as email assistant. French. Context: {context_text}.").text
 
-# --- 5. GLOBAL SAVE FUNCTION ---
-def save_everything_and_close(pid, new_name, stat, pays, vol, salon, cfia, prod, app, pain, notes):
-    """
-    Сохраняет проспект, контакты из редактора и закрывает окно.
-    """
-    with st.spinner("Sauvegarde..."):
-        # 1. Сохраняем Prospect
-        supabase.table("prospects").update({
-            "company_name": new_name, "status": stat, "country": pays, 
-            "potential_volume": vol, "last_salon": salon, "cfia_priority": cfia,
-            "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
-        }).eq("id", pid).execute()
-        
-        # 2. Сохраняем Contacts (Достаем данные из session_state по ключу редактора)
-        editor_key = f"editor_{pid}"
-        if editor_key in st.session_state:
-            changes = st.session_state[editor_key]
-            # data_editor возвращает словарь с 'added_rows', 'deleted_rows', 'edited_rows'
-            # Но Streamlit возвращает полный dataframe в session_state[key] если это data_editor?
-            # Нет, st.data_editor возвращает df, но в session_state лежит измененный df если мы так настроили.
-            # Проще: мы не используем form, поэтому st.data_editor возвращает актуальный DF сразу при рендере.
-            # Но так как мы вызываем эту функцию из ДРУГОЙ вкладки, нам нужно достать последнее состояние.
-            # Streamlit обновляет переменную, привязанную к editor.
-            pass # Логика реализована внутри кнопки, т.к. нам нужен доступ к переменной edited_contacts
-    
-    st.toast("✅ Données enregistrées !")
-    # Закрываем модалку путем очистки ID и перезагрузки
-    if 'active_prospect_id' in st.session_state:
-        del st.session_state['active_prospect_id']
-    if 'open_new_id' in st.session_state:
-        del st.session_state['open_new_id']
-    
-    time.sleep(0.5)
-    st.rerun()
-
-# --- 6. FICHE PROSPECT (MODAL) ---
+# --- 5. FICHE PROSPECT (MODAL) ---
 @st.dialog(" ", width="large")
 def show_prospect_card(pid, data):
     pid = int(pid)
     
-    # Header
-    st.markdown(f"<h2 style='margin-top: -45px; margin-bottom: 25px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-weight: 700;'>{data['company_name']}</h2>", unsafe_allow_html=True)
+    # Header: используем отрицательный отступ, чтобы "наехать" на пустое место заголовка
+    # ВАЖНО: display:none убрал, так что теперь безопасно
+    st.markdown(f"<h2 style='margin-top: -20px; margin-bottom: 25px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-weight: 700;'>{data['company_name']}</h2>", unsafe_allow_html=True)
 
     c_left, c_right = st.columns([1, 2], gap="large")
 
@@ -228,7 +193,7 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             st.markdown("<p style='font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;'>CONTACTS CLÉS</p>", unsafe_allow_html=True)
             
-            # CONTACT EDITOR (Без формы, чтобы данные были доступны сразу)
+            # CONTACT EDITOR
             contacts_df = get_sub_data("contacts", pid)
             edited_contacts = st.data_editor(
                 contacts_df,
@@ -250,14 +215,12 @@ def show_prospect_card(pid, data):
             st.info("ℹ️ Protocole R&D : Toujours valider la fiche technique avant envoi.")
             
             with st.container(border=True):
-                # Меньше Reference, Больше Product, Кнопка на одной линии
                 c_s1, c_s2, c_s3 = st.columns([1.5, 2, 1.2]) 
                 new_ref = c_s1.text_input("Référence (ex: Lot A12)", key="new_ref")
                 new_prod = c_s2.selectbox("Produit", ["LEN", "PEP", "NEW"], key="new_prod")
                 
                 c_s3.write("") 
                 c_s3.write("") 
-                # Кнопка Sauvegarder
                 if c_s3.button("Sauvegarder", key="save_sample"):
                     if new_ref:
                         supabase.table("samples").insert({
@@ -276,7 +239,6 @@ def show_prospect_card(pid, data):
                     days_diff = (datetime.now() - sent_date).days
                     
                     with st.container(border=True):
-                        # Заголовок карточки + Удаление
                         c_card1, c_del = st.columns([10, 1])
                         date_str = sent_date.strftime("%d %b %Y")
                         
@@ -287,18 +249,15 @@ def show_prospect_card(pid, data):
                         
                         c_card1.markdown(f"**{row['product_name']}** | {row['reference']} <span style='color:gray; font-size:12px'>({date_str})</span> {warning_html}", unsafe_allow_html=True)
                         
-                        # КНОПКА УДАЛЕНИЯ (Серый значок)
                         if c_del.button("🗑️", key=f"del_spl_{row['id']}"):
                             supabase.table("samples").delete().eq("id", row['id']).execute()
                             st.rerun()
                         
-                        # Feedback
                         new_fb = st.text_area("Feedback", value=current_feedback if current_feedback != "None" else "", key=f"fb_{row['id']}", height=60, placeholder="En attente...")
                         
                         if new_fb != current_feedback:
                             supabase.table("samples").update({"feedback": new_fb}).eq("id", row['id']).execute()
                             st.toast("Feedback sauvé")
-                            # Без перезагрузки, чтобы не сбивать фокус, или с задержкой
 
         # TAB 3: JOURNAL
         with tab3:
@@ -313,42 +272,50 @@ def show_prospect_card(pid, data):
                     st.caption(f"{row['date'][:10]} | {row['type']}")
                     st.write(row['content'])
 
-    # --- GLOBAL SAVE BUTTON (AT BOTTOM, OUTSIDE TABS) ---
+    # --- GLOBAL SAVE BUTTON ---
     st.markdown("---")
-    # Кнопка на всю ширину, стиль как у Email AI (нейтральный)
-    if st.button("Enregistrer", type="secondary", use_container_width=True):
-        # 1. Save Main Info
-        supabase.table("prospects").update({
-            "company_name": new_company_name, "status": stat, "country": pays, 
-            "potential_volume": vol, "last_salon": salon, "cfia_priority": cfia,
-            "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
-        }).eq("id", pid).execute()
-        
-        # 2. Save Contacts (Retrieving edited_contacts from widget state)
-        # Note: edited_contacts variable holds the current state because we are in the same run
-        if not edited_contacts.empty:
-            records = edited_contacts.to_dict('records')
-            for row in records:
-                name_val = str(row.get("name") or "").strip()
-                if not name_val or name_val.lower() == "nan": continue
-                
-                c_data = {
-                    "prospect_id": pid, "name": name_val,
-                    "role": str(row.get("role") or "").strip(),
-                    "email": str(row.get("email") or "").strip(),
-                    "phone": str(row.get("phone") or "").strip()
-                }
-                
-                raw_id = row.get("id")
-                # Fix float ID issue
-                if pd.notna(raw_id) and str(raw_id).replace('.','',1).isdigit():
-                        c_data["id"] = int(float(raw_id))
-                        supabase.table("contacts").upsert(c_data).execute()
-                else:
-                        supabase.table("contacts").insert(c_data).execute()
+    # Используем нейтральный стиль (type="secondary" в нашем CSS)
+    if st.button("Enregistrer & Fermer", use_container_width=True):
+        with st.spinner("Sauvegarde..."):
+            # 1. Проспект
+            supabase.table("prospects").update({
+                "company_name": new_company_name, "status": stat, "country": pays, 
+                "potential_volume": vol, "last_salon": salon, "cfia_priority": cfia,
+                "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
+            }).eq("id", pid).execute()
+            
+            # 2. Контакты (Берем из edited_contacts, который обновляется Streamlit автоматически)
+            if not edited_contacts.empty:
+                records = edited_contacts.to_dict('records')
+                for row in records:
+                    name_val = str(row.get("name") or "").strip()
+                    if not name_val or name_val.lower() == "nan": continue
+                    
+                    c_data = {
+                        "prospect_id": pid, "name": name_val,
+                        "role": str(row.get("role") or "").strip(),
+                        "email": str(row.get("email") or "").strip(),
+                        "phone": str(row.get("phone") or "").strip()
+                    }
+                    
+                    raw_id = row.get("id")
+                    # Универсальная проверка ID: работает и с числами, и со строками (UUID)
+                    if pd.notna(raw_id) and str(raw_id).strip() != "":
+                         try:
+                            # Пробуем как число (если база старая)
+                            c_data["id"] = int(float(raw_id))
+                            supabase.table("contacts").upsert(c_data).execute()
+                         except:
+                            # Если не число (UUID), просто обновляем по ID (но upsert требует id в данных)
+                            # В Supabase upsert работает, если указан Primary Key
+                            # Если raw_id - это UUID строка, передаем как есть
+                            c_data["id"] = str(raw_id)
+                            supabase.table("contacts").upsert(c_data).execute()
+                    else:
+                         supabase.table("contacts").insert(c_data).execute()
 
         st.toast("✅ Sauvegardé !")
-        # CLOSE DIALOG
+        # Закрытие окна
         if 'active_prospect_id' in st.session_state: del st.session_state['active_prospect_id']
         if 'open_new_id' in st.session_state: del st.session_state['open_new_id']
         time.sleep(0.5)
@@ -381,10 +348,10 @@ with st.sidebar:
 # --- 7. AUTO-OPEN ---
 if 'open_new_id' in st.session_state:
     new_pid = st.session_state['open_new_id']
-    st.session_state['active_prospect_id'] = new_pid # Set active trigger
-    del st.session_state['open_new_id'] # Clear one-time trigger
+    st.session_state['active_prospect_id'] = new_pid # Set active
+    del st.session_state['open_new_id']
 
-# Logic to keep dialog open or open it based on selection
+# Logic to open dialog if active_id is set
 if 'active_prospect_id' in st.session_state:
     try:
         pid = st.session_state['active_prospect_id']
