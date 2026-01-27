@@ -6,7 +6,7 @@ import plotly.express as px
 from datetime import datetime
 import io
 
-# --- 1. CONFIGURATION & STYLE (LUXURY THEME) ---
+# --- 1. CONFIGURATION & DESIGN SYSTEM (LUXURY EMERALD THEME) ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
 st.markdown("""
@@ -19,21 +19,22 @@ st.markdown("""
             background: linear-gradient(135deg, #046c4e 0%, #065f46 100%);
             color: white; border: none; border-radius: 6px; font-weight: 600;
             box-shadow: 0 4px 6px rgba(4, 108, 78, 0.2);
+            transition: all 0.2s;
+        }
+        div.stButton > button:first-child:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(4, 108, 78, 0.3);
         }
         
-        /* Поля ввода - как на скриншоте (светлые) */
-        div[data-testid="stForm"] {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        /* Карточки KPI */
+        div[data-testid="stMetric"] {
+            background-color: white; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
+        div[data-testid="stMetricValue"] { color: #046c4e; font-weight: 800; }
         
-        /* Заголовки вкладок */
-        button[data-baseweb="tab"] {
-            font-size: 14px;
-            font-weight: 600;
-        }
+        /* Заголовки */
+        h1, h2, h3 { color: #1e293b; font-weight: 700; letter-spacing: -0.01em; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -51,38 +52,48 @@ if not supabase: st.stop()
 
 # --- 3. DATA FUNCTIONS ---
 def get_data():
+    """Получает проекты"""
     return pd.DataFrame(supabase.table("prospects").select("*").order("last_action_date", desc=True).execute().data)
 
 def get_sub_data(table, prospect_id):
+    """Получает детали (контакты/активность/образцы) для конкретного проекта"""
     return pd.DataFrame(supabase.table(table).select("*").eq("prospect_id", prospect_id).order("id", desc=True).execute().data)
 
+def get_all_contacts():
+    """Получает ВСЕ контакты и объединяет с названиями компаний"""
+    contacts = pd.DataFrame(supabase.table("contacts").select("*").execute().data)
+    prospects = pd.DataFrame(supabase.table("prospects").select("id, company_name").execute().data)
+    
+    if not contacts.empty and not prospects.empty:
+        # Объединяем таблицы по ID
+        merged = pd.merge(contacts, prospects, left_on='prospect_id', right_on='id', how='left')
+        return merged
+    return contacts
+
 def add_log(pid, type_act, content):
+    """Добавляет активность и обновляет дату"""
     supabase.table("activities").insert({"prospect_id": pid, "type": type_act, "content": content, "date": datetime.now().isoformat()}).execute()
     supabase.table("prospects").update({"last_action_date": datetime.now().strftime("%Y-%m-%d")}).eq("id", pid).execute()
 
 # --- 4. AI FUNCTIONS ---
 def transcribe_audio(audio_file):
-    """Диктофон: Голос -> Текст через Gemini"""
     model = genai.GenerativeModel("gemini-1.5-flash")
     prompt = "Transcribe this meeting audio to French text. Summarize key points."
     response = model.generate_content([prompt, {"mime_type": "audio/wav", "data": audio_file.read()}])
     return response.text
 
 def ai_email_assistant(context_text):
-    """Помощник Gemini для писем"""
     model = genai.GenerativeModel("gemini-1.5-flash")
     prompt = f"Act as an email assistant. Improve or draft an email based on this context: {context_text}. Language: French."
     return model.generate_content(prompt).text
 
-# --- 5. FICHE PROSPECT (MODAL) - РЕАЛИЗАЦИЯ ПО СКРИНШОТАМ ---
+# --- 5. FICHE PROSPECT (MODAL) ---
 @st.dialog("Fiche Prospect", width="large")
 def show_prospect_card(pid, data):
-    # Заголовок как на скриншоте
     c_head1, c_head2 = st.columns([3, 1])
     c_head1.subheader(f"🏢 {data['company_name']}")
     c_head1.caption("Gestion et Suivi R&D")
     
-    # AI Кнопки в углу (как на макете)
     with c_head2:
         with st.popover("✨ AI Assistant"):
             if st.button("📧 Hunter Email"):
@@ -92,44 +103,36 @@ def show_prospect_card(pid, data):
                 res = ai_email_assistant(f"Technical Brief for {data['company_name']}, Product: {data['product_interest']}")
                 st.code(res, language="text")
 
-    # Вкладки (Tabs)
     tab1, tab2, tab3 = st.tabs(["Contexte & Technique", "Suivi Échantillons", "Journal d'Activité"])
 
-    # --- TAB 1: CONTEXTE (Как на image_4cbca1.png и image_4cbfa2.png) ---
+    # TAB 1
     with tab1:
         with st.form("main_form"):
             col_left, col_right = st.columns([1, 2])
-            
             with col_left:
                 st.markdown("**INFO PIPELINE**")
                 stat = st.selectbox("Statut Pipeline", ["Prospection", "Qualification", "Envoi Echantillon", "Test R&D", "Négociation", "Client"], index=["Prospection", "Qualification", "Envoi Echantillon", "Test R&D", "Négociation", "Client"].index(data.get("status", "Prospection")))
-                
                 c_l1, c_l2 = st.columns(2)
                 pays = c_l1.text_input("Pays", value=data.get("country", ""))
                 vol = c_l2.number_input("Potentiel (T)", value=float(data.get("potential_volume") or 0))
-                
-                salon = st.text_input("Dernier Salon / Source", value=data.get("last_salon", ""))
+                salon = st.text_input("Dernier Salon", value=data.get("last_salon", ""))
                 cfia = st.checkbox("🔥 Cible Prioritaire CFIA", value=data.get("cfia_priority", False))
 
             with col_right:
                 st.markdown("**DONNÉES TECHNIQUES**")
                 c_r1, c_r2 = st.columns(2)
-                prod = c_r1.selectbox("Ingrédient Ingood", ["LENGOOD", "PEPTIPEA", "SULFODYNE"], index=0 if not data.get("product_interest") else ["LENGOOD", "PEPTIPEA", "SULFODYNE"].index(data.get("product_interest")))
-                app = c_r2.text_input("Application Finale", value=data.get("segment", ""))
-                
-                pain = st.text_area("Problématique / Besoin (Pain Point)", value=data.get("tech_pain_points", ""), height=100, placeholder="Ex: Volatilité prix œuf...")
-                notes = st.text_area("Notes Techniques", value=data.get("tech_notes", ""), height=100, placeholder="pH, Température...")
+                prod = c_r1.selectbox("Ingrédient", ["LENGOOD", "PEPTIPEA", "SULFODYNE"], index=0 if not data.get("product_interest") else ["LENGOOD", "PEPTIPEA", "SULFODYNE"].index(data.get("product_interest")))
+                app = c_r2.text_input("Application", value=data.get("segment", ""))
+                pain = st.text_area("Pain Point", value=data.get("tech_pain_points", ""), height=100)
+                notes = st.text_area("Notes Techniques", value=data.get("tech_notes", ""), height=100)
 
             st.markdown("---")
             st.markdown("**CONTACTS CLÉS**")
-            # Встроенное редактирование контактов (как в Excel)
             contacts_df = get_sub_data("contacts", pid)
             edited_contacts = st.data_editor(contacts_df[["name", "role", "email"]], num_rows="dynamic", use_container_width=True, key="contact_editor")
 
-            # Кнопки сохранения
             c_btn1, c_btn2 = st.columns([4, 1])
             if c_btn2.form_submit_button("💾 Enregistrer", type="primary"):
-                # 1. Сохраняем проспект
                 supabase.table("prospects").update({
                     "status": stat, "country": pays, "potential_volume": vol,
                     "last_salon": salon, "cfia_priority": cfia,
@@ -137,56 +140,45 @@ def show_prospect_card(pid, data):
                     "tech_pain_points": pain, "tech_notes": notes
                 }).eq("id", pid).execute()
                 
-                # 2. Сохраняем новые контакты (упрощенная логика: добавляем новые)
-                # (Для полной синхронизации data_editor нужен более сложный код, пока сохраняем добавленные)
+                # Логика добавления контактов (упрощенная)
+                # В реальном проекте тут нужно сравнивать data_editor с базой
                 st.toast("Modifications enregistrées !")
                 st.rerun()
 
-    # --- TAB 2: ÉCHANTILLONS (Как на image_4cb85b.png) ---
+    # TAB 2
     with tab2:
-        st.info("ℹ️ Protocole R&D : Toujours valider la fiche technique avant envoi.")
-        
-        # Форма отправки
+        st.info("ℹ️ Protocole R&D : Valider fiche technique avant envoi.")
         with st.form("sample_form", clear_on_submit=True):
             c_s1, c_s2, c_s3 = st.columns([2, 1, 1])
-            ref = c_s1.text_input("Ref (ex: Lot A12)")
+            ref = c_s1.text_input("Ref (Lot)")
             s_prod = c_s2.selectbox("Produit", ["LENGOOD", "PEPTIPEA", "SULFODYNE"])
             if c_s3.form_submit_button("Envoyer 🚀"):
                 supabase.table("samples").insert({"prospect_id": pid, "reference": ref, "product_name": s_prod, "status": "Envoyé"}).execute()
                 add_log(pid, "Sample", f"Envoi échantillon {s_prod} ({ref})")
                 st.rerun()
         
-        # История образцов
-        st.markdown("### Historique")
         samples = get_sub_data("samples", pid)
         if not samples.empty:
             st.dataframe(samples[["date_sent", "product_name", "reference", "status", "feedback"]], use_container_width=True, hide_index=True)
-        else:
-            st.caption("Aucun échantillon envoyé.")
 
-    # --- TAB 3: JOURNAL D'ACTIVITÉ (Как на image_4cb101.png + Диктофон) ---
+    # TAB 3
     with tab3:
-        # 1. Добавление заметки
         with st.form("act_form", clear_on_submit=True):
-            note = st.text_area("Nouvelle note ou CR d'appel...", placeholder="Entrez votre compte-rendu ici...")
-            c_act1, c_act2 = st.columns([1, 4])
-            if c_act1.form_submit_button("Ajouter Note"):
+            note = st.text_area("Nouvelle note...")
+            if st.form_submit_button("Ajouter Note"):
                 add_log(pid, "Note", note)
                 st.rerun()
         
-        # 2. Диктофон AI
-        with st.expander("🎙️ Dictaphone IA (Meeting Transcriber)"):
-            audio = st.audio_input("Enregistrer le meeting")
+        with st.expander("🎙️ Dictaphone IA"):
+            audio = st.audio_input("Enregistrer")
             if audio:
-                with st.spinner("Transcription en cours via Gemini..."):
+                with st.spinner("Transcription..."):
                     text = transcribe_audio(audio)
-                    st.success("Transcription terminée !")
-                    st.text_area("Résultat", text, height=150)
-                    if st.button("Sauvegarder dans le Journal"):
+                    st.success("Terminé !")
+                    if st.button("Sauvegarder"):
                         add_log(pid, "Meeting", text)
                         st.rerun()
 
-        # 3. Лента истории
         st.markdown("### Timeline")
         activities = get_sub_data("activities", pid)
         if not activities.empty:
@@ -200,7 +192,8 @@ def show_prospect_card(pid, data):
 with st.sidebar:
     st.image("favicon.png", width=60)
     st.title("Ingood Growth")
-    page = st.radio("Navigation", ["Dashboard", "Pipeline", "Contacts (Bêta)"], label_visibility="collapsed")
+    # Обновили название вкладки
+    page = st.radio("Navigation", ["Dashboard", "Pipeline", "Contacts"], label_visibility="collapsed")
     st.divider()
     if st.button("➕ Nouveau Prospect", use_container_width=True):
         res = supabase.table("prospects").insert({"company_name": "NOUVEAU CLIENT"}).execute()
@@ -234,15 +227,12 @@ elif page == "Pipeline":
     df = get_data()
     if not df.empty:
         search = st.text_input("Recherche...", placeholder="Société, produit...")
-        
-        # Умные фильтры
         with st.expander("Filtres", expanded=False):
             f1, f2, f3, f4 = st.columns(4)
             p_fil = f1.multiselect("Produit", df["product_interest"].unique())
             s_fil = f2.multiselect("Statut", df["status"].unique())
             c_fil = f3.multiselect("Pays", df["country"].unique())
             
-        # Логика фильтрации
         if search: df = df[df.apply(lambda x: search.lower() in str(x.values).lower(), axis=1)]
         if p_fil: df = df[df["product_interest"].isin(p_fil)]
         if s_fil: df = df[df["status"].isin(s_fil)]
@@ -250,7 +240,6 @@ elif page == "Pipeline":
 
         df['company_name'] = df['company_name'].str.upper()
         
-        # Таблица Pipeline
         st.dataframe(
             df,
             column_order=("company_name", "country", "product_interest", "status", "last_action_date", "cfia_priority"),
@@ -261,22 +250,62 @@ elif page == "Pipeline":
                 "cfia_priority": st.column_config.CheckboxColumn("CFIA", width="small")
             }, hide_index=True, use_container_width=True
         )
-        
         st.markdown("---")
-        # Выбор для открытия
         col_sel, col_btn = st.columns([3, 1])
         sel_comp = col_sel.selectbox("Ouvrir dossier :", df["company_name"].unique(), label_visibility="collapsed")
         if col_btn.button("Ouvrir Fiche", type="primary", use_container_width=True):
             row = df[df["company_name"] == sel_comp].iloc[0]
             show_prospect_card(row['id'], row)
 
-# PAGE: CONTACTS (ЭТАП 2 - Заготовка)
-elif page == "Contacts (Bêta)":
+# PAGE: CONTACTS (ОБНОВЛЕННАЯ СТРАНИЦА)
+elif page == "Contacts":
     st.title("Annuaire Contacts")
-    if st.button("📥 Exporter Excel"):
-        # Логика экспорта будет здесь
+    
+    # 1. Загрузка и объединение данных
+    all_contacts = get_all_contacts()
+    
+    if not all_contacts.empty:
+        # 2. Метрики и Поиск
+        c1, c2 = st.columns([1, 3])
+        c1.metric("Total Contacts", len(all_contacts))
+        search_contact = c2.text_input("🔍 Rechercher un contact (Nom, Entreprise...)", placeholder="Tapez pour filtrer...")
+        
+        # 3. Фильтрация
+        if search_contact:
+            mask = all_contacts.apply(lambda x: search_contact.lower() in str(x.values).lower(), axis=1)
+            filtered_contacts = all_contacts[mask]
+        else:
+            filtered_contacts = all_contacts
+            
+        # 4. Отображение таблицы
+        st.dataframe(
+            filtered_contacts,
+            column_order=("name", "role", "company_name", "email"),
+            column_config={
+                "name": "Nom Complet",
+                "role": "Rôle / Poste",
+                "company_name": st.column_config.TextColumn("Entreprise", width="medium"),
+                "email": st.column_config.LinkColumn("Email"),
+            },
+            hide_index=True,
+            use_container_width=True
+        )
+        
+        # 5. Экспорт в Excel
+        st.markdown("---")
+        col_ex1, col_ex2 = st.columns([3, 1])
+        
+        # Генерация файла в памяти
         buffer = io.BytesIO()
         with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-            get_data().to_excel(writer, sheet_name='Prospects')
-        st.download_button("Télécharger", buffer, file_name="ingood_contacts.xlsx")
-    st.info("Module complet dans la prochaine mise à jour.")
+            filtered_contacts.to_excel(writer, sheet_name='Contacts', index=False)
+            
+        col_ex2.download_button(
+            label="📥 Télécharger Excel",
+            data=buffer,
+            file_name=f"ingood_contacts_{datetime.now().strftime('%d-%m-%y')}.xlsx",
+            mime="application/vnd.ms-excel",
+            use_container_width=True
+        )
+    else:
+        st.info("Aucun contact trouvé. Ajoutez des contacts dans les Fiches Clients.")
