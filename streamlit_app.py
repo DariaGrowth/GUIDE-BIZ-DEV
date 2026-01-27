@@ -8,7 +8,7 @@ import io
 import numpy as np
 import time
 
-# --- 1. CONFIGURATION & STYLE (GREEN BUTTONS & MONOCHROME) ---
+# --- 1. CONFIGURATION & STYLE ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
 st.markdown("""
@@ -18,18 +18,17 @@ st.markdown("""
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
-        /* СКРЫВАЕМ ЗАГОЛОВОК ДИАЛОГА */
-        div[data-testid="stDialog"] div[data-testid="stVerticalBlock"] > div:first-child { display: none; }
+        /* ИСПРАВЛЕНИЕ: МЫ БОЛЬШЕ НЕ СКРЫВАЕМ БЛОКИ ЧЕРЕЗ CSS, ЧТОБЫ НЕ ЛОМАТЬ ОКНО */
+        /* Просто двигаем кнопку закрытия */
         button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
         
-        /* ЗАГОЛОВКИ ПОЛЕЙ (ГРАФИТОВЫЙ СЕРЫЙ) */
+        /* ЗАГОЛОВКИ ПОЛЕЙ (ГРАФИТ) */
         .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p {
             color: #64748b !important; font-size: 11px !important; font-weight: 700 !important;
             text-transform: uppercase !important; letter-spacing: 0.5px;
         }
 
-        /* ПРИНУДИТЕЛЬНЫЙ МОНОХРОМ ДЛЯ ВСЕХ ЭМОДЗИ И ИКОНОК */
-        /* Это делает все цветные значки (статусы, меню) темно-серыми */
+        /* МОНОХРОМНЫЕ ИКОНКИ (ВСЕ) */
         .stSelectbox div[data-baseweb="select"], 
         div[role="radiogroup"] label p,
         .stMarkdown p { 
@@ -37,7 +36,7 @@ st.markdown("""
             color: #334155;
         }
         
-        /* ЗЕЛЕНЫЕ КНОПКИ (INGOOD PANTONE) - ГЛОБАЛЬНО */
+        /* ЗЕЛЕНЫЕ КНОПКИ (ГЛАВНЫЕ) */
         .stButton > button {
             width: 100%;
             background-color: #047857 !important; /* Ingood Green */
@@ -48,13 +47,12 @@ st.markdown("""
             transition: all 0.2s ease;
         }
         .stButton > button:hover { 
-            background-color: #065f46 !important; /* Darker Green on Hover */
+            background-color: #065f46 !important; /* Darker Green */
             transform: translateY(-1px); 
         }
-        /* Иконка плюса для кнопки создания */
-        [data-testid="stSidebar"] .stButton > button::before { content: "⊕ "; font-size: 16px; margin-right: 8px; }
-
-        /* КНОПКА "УДАЛИТЬ" (МУСОРКА) - СЕРАЯ И МАЛЕНЬКАЯ */
+        
+        /* КНОПКА "УДАЛИТЬ" (ВТОРИЧНАЯ - СЕРАЯ) */
+        /* Мы используем специфичный селектор для кнопок внутри колонок, которые должны быть серыми */
         div[data-testid="column"] button[kind="secondary"] {
             background-color: transparent !important;
             border: 1px solid #e2e8f0 !important;
@@ -67,7 +65,7 @@ st.markdown("""
             background-color: #fef2f2 !important;
         }
 
-        /* МЕНЮ НАВИГАЦИИ */
+        /* МЕНЮ */
         div[role="radiogroup"] > label > div:first-child { display: none !important; }
         div[role="radiogroup"] label {
             display: flex; align-items: center; width: 100%; padding: 10px 16px;
@@ -76,10 +74,8 @@ st.markdown("""
         }
         div[role="radiogroup"] label[data-checked="true"] { 
             background-color: rgba(16, 185, 129, 0.1) !important; 
-            color: #047857 !important; 
-            font-weight: 600; 
+            color: #047857 !important; font-weight: 600; 
         }
-        /* Убираем фильтр для активного элемента меню, чтобы он был зеленым */
         div[role="radiogroup"] label[data-checked="true"] p { filter: none !important; color: #047857 !important; }
 
         /* КАРТОЧКА ОБРАЗЦА */
@@ -88,7 +84,7 @@ st.markdown("""
             background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
         .warning-badge { 
-            background-color: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; uppercase;
+            background-color: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 700;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -166,8 +162,8 @@ def ai_email_assistant(context_text):
 def show_prospect_card(pid, data):
     pid = int(pid)
     
-    # Header
-    st.markdown(f"<h2 style='margin-top: -45px; margin-bottom: 25px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-weight: 700;'>{data['company_name']}</h2>", unsafe_allow_html=True)
+    # Custom Header (Сдвигаем вверх, чтобы перекрыть стандартный пустой заголовок)
+    st.markdown(f"<h2 style='margin-top: -30px; margin-bottom: 25px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-weight: 700;'>{data['company_name']}</h2>", unsafe_allow_html=True)
 
     c_left, c_right = st.columns([1, 2], gap="large")
 
@@ -176,7 +172,6 @@ def show_prospect_card(pid, data):
         with st.container(border=True):
             new_company_name = st.text_input("Société / Client", value=data['company_name'], key=f"name_{pid}")
             
-            # МОНОХРОМНЫЕ ИКОНКИ В СЕЛЕКТЕ (Через CSS фильтр)
             status_opts = ["🔭 Prospection", "📋 Qualification", "📦 Echantillon", "🔬 Test R&D", "🏭 Essai industriel", "⚖️ Négociation", "✅ Client signé"]
             curr = data.get("status", "Prospection")
             idx = 0
@@ -193,7 +188,8 @@ def show_prospect_card(pid, data):
             cfia = st.checkbox("🔥 Prio CFIA", value=data.get("cfia_priority", False))
 
             st.markdown("---")
-            if st.button("📧 Email AI", use_container_width=True):
+            # Кнопка AI Assistant (Нейтральная, чтобы не отвлекать)
+            if st.button("📧 Email AI", use_container_width=True, key="ai_btn"):
                  res = ai_email_assistant(f"Client: {data['company_name']}")
                  st.code(res)
 
@@ -235,24 +231,22 @@ def show_prospect_card(pid, data):
                 key=f"editor_{pid}"
             )
 
-        # TAB 2: SAMPLES (ВЫРАВНИВАНИЕ + УДАЛЕНИЕ)
+        # TAB 2: SAMPLES
         with tab2:
             st.info("ℹ️ Protocole R&D : Toujours valider la fiche technique avant envoi.")
             
             with st.container(border=True):
-                # ВЫРАВНИВАНИЕ: 
-                # Ref (2) | Product (2) | Button (1)
-                # vertical_alignment="bottom" работает только в новых версиях, используем старый трюк с отступами
-                c_s1, c_s2, c_s3 = st.columns([2, 2, 1.2]) 
+                # Сетка: Ref (2), Product (2), Spacer (0.1), Button (1)
+                c_s1, c_s2, c_sp, c_s3 = st.columns([2, 2, 0.1, 1.2]) 
                 
                 with c_s1:
                     new_ref = st.text_input("Référence (ex: Lot A12)", key="new_ref")
                 with c_s2:
                     new_prod = st.selectbox("Produit", ["LEN", "PEP", "NEW"], key="new_prod")
                 with c_s3:
-                    st.write("") # Spacer 1
-                    st.write("") # Spacer 2
-                    # Кнопка теперь зеленая (как глобальные)
+                    st.write("") # Отступ
+                    st.write("") 
+                    # Кнопка зеленая
                     if st.button("Sauvegarder", key="save_sample"):
                         if new_ref:
                             supabase.table("samples").insert({
@@ -271,33 +265,29 @@ def show_prospect_card(pid, data):
                     days_diff = (datetime.now() - sent_date).days
                     
                     with st.container(border=True):
-                        # Сетка карточки: Инфо (8) | Мусорка (1)
-                        c_card_info, c_card_del = st.columns([8, 1])
+                        # Сетка карточки: Инфо (9) | Мусорка (1)
+                        c_card_info, c_card_del = st.columns([9, 1])
                         
-                        # DATE & WARNING
                         date_str = sent_date.strftime("%d %b %Y")
                         warning_html = ""
                         current_feedback = str(row['feedback'] or "")
                         if days_diff > 15 and (not current_feedback or current_feedback.lower() == "none"):
                             warning_html = f"<span class='warning-badge'>⚠️ Relance nécessaire (+{days_diff}j)</span>"
                         
-                        # INFO
                         with c_card_info:
                             st.markdown(f"**{row['product_name']}** | {row['reference']} <span style='color:gray; font-size:12px'>({date_str})</span> {warning_html}", unsafe_allow_html=True)
                             new_fb = st.text_area("Feedback", value=current_feedback if current_feedback != "None" else "", key=f"fb_{row['id']}", height=60, placeholder="En attente...", label_visibility="collapsed")
                         
-                        # DELETE BUTTON (WORKING NOW!)
                         with c_card_del:
-                            st.write("") # Spacer
-                            # Кнопка вторичная (прозрачная/серая по CSS)
+                            st.write("")
+                            # Кнопка удаления (type="secondary" -> делает её серой по нашему CSS)
                             if st.button("🗑️", key=f"del_spl_{row['id']}", type="secondary"):
                                 supabase.table("samples").delete().eq("id", row['id']).execute()
                                 st.rerun()
                         
-                        # Save feedback logic
+                        # Feedback Save
                         if new_fb != current_feedback:
                             supabase.table("samples").update({"feedback": new_fb}).eq("id", row['id']).execute()
-                            # Feedback saves silently without full rerun to keep focus, or with toast
                             st.toast("Feedback sauvé")
 
         # TAB 3: JOURNAL
@@ -315,7 +305,7 @@ def show_prospect_card(pid, data):
 
     # --- GLOBAL SAVE BUTTON (GREEN) ---
     st.markdown("---")
-    # Кнопка сохранения ВСЕГО (Контакты + Инфо)
+    # Кнопка сохранения ВСЕГО (Зеленая по умолчанию из CSS)
     if st.button("Enregistrer & Fermer", use_container_width=True):
         with st.spinner("Sauvegarde..."):
             # 1. Проспект
@@ -341,19 +331,17 @@ def show_prospect_card(pid, data):
                     
                     raw_id = row.get("id")
                     if pd.notna(raw_id) and str(raw_id).strip() != "":
-                         # Пытаемся обновить
                          try:
                             c_data["id"] = int(float(raw_id))
                             supabase.table("contacts").upsert(c_data).execute()
                          except:
-                            # Если ID сложный или не числовой, пробуем как есть
                             c_data["id"] = raw_id
                             supabase.table("contacts").upsert(c_data).execute()
                     else:
                          supabase.table("contacts").insert(c_data).execute()
 
         st.toast("✅ Sauvegardé !")
-        # Close dialog logic
+        # Закрываем окно (очищаем стейт)
         if 'active_prospect_id' in st.session_state: del st.session_state['active_prospect_id']
         if 'open_new_id' in st.session_state: del st.session_state['open_new_id']
         time.sleep(0.5)
