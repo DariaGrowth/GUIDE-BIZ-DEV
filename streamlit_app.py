@@ -6,7 +6,7 @@ import plotly.express as px
 from datetime import datetime
 import io
 import numpy as np
-import time  # <--- ДОБАВЛЕНО ДЛЯ ИСПРАВЛЕНИЯ ЗАДЕРЖКИ
+import time
 
 # --- 1. CONFIGURATION & DESIGN SYSTEM ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
@@ -52,19 +52,30 @@ def get_sub_data(table, prospect_id):
     data = supabase.table(table).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
     df = pd.DataFrame(data)
     
+    # 1. Создаем каркас, если пусто
     if df.empty:
         if table == "contacts":
-            return pd.DataFrame(columns=["id", "name", "role", "email"])
+            df = pd.DataFrame(columns=["id", "name", "role", "email"])
         elif table == "samples":
             return pd.DataFrame(columns=["id", "date_sent", "product_name", "reference", "status", "feedback"])
         elif table == "activities":
             return pd.DataFrame(columns=["id", "date", "type", "content"])
             
+    # 2. ЖЕСТКАЯ ТИПИЗАЦИЯ ДЛЯ КОНТАКТОВ (Исправляет баг с Email)
     if table == "contacts":
-        if "role" in df.columns:
-            df["role"] = df["role"].fillna("").astype(str).replace("None", "")
-        if "email" in df.columns:
-            df["email"] = df["email"].fillna("").astype(str).replace("None", "")
+        # Гарантируем, что колонки существуют
+        for col in ["name", "role", "email"]:
+            if col not in df.columns:
+                df[col] = ""
+        
+        # Принудительно делаем всё строками (избавляемся от NaN/None)
+        df["name"] = df["name"].fillna("").astype(str)
+        df["role"] = df["role"].fillna("").astype(str)
+        df["email"] = df["email"].fillna("").astype(str)
+
+        # Убираем текстовые артефакты "None", если они вдруг появились
+        df["role"] = df["role"].replace({"None": "", "nan": ""})
+        df["email"] = df["email"].replace({"None": "", "nan": ""})
 
     return df
 
@@ -117,6 +128,7 @@ def show_prospect_card(pid, data):
 
     tab1, tab2, tab3 = st.tabs(["Contexte", "Échantillons", "Journal"])
 
+    # TAB 1: Contexte + Contacts
     with tab1:
         with st.form("main_form"):
             c1, c2 = st.columns([1, 2])
@@ -139,12 +151,14 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             st.markdown("**CONTACTS** (Ajoutez des lignes ici 👇)")
             
+            # Загрузка подготовленных данных
             contacts_df = get_sub_data("contacts", pid)
             
+            # Редактор таблицы
             edited_contacts = st.data_editor(
                 contacts_df,
                 column_config={
-                    "id": None,
+                    "id": None, # Скрываем ID
                     "name": st.column_config.TextColumn("Nom", required=True),
                     "role": st.column_config.TextColumn("Rôle"),
                     "email": st.column_config.TextColumn("Email")
@@ -156,8 +170,8 @@ def show_prospect_card(pid, data):
             )
 
             if st.form_submit_button("💾 Enregistrer Tout", type="primary"):
-                with st.spinner("Sauvegarde en cours..."): # Анимация загрузки
-                    # 1. Update Prospect
+                with st.spinner("Sauvegarde..."):
+                    # 1. Обновляем Проспект
                     supabase.table("prospects").update({
                         "status": stat, "country": pays, "potential_volume": vol,
                         "last_salon": salon, "cfia_priority": cfia,
@@ -165,34 +179,45 @@ def show_prospect_card(pid, data):
                         "tech_pain_points": pain, "tech_notes": notes
                     }).eq("id", pid).execute()
                     
-                    # 2. Update Contacts
+                    # 2. Обновляем Контакты (Безопасный метод)
                     if not edited_contacts.empty:
+                        # Фильтруем пустые строки, если случайно создались
                         edited_contacts = edited_contacts.replace({np.nan: None})
+                        
+                        count = 0
                         for index, row in edited_contacts.iterrows():
+                            # Берем значения как строки и чистим пробелы
                             name_val = str(row["name"]).strip()
                             role_val = str(row["role"]).strip()
                             email_val = str(row["email"]).strip()
                             
-                            if role_val.lower() in ["nan", "none"]: role_val = ""
-                            if email_val.lower() in ["nan", "none"]: email_val = ""
+                            # Убираем артефакты "None" и "nan"
+                            if role_val.lower() in ["none", "nan"]: role_val = ""
+                            if email_val.lower() in ["none", "nan"]: email_val = ""
 
-                            if name_val:
+                            if name_val: # Сохраняем, только если есть имя
                                 contact_data = {
-                                    "prospect_id": pid, "name": name_val,
-                                    "role": role_val, "email": email_val
+                                    "prospect_id": pid, 
+                                    "name": name_val,
+                                    "role": role_val, 
+                                    "email": email_val
                                 }
+                                
+                                # Если есть ID (существующий контакт) -> обновляем
                                 if row.get("id") and pd.notna(row["id"]):
                                      contact_data["id"] = int(row["id"])
                                      supabase.table("contacts").upsert(contact_data).execute()
+                                # Если нет ID (новый) -> создаем
                                 else:
                                      supabase.table("contacts").insert(contact_data).execute()
+                                count += 1
+                        
+                    time.sleep(1.2) # Пауза для синхронизации с базой
                     
-                    # 3. ИСКУССТВЕННАЯ ПАУЗА ДЛЯ СИНХРОНИЗАЦИИ
-                    time.sleep(1.2) # Ждем 1.2 секунды, чтобы база точно обновилась
-                    
-                st.toast("✅ Données sauvegardées !")
+                st.toast(f"✅ Sauvegardé ! ({count if 'count' in locals() else 0} contacts mis à jour)")
                 st.rerun()
 
+    # TAB 2
     with tab2:
         with st.form("sample_form", clear_on_submit=True):
             c_s1, c_s2, c_s3 = st.columns([2, 1, 1])
@@ -201,12 +226,13 @@ def show_prospect_card(pid, data):
             if c_s3.form_submit_button("Envoyer 🚀"):
                 supabase.table("samples").insert({"prospect_id": pid, "reference": ref, "product_name": s_prod, "status": "Envoyé"}).execute()
                 add_log(pid, "Sample", f"Envoi échantillon {s_prod} ({ref})")
-                time.sleep(1) # Пауза здесь тоже полезна
+                time.sleep(1)
                 st.rerun()
         
         samples = get_sub_data("samples", pid)
         st.dataframe(samples[["date_sent", "product_name", "reference", "status", "feedback"]], use_container_width=True, hide_index=True)
 
+    # TAB 3
     with tab3:
         with st.form("act_form", clear_on_submit=True):
             note = st.text_area("Note...")
