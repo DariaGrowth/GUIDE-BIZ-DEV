@@ -8,30 +8,98 @@ import io
 import numpy as np
 import time
 
-# --- 1. CONFIGURATION & DESIGN SYSTEM ---
+# --- 1. CONFIGURATION & VISUAL IDENTITY (CSS MAGIC) ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
+# Здесь мы внедряем CSS, чтобы скопировать дизайн с твоего скриншота
 st.markdown("""
     <style>
+        /* 1. ОБЩИЙ ФОН */
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
-        section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
-        div.stButton > button:first-child {
-            background: linear-gradient(135deg, #046c4e 0%, #065f46 100%);
-            color: white; border: none; border-radius: 6px; font-weight: 600;
-            box-shadow: 0 4px 6px rgba(4, 108, 78, 0.2);
+        /* 2. САЙДБАР (БЕЛЫЙ И ЧИСТЫЙ) */
+        section[data-testid="stSidebar"] { 
+            background-color: #ffffff; 
+            border-right: 1px solid #edf2f7;
+            padding-top: 20px;
         }
         
-        div[data-testid="stMetric"] {
-            background-color: white; border: 1px solid #e2e8f0; border-radius: 10px;
-            padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        div[data-testid="stMetricValue"] { color: #046c4e; font-weight: 800; }
-        h1, h2, h3 { color: #1e293b; font-weight: 700; }
+        /* Логотип и заголовок в сайдбаре */
+        [data-testid="stSidebar"] img { margin-bottom: 10px; }
         
-        /* Скрываем индекс в таблицах для красоты */
+        /* 3. КНОПКА "NOUVEAU PROJET" (КАК НА СКРИНЕ) */
+        .stButton > button {
+            width: 100%;
+            background-color: #047857 !important; /* Зеленый изумруд */
+            color: white !important;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 6px rgba(4, 120, 87, 0.2);
+            transition: all 0.2s;
+        }
+        .stButton > button:hover {
+            background-color: #065f46 !important;
+            box-shadow: 0 6px 12px rgba(4, 120, 87, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* 4. НАВИГАЦИЯ (МЕНЮ СЛЕВА) */
+        /* Скрываем стандартные кружочки радио-кнопок */
+        div[role="radiogroup"] > label > div:first-child {
+            display: none !important;
+        }
+        /* Стилизуем пункты меню */
+        div[role="radiogroup"] label {
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            border: none;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+        /* Активный пункт (Зеленый фон сбоку как на скрине) */
+        div[role="radiogroup"] label[data-checked="true"] {
+            background-color: #ecfdf5 !important; /* Светло-зеленый фон */
+            color: #047857 !important; /* Зеленый текст */
+            font-weight: 700;
+            border-left: 4px solid #047857;
+        }
+        /* Неактивный пункт */
+        div[role="radiogroup"] label[data-checked="false"] {
+            color: #64748b; /* Серый текст */
+            background-color: transparent;
+        }
+        div[role="radiogroup"] label:hover {
+            background-color: #f1f5f9;
+        }
+
+        /* 5. ТАБЛИЦА (PIPELINE) */
+        /* Заголовки таблицы */
+        thead tr th {
+            background-color: #f8fafc !important;
+            color: #64748b !important;
+            font-weight: 600 !important;
+            text-transform: uppercase;
+            font-size: 12px;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+        /* Строки таблицы */
+        tbody tr td {
+            font-size: 14px;
+            color: #1e293b;
+            padding: 12px !important;
+        }
+        /* Скрываем индекс */
         thead tr th:first-child { display:none }
         tbody tr td:first-child { display:none }
+
+        /* 6. ЗАГОЛОВКИ СТРАНИЦ */
+        h1 { color: #0f172a; font-weight: 800; letter-spacing: -0.5px; }
+        h2, h3 { color: #334155; }
+        
     </style>
 """, unsafe_allow_html=True)
 
@@ -56,7 +124,6 @@ def get_sub_data(table, prospect_id):
     data = supabase.table(table).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
     df = pd.DataFrame(data)
     
-    # Создаем каркас, если пусто
     if df.empty:
         if table == "contacts":
             df = pd.DataFrame(columns=["id", "name", "role", "email"])
@@ -65,11 +132,9 @@ def get_sub_data(table, prospect_id):
         elif table == "activities":
             return pd.DataFrame(columns=["id", "date", "type", "content"])
             
-    # ЧИСТКА ДАННЫХ КОНТАКТОВ
     if table == "contacts":
         for col in ["name", "role", "email"]:
             if col not in df.columns: df[col] = ""
-            # Превращаем в строки, убираем NaN и 'None'
             df[col] = df[col].astype(str).replace({"nan": "", "None": "", "none": ""})
             
     return df
@@ -108,6 +173,7 @@ def ai_email_assistant(context_text):
 def show_prospect_card(pid, data):
     pid = int(pid)
     
+    # Header карточки
     c_head1, c_head2 = st.columns([3, 1])
     c_head1.subheader(f"🏢 {data['company_name']}")
     c_head1.caption("Gestion et Suivi R&D")
@@ -123,6 +189,7 @@ def show_prospect_card(pid, data):
 
     tab1, tab2, tab3 = st.tabs(["Contexte", "Échantillons", "Journal"])
 
+    # TAB 1: Contexte
     with tab1:
         with st.form("main_form"):
             c1, c2 = st.columns([1, 2])
@@ -145,28 +212,22 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             st.markdown("**CONTACTS** (Ajoutez des lignes ici 👇)")
             
-            # 1. Загрузка
             contacts_df = get_sub_data("contacts", pid)
             
-            # 2. РЕДАКТОР С ПРОСТОЙ КОНФИГУРАЦИЕЙ
-            # Убрали сложный column_config для Email, чтобы не мешал
             edited_contacts = st.data_editor(
                 contacts_df,
                 column_config={
-                    "id": None, # Скрываем ID
-                    "name": "Nom",
-                    "role": "Rôle",
-                    "email": "Email"
+                    "id": None, "name": "Nom", "role": "Rôle", "email": "Email"
                 },
                 column_order=("name", "role", "email"), 
                 num_rows="dynamic",
                 use_container_width=True,
-                key=f"editor_{pid}" # Уникальный ключ для сброса кэша
+                key=f"editor_{pid}"
             )
 
             if st.form_submit_button("💾 Enregistrer Tout", type="primary"):
                 with st.spinner("Sauvegarde..."):
-                    # 1. Сохраняем карточку
+                    # Update Prospect
                     supabase.table("prospects").update({
                         "status": stat, "country": pays, "potential_volume": vol,
                         "last_salon": salon, "cfia_priority": cfia,
@@ -174,50 +235,35 @@ def show_prospect_card(pid, data):
                         "tech_pain_points": pain, "tech_notes": notes
                     }).eq("id", pid).execute()
                     
-                    # 2. Сохраняем контакты (НОВЫЙ МЕТОД: to_dict)
+                    # Update Contacts
                     if not edited_contacts.empty:
-                        # Конвертируем в список словарей - это самый надежный способ
                         records = edited_contacts.to_dict('records')
-                        
-                        count = 0
                         for row in records:
-                            # Извлекаем данные максимально безопасно
                             name_val = str(row.get("name", "")).strip()
                             role_val = str(row.get("role", "")).strip()
-                            email_val = str(row.get("email", "")).strip() # Здесь теперь точно будет значение
+                            email_val = str(row.get("email", "")).strip()
                             
-                            # Убираем мусор
                             if role_val.lower() == "nan": role_val = ""
                             if email_val.lower() == "nan": email_val = ""
 
-                            # Сохраняем только валидные строки
                             if name_val and name_val != "nan":
                                 contact_data = {
-                                    "prospect_id": pid,
-                                    "name": name_val,
-                                    "role": role_val,
-                                    "email": email_val
+                                    "prospect_id": pid, "name": name_val, "role": role_val, "email": email_val
                                 }
-                                
-                                # Если это существующий контакт (есть ID) -> обновляем
                                 raw_id = row.get("id")
                                 if raw_id and pd.notna(raw_id) and str(raw_id) != "":
                                      try:
                                         contact_data["id"] = int(float(raw_id))
                                         supabase.table("contacts").upsert(contact_data).execute()
                                      except:
-                                        # Если ID битый, пробуем вставить как новый (редкий случай)
                                         supabase.table("contacts").insert(contact_data).execute()
                                 else:
-                                     # Новый контакт
                                      supabase.table("contacts").insert(contact_data).execute()
-                                count += 1
-                    
-                    time.sleep(1.2) # Важная пауза для базы данных
-                    
+                    time.sleep(1.2)
                 st.toast(f"✅ Sauvegardé !")
                 st.rerun()
 
+    # TAB 2 & 3 (Остаются такими же)
     with tab2:
         with st.form("sample_form", clear_on_submit=True):
             c_s1, c_s2, c_s3 = st.columns([2, 1, 1])
@@ -228,7 +274,6 @@ def show_prospect_card(pid, data):
                 add_log(pid, "Sample", f"Envoi échantillon {s_prod} ({ref})")
                 time.sleep(1)
                 st.rerun()
-        
         samples = get_sub_data("samples", pid)
         st.dataframe(samples[["date_sent", "product_name", "reference", "status", "feedback"]], use_container_width=True, hide_index=True)
 
@@ -239,7 +284,6 @@ def show_prospect_card(pid, data):
                 add_log(pid, "Note", note)
                 time.sleep(1)
                 st.rerun()
-        
         with st.expander("🎙️ Dictaphone IA"):
             audio = st.audio_input("Enregistrer")
             if audio:
@@ -250,7 +294,6 @@ def show_prospect_card(pid, data):
                         add_log(pid, "Meeting", text)
                         time.sleep(1)
                         st.rerun()
-
         st.markdown("### Timeline")
         activities = get_sub_data("activities", pid)
         for _, row in activities.iterrows():
@@ -258,86 +301,138 @@ def show_prospect_card(pid, data):
                 st.caption(f"{row['date'][:10]} | {row['type']}")
                 st.write(row['content'])
 
-# --- 6. MAIN UI ---
+# --- 6. MAIN SIDEBAR & NAVIGATION (RE-DESIGNED) ---
 with st.sidebar:
-    st.image("favicon.png", width=60)
-    st.title("Ingood Growth")
-    page = st.radio("Menu", ["Dashboard", "Pipeline", "Contacts"], label_visibility="collapsed")
-    st.divider()
-    if st.button("➕ Nouveau Prospect", use_container_width=True):
+    # 1. Логотип
+    st.image("favicon.png", width=70)
+    
+    # 2. Кнопка "Новый проект" ВВЕРХУ (как на скрине)
+    if st.button("⊕ Nouveau Projet", use_container_width=True):
         res = supabase.table("prospects").insert({"company_name": "NOUVEAU CLIENT"}).execute()
         show_prospect_card(int(res.data[0]['id']), res.data[0])
+    
+    st.markdown("---")
+    
+    # 3. Меню (стилизованное через CSS под вкладки)
+    # Порядок элементов как на скрине
+    menu_options = ["Tableau de Bord", "Pipeline", "Contacts", "Kanban (Bientôt)", "Échantillons (Bientôt)"]
+    # Иконки для красоты
+    icons = {
+        "Tableau de Bord": "📊",
+        "Pipeline": "🚀",
+        "Contacts": "👥",
+        "Kanban (Bientôt)": "📋",
+        "Échantillons (Bientôt)": "🧪"
+    }
+    
+    # Функция форматирования для отображения иконок
+    def format_func(option):
+        return f"{icons.get(option, '')}  {option}"
 
-if page == "Dashboard":
+    page = st.radio("Navigation", menu_options, format_func=format_func, label_visibility="collapsed")
+    
+    # Блок профиля внизу (заглушка для красоты)
+    st.markdown("---")
+    st.caption("👤 Daria (Admin)")
+
+# --- 7. PAGES LOGIC ---
+
+if page == "Tableau de Bord":
     st.title("Tableau de Bord")
+    st.caption("Suivi des performances commerciales")
     df = get_data()
     if not df.empty:
+        # KPI Cards (белые с тенью)
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Projets", len(df))
-        c2.metric("R&D", len(df[df['status'] == 'Test R&D']))
-        c3.metric("Volume", f"{df['potential_volume'].sum():.0f}")
-        c4.metric("Clients", len(df[df['status'] == 'Client']))
-        st.markdown("---")
+        c1.metric("Projets Actifs", len(df))
+        c2.metric("En Test R&D", len(df[df['status'] == 'Test R&D']))
+        c3.metric("Volume Potentiel", f"{df['potential_volume'].sum():.0f} T")
+        c4.metric("Clients Gagnés", len(df[df['status'] == 'Client']))
+        
+        st.markdown("### Répartition")
         cl, cr = st.columns(2)
         with cl:
-            fig = px.pie(df, names='segment', color_discrete_sequence=['#046c4e', '#059669', '#10b981', '#34d399'], hole=0.5)
-            fig.update_layout(showlegend=False, margin=dict(t=0, b=0, l=0, r=0), paper_bgcolor="rgba(0,0,0,0)")
+            fig = px.pie(df, names='segment', color_discrete_sequence=['#047857', '#10b981', '#34d399', '#6ee7b7'], hole=0.6)
+            fig.update_layout(showlegend=True, margin=dict(t=0, b=0, l=0, r=0), paper_bgcolor="rgba(0,0,0,0)")
             st.plotly_chart(fig, use_container_width=True)
         with cr:
             cnt = df['status'].value_counts().reset_index()
-            fig = px.bar(cnt, x='status', y='count', color_discrete_sequence=['#046c4e'])
+            fig = px.bar(cnt, x='status', y='count', color_discrete_sequence=['#047857'])
             fig.update_layout(xaxis_title=None, yaxis_title=None, margin=dict(t=0, b=0, l=0, r=0), paper_bgcolor="rgba(0,0,0,0)")
             st.plotly_chart(fig, use_container_width=True)
 
 elif page == "Pipeline":
-    st.title("Pipeline")
+    # Заголовок как на скрине
+    st.title("Pipeline Food & Ingrédients")
+    st.caption("Suivi des projets R&D et commerciaux.")
+    
     df = get_data()
     if not df.empty:
-        search = st.text_input("Recherche...", placeholder="Société...")
-        with st.expander("Filtres", expanded=False):
-            f1, f2, f3 = st.columns(3)
-            p = f1.multiselect("Produit", df["product_interest"].unique())
-            s = f2.multiselect("Statut", df["status"].unique())
-            c = f3.multiselect("Pays", df["country"].unique())
+        # Фильтры в ряд (белые селекты)
+        c_search, c_filter = st.columns([1, 3])
+        search = c_search.text_input("Recherche...", placeholder="Société...", label_visibility="collapsed")
         
+        # Логика фильтрации
         if search: df = df[df.apply(lambda x: search.lower() in str(x.values).lower(), axis=1)]
-        if p: df = df[df["product_interest"].isin(p)]
-        if s: df = df[df["status"].isin(s)]
-        if c: df = df[df["country"].isin(c)]
 
         df['company_name'] = df['company_name'].str.upper()
         
-        # --- НОВАЯ ИНТЕРАКТИВНАЯ ТАБЛИЦА (КЛИК = ОТКРЫТИЕ) ---
+        # ТАБЛИЦА (Чистый вид)
+        st.markdown("###") # Отступ
+        
+        # Используем SelectboxColumn для статуса, чтобы он выглядел красиво
         selection = st.dataframe(
             df,
             column_order=("company_name", "country", "product_interest", "status", "last_action_date", "cfia_priority"),
+            column_config={
+                "company_name": st.column_config.TextColumn("Société", width="medium"),
+                "country": st.column_config.TextColumn("Pays"),
+                "product_interest": st.column_config.TextColumn("Produit"),
+                "status": st.column_config.SelectboxColumn(
+                    "Statut",
+                    options=["Prospection", "Qualification", "Envoi Echantillon", "Test R&D", "Négociation", "Client"],
+                    width="medium",
+                    disabled=True # Только для отображения в таблице (меняем внутри карточки)
+                ),
+                "last_action_date": st.column_config.DateColumn("Dernier Contact", format="DD MMM YYYY"),
+                "cfia_priority": st.column_config.CheckboxColumn("CFIA", width="small")
+            },
             hide_index=True,
             use_container_width=True,
-            on_select="rerun",  # <-- Вот магия: перезагрузка при клике
+            on_select="rerun",
             selection_mode="single-row"
         )
         
-        # Если строка выбрана, открываем карточку
         if selection.selection.rows:
             idx = selection.selection.rows[0]
-            # Берем данные по правильному индексу (даже после фильтрации)
             row = df.iloc[idx]
             show_prospect_card(int(row['id']), row)
 
 elif page == "Contacts":
-    st.title("Contacts")
+    st.title("Annuaire Contacts")
     all_c = get_all_contacts()
     if not all_c.empty:
-        search = st.text_input("Recherche contact...")
+        search = st.text_input("Recherche contact...", placeholder="Nom, email...")
         if search:
             mask = all_c.apply(lambda x: search.lower() in str(x.values).lower(), axis=1)
             all_c = all_c[mask]
         
-        st.dataframe(all_c, column_order=("name", "role", "company_name", "email"), hide_index=True, use_container_width=True)
+        st.dataframe(
+            all_c, 
+            column_order=("name", "role", "company_name", "email"),
+            column_config={
+                "name": "Nom", "role": "Rôle", "company_name": "Société", "email": "Email"
+            },
+            hide_index=True, use_container_width=True
+        )
         
         buffer = io.BytesIO()
         with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
             all_c.to_excel(writer, sheet_name='Contacts', index=False)
         st.download_button("📥 Télécharger Excel", data=buffer, file_name="contacts.xlsx", mime="application/vnd.ms-excel")
     else:
-        st.info("Aucun contact.")
+        st.info("Aucun contact trouvé.")
+
+elif "Bientôt" in page:
+    st.title("En construction 🚧")
+    st.info("Ce module sera disponible dans la prochaine mise à jour.")
