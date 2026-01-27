@@ -8,98 +8,141 @@ import io
 import numpy as np
 import time
 
-# --- 1. CONFIGURATION & VISUAL IDENTITY (CSS MAGIC) ---
+# --- 1. CONFIGURATION & VISUAL IDENTITY (PIXEL-PERFECT CSS) ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
-# Здесь мы внедряем CSS, чтобы скопировать дизайн с твоего скриншота
 st.markdown("""
     <style>
-        /* 1. ОБЩИЙ ФОН */
-        .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
-        
-        /* 2. САЙДБАР (БЕЛЫЙ И ЧИСТЫЙ) */
-        section[data-testid="stSidebar"] { 
-            background-color: #ffffff; 
-            border-right: 1px solid #edf2f7;
-            padding-top: 20px;
+        /* ИМПОРТ ШРИФТА (Опционально, для идеального сходства) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        /* 1. ГЛОБАЛЬНЫЙ СТИЛЬ */
+        .stApp { 
+            background-color: #f8fafc; /* Очень светлый серо-голубой фон */
+            font-family: 'Inter', sans-serif;
+            color: #334155;
         }
         
-        /* Логотип и заголовок в сайдбаре */
-        [data-testid="stSidebar"] img { margin-bottom: 10px; }
+        /* 2. САЙДБАР (ЧИСТЫЙ БЕЛЫЙ) */
+        section[data-testid="stSidebar"] { 
+            background-color: #ffffff; 
+            border-right: 1px solid #e2e8f0;
+            padding-top: 10px;
+        }
         
         /* 3. КНОПКА "NOUVEAU PROJET" (КАК НА СКРИНЕ) */
         .stButton > button {
             width: 100%;
-            background-color: #047857 !important; /* Зеленый изумруд */
+            background-color: #047857 !important; /* Emerald 700 */
             color: white !important;
             border: none;
             border-radius: 8px;
-            padding: 12px 20px;
+            padding: 12px 16px;
             font-weight: 600;
-            font-size: 16px;
-            box-shadow: 0 4px 6px rgba(4, 120, 87, 0.2);
-            transition: all 0.2s;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
         }
         .stButton > button:hover {
-            background-color: #065f46 !important;
-            box-shadow: 0 6px 12px rgba(4, 120, 87, 0.3);
+            background-color: #065f46 !important; /* Emerald 800 */
             transform: translateY(-1px);
         }
+        /* Добавляем иконку плюса перед текстом кнопки через CSS (трюк) */
+        .stButton > button::before {
+            content: "⊕ ";
+            font-size: 18px;
+            margin-right: 8px;
+            font-weight: 400;
+        }
 
-        /* 4. НАВИГАЦИЯ (МЕНЮ СЛЕВА) */
-        /* Скрываем стандартные кружочки радио-кнопок */
+        /* 4. МЕНЮ НАВИГАЦИИ (РАДИО-КНОПКИ -> ВКЛАДКИ) */
+        
+        /* Скрываем стандартные кружки радио-кнопок */
         div[role="radiogroup"] > label > div:first-child {
             display: none !important;
         }
-        /* Стилизуем пункты меню */
+        
+        /* Базовый стиль пункта меню */
         div[role="radiogroup"] label {
-            padding: 10px 15px;
-            margin-bottom: 5px;
-            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 10px 16px;
+            margin-bottom: 4px;
+            border-radius: 6px;
             border: none;
-            transition: background 0.3s;
             cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b; /* Серый текст (неактивный) */
+            font-weight: 500;
+            font-size: 15px;
         }
-        /* Активный пункт (Зеленый фон сбоку как на скрине) */
+        
+        /* Стиль иконок (Эмодзи) - делаем их МОНОХРОМНЫМИ */
+        div[role="radiogroup"] label p {
+            font-size: 16px; 
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px; /* Расстояние между иконкой и текстом */
+        }
+        
+        /* АКТИВНЫЙ пункт меню (Зеленый фон) */
         div[role="radiogroup"] label[data-checked="true"] {
-            background-color: #ecfdf5 !important; /* Светло-зеленый фон */
-            color: #047857 !important; /* Зеленый текст */
-            font-weight: 700;
-            border-left: 4px solid #047857;
+            background-color: #ecfdf5 !important; /* Emerald 50 (Светло-зеленый) */
+            color: #047857 !important; /* Emerald 700 (Темно-зеленый текст) */
+            font-weight: 600;
         }
-        /* Неактивный пункт */
-        div[role="radiogroup"] label[data-checked="false"] {
-            color: #64748b; /* Серый текст */
-            background-color: transparent;
-        }
+
+        /* Эффект при наведении (Ховер) */
         div[role="radiogroup"] label:hover {
             background-color: #f1f5f9;
+            color: #334155;
         }
 
-        /* 5. ТАБЛИЦА (PIPELINE) */
-        /* Заголовки таблицы */
-        thead tr th {
-            background-color: #f8fafc !important;
-            color: #64748b !important;
-            font-weight: 600 !important;
-            text-transform: uppercase;
-            font-size: 12px;
-            border-bottom: 1px solid #e2e8f0 !important;
+        /* 5. ТАБЛИЦА (PIPELINE - КАК НА СКРИНЕ) */
+        div[data-testid="stDataFrame"] {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
         }
-        /* Строки таблицы */
-        tbody tr td {
-            font-size: 14px;
-            color: #1e293b;
-            padding: 12px !important;
-        }
-        /* Скрываем индекс */
-        thead tr th:first-child { display:none }
-        tbody tr td:first-child { display:none }
-
-        /* 6. ЗАГОЛОВКИ СТРАНИЦ */
-        h1 { color: #0f172a; font-weight: 800; letter-spacing: -0.5px; }
-        h2, h3 { color: #334155; }
         
+        /* Заголовки */
+        thead tr th {
+            background-color: #f8fafc !important; /* Серый фон заголовка */
+            color: #64748b !important; /* Серый текст */
+            font-weight: 600 !important;
+            font-size: 13px !important;
+            text-transform: none !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            padding: 12px 16px !important;
+        }
+        
+        /* Ячейки */
+        tbody tr td {
+            color: #334155 !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            padding: 12px 16px !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+        }
+        
+        /* Убираем индексы */
+        thead tr th:first-child, tbody tr td:first-child { display: none; }
+
+        /* Заголовки страниц */
+        h1 {
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 28px;
+            margin-bottom: 0.5rem;
+        }
+        .caption { color: #64748b; font-size: 14px; }
+
     </style>
 """, unsafe_allow_html=True)
 
@@ -136,7 +179,6 @@ def get_sub_data(table, prospect_id):
         for col in ["name", "role", "email"]:
             if col not in df.columns: df[col] = ""
             df[col] = df[col].astype(str).replace({"nan": "", "None": "", "none": ""})
-            
     return df
 
 def get_all_contacts():
@@ -145,7 +187,6 @@ def get_all_contacts():
     
     if contacts.empty:
         return pd.DataFrame(columns=["name", "role", "company_name", "email"])
-        
     if not prospects.empty:
         merged = pd.merge(contacts, prospects, left_on='prospect_id', right_on='id', how='left')
         return merged
@@ -173,7 +214,6 @@ def ai_email_assistant(context_text):
 def show_prospect_card(pid, data):
     pid = int(pid)
     
-    # Header карточки
     c_head1, c_head2 = st.columns([3, 1])
     c_head1.subheader(f"🏢 {data['company_name']}")
     c_head1.caption("Gestion et Suivi R&D")
@@ -189,7 +229,6 @@ def show_prospect_card(pid, data):
 
     tab1, tab2, tab3 = st.tabs(["Contexte", "Échantillons", "Journal"])
 
-    # TAB 1: Contexte
     with tab1:
         with st.form("main_form"):
             c1, c2 = st.columns([1, 2])
@@ -216,9 +255,7 @@ def show_prospect_card(pid, data):
             
             edited_contacts = st.data_editor(
                 contacts_df,
-                column_config={
-                    "id": None, "name": "Nom", "role": "Rôle", "email": "Email"
-                },
+                column_config={"id": None, "name": "Nom", "role": "Rôle", "email": "Email"},
                 column_order=("name", "role", "email"), 
                 num_rows="dynamic",
                 use_container_width=True,
@@ -227,7 +264,6 @@ def show_prospect_card(pid, data):
 
             if st.form_submit_button("💾 Enregistrer Tout", type="primary"):
                 with st.spinner("Sauvegarde..."):
-                    # Update Prospect
                     supabase.table("prospects").update({
                         "status": stat, "country": pays, "potential_volume": vol,
                         "last_salon": salon, "cfia_priority": cfia,
@@ -235,7 +271,6 @@ def show_prospect_card(pid, data):
                         "tech_pain_points": pain, "tech_notes": notes
                     }).eq("id", pid).execute()
                     
-                    # Update Contacts
                     if not edited_contacts.empty:
                         records = edited_contacts.to_dict('records')
                         for row in records:
@@ -247,23 +282,18 @@ def show_prospect_card(pid, data):
                             if email_val.lower() == "nan": email_val = ""
 
                             if name_val and name_val != "nan":
-                                contact_data = {
-                                    "prospect_id": pid, "name": name_val, "role": role_val, "email": email_val
-                                }
+                                contact_data = {"prospect_id": pid, "name": name_val, "role": role_val, "email": email_val}
                                 raw_id = row.get("id")
                                 if raw_id and pd.notna(raw_id) and str(raw_id) != "":
                                      try:
                                         contact_data["id"] = int(float(raw_id))
                                         supabase.table("contacts").upsert(contact_data).execute()
-                                     except:
-                                        supabase.table("contacts").insert(contact_data).execute()
-                                else:
-                                     supabase.table("contacts").insert(contact_data).execute()
+                                     except: supabase.table("contacts").insert(contact_data).execute()
+                                else: supabase.table("contacts").insert(contact_data).execute()
                     time.sleep(1.2)
                 st.toast(f"✅ Sauvegardé !")
                 st.rerun()
 
-    # TAB 2 & 3 (Остаются такими же)
     with tab2:
         with st.form("sample_form", clear_on_submit=True):
             c_s1, c_s2, c_s3 = st.columns([2, 1, 1])
@@ -301,58 +331,68 @@ def show_prospect_card(pid, data):
                 st.caption(f"{row['date'][:10]} | {row['type']}")
                 st.write(row['content'])
 
-# --- 6. MAIN SIDEBAR & NAVIGATION (RE-DESIGNED) ---
+# --- 6. MAIN SIDEBAR & NAVIGATION (MODERN MONOCHROME) ---
 with st.sidebar:
-    # 1. Логотип
-    st.image("favicon.png", width=70)
+    st.image("favicon.png", width=65)
     
-    # 2. Кнопка "Новый проект" ВВЕРХУ (как на скрине)
-    if st.button("⊕ Nouveau Projet", use_container_width=True):
+    # Кнопка Nouveau Projet - стиль обновлен в CSS
+    if st.button("Nouveau Projet", use_container_width=True):
         res = supabase.table("prospects").insert({"company_name": "NOUVEAU CLIENT"}).execute()
         show_prospect_card(int(res.data[0]['id']), res.data[0])
     
-    st.markdown("---")
+    st.write("") # Отступ
     
-    # 3. Меню (стилизованное через CSS под вкладки)
-    # Порядок элементов как на скрине
-    menu_options = ["Tableau de Bord", "Pipeline", "Contacts", "Kanban (Bientôt)", "Échantillons (Bientôt)"]
-    # Иконки для красоты
+    # МЕНЮ
+    # Мы используем простые символы, которые выглядят как иконки, но они черно-белые.
+    # CSS фильтр делает их серыми, а при выборе - зелеными.
+    menu_options = [
+        "Tableau de Bord", 
+        "Pipeline", 
+        "Contacts", 
+        "Kanban", 
+        "Échantillons"
+    ]
+    
+    # Иконки (Юникод символы для чистоты)
+    # ⊞ (Dashboard), ≡ (List/Pipeline), 👤 (Contacts), ☷ (Kanban), 🧪 (Samples)
     icons = {
-        "Tableau de Bord": "📊",
-        "Pipeline": "🚀",
-        "Contacts": "👥",
-        "Kanban (Bientôt)": "📋",
-        "Échantillons (Bientôt)": "🧪"
+        "Tableau de Bord": "⊞", 
+        "Pipeline": "≡",
+        "Contacts": "👤",
+        "Kanban": "☷", 
+        "Échantillons": "🧪"
     }
-    
-    # Функция форматирования для отображения иконок
+
     def format_func(option):
-        return f"{icons.get(option, '')}  {option}"
+        return f"{icons[option]}  {option}"
 
     page = st.radio("Navigation", menu_options, format_func=format_func, label_visibility="collapsed")
     
-    # Блок профиля внизу (заглушка для красоты)
     st.markdown("---")
-    st.caption("👤 Daria (Admin)")
+    # Блок профиля как на скрине
+    c_prof1, c_prof2 = st.columns([1, 4])
+    with c_prof1:
+        st.write("👤") # Заглушка аватара
+    with c_prof2:
+        st.caption("Daria Growth\nAdmin")
 
 # --- 7. PAGES LOGIC ---
 
 if page == "Tableau de Bord":
     st.title("Tableau de Bord")
-    st.caption("Suivi des performances commerciales")
+    st.markdown("<p class='caption'>Suivi des performances commerciales</p>", unsafe_allow_html=True)
     df = get_data()
     if not df.empty:
-        # KPI Cards (белые с тенью)
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Projets Actifs", len(df))
         c2.metric("En Test R&D", len(df[df['status'] == 'Test R&D']))
-        c3.metric("Volume Potentiel", f"{df['potential_volume'].sum():.0f} T")
-        c4.metric("Clients Gagnés", len(df[df['status'] == 'Client']))
+        c3.metric("Volume (T)", f"{df['potential_volume'].sum():.0f}")
+        c4.metric("Gagnés", len(df[df['status'] == 'Client']))
         
         st.markdown("### Répartition")
         cl, cr = st.columns(2)
         with cl:
-            fig = px.pie(df, names='segment', color_discrete_sequence=['#047857', '#10b981', '#34d399', '#6ee7b7'], hole=0.6)
+            fig = px.pie(df, names='segment', color_discrete_sequence=['#047857', '#10b981', '#34d399', '#6ee7b7'], hole=0.7)
             fig.update_layout(showlegend=True, margin=dict(t=0, b=0, l=0, r=0), paper_bgcolor="rgba(0,0,0,0)")
             st.plotly_chart(fig, use_container_width=True)
         with cr:
@@ -362,28 +402,27 @@ if page == "Tableau de Bord":
             st.plotly_chart(fig, use_container_width=True)
 
 elif page == "Pipeline":
-    # Заголовок как на скрине
     st.title("Pipeline Food & Ingrédients")
-    st.caption("Suivi des projets R&D et commerciaux.")
+    st.markdown("<p class='caption'>Suivi des projets R&D et commerciaux.</p>", unsafe_allow_html=True)
     
     df = get_data()
     if not df.empty:
-        # Фильтры в ряд (белые селекты)
-        c_search, c_filter = st.columns([1, 3])
-        search = c_search.text_input("Recherche...", placeholder="Société...", label_visibility="collapsed")
+        # Фильтры
+        c_search, c_space = st.columns([1, 3])
+        search = c_search.text_input("Recherche", placeholder="Société...", label_visibility="collapsed")
         
-        # Логика фильтрации
         if search: df = df[df.apply(lambda x: search.lower() in str(x.values).lower(), axis=1)]
-
         df['company_name'] = df['company_name'].str.upper()
         
-        # ТАБЛИЦА (Чистый вид)
-        st.markdown("###") # Отступ
+        # Добавляем пустую колонку Actions для стрелочки
+        df['actions'] = "›" 
         
-        # Используем SelectboxColumn для статуса, чтобы он выглядел красиво
+        st.write("") # Отступ
+        
+        # ТАБЛИЦА
         selection = st.dataframe(
             df,
-            column_order=("company_name", "country", "product_interest", "status", "last_action_date", "cfia_priority"),
+            column_order=("company_name", "country", "product_interest", "status", "last_action_date", "cfia_priority", "actions"),
             column_config={
                 "company_name": st.column_config.TextColumn("Société", width="medium"),
                 "country": st.column_config.TextColumn("Pays"),
@@ -392,10 +431,11 @@ elif page == "Pipeline":
                     "Statut",
                     options=["Prospection", "Qualification", "Envoi Echantillon", "Test R&D", "Négociation", "Client"],
                     width="medium",
-                    disabled=True # Только для отображения в таблице (меняем внутри карточки)
+                    disabled=True
                 ),
                 "last_action_date": st.column_config.DateColumn("Dernier Contact", format="DD MMM YYYY"),
-                "cfia_priority": st.column_config.CheckboxColumn("CFIA", width="small")
+                "cfia_priority": st.column_config.CheckboxColumn("CFIA", width="small"),
+                "actions": st.column_config.TextColumn(" ", width="small") # Стрелочка
             },
             hide_index=True,
             use_container_width=True,
@@ -420,9 +460,7 @@ elif page == "Contacts":
         st.dataframe(
             all_c, 
             column_order=("name", "role", "company_name", "email"),
-            column_config={
-                "name": "Nom", "role": "Rôle", "company_name": "Société", "email": "Email"
-            },
+            column_config={"name": "Nom", "role": "Rôle", "company_name": "Société", "email": "Email"},
             hide_index=True, use_container_width=True
         )
         
@@ -433,6 +471,6 @@ elif page == "Contacts":
     else:
         st.info("Aucun contact trouvé.")
 
-elif "Bientôt" in page:
+else:
     st.title("En construction 🚧")
-    st.info("Ce module sera disponible dans la prochaine mise à jour.")
+    st.info("Module bientôt disponible.")
