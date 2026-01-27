@@ -18,12 +18,11 @@ st.markdown("""
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
-        /* 1. СКРЫВАЕМ ЗАГОЛОВОК ДИАЛОГА */
-        div[data-testid="stDialog"] div[data-testid="stVerticalBlock"] > div:first-child {
-            display: none;
-        }
+        /* 1. ИСПРАВЛЕННЫЙ СТИЛЬ ДИАЛОГА (БЕЗ СКРЫТИЯ КОНТЕНТА) */
+        /* Мы просто делаем заголовок пустым при вызове функции, а тут немного двигаем крестик */
         button[aria-label="Close"] {
-            margin-top: 10px; /* Сдвигаем крестик закрытия чуть ниже */
+            margin-top: 8px;
+            margin-right: 8px;
         }
         
         /* 2. СТИЛЬ ЗАГОЛОВКОВ ПОЛЕЙ (LABELS) */
@@ -35,7 +34,7 @@ st.markdown("""
             letter-spacing: 0.5px;
         }
 
-        /* 3. МОНОХРОМНЫЕ СТАТУСЫ В ВЫБОРКЕ */
+        /* 3. МОНОХРОМНЫЕ СТАТУСЫ */
         div[data-testid="stSelectbox"] div[data-baseweb="select"] {
             filter: grayscale(100%); 
             color: #475569;
@@ -110,7 +109,6 @@ def get_sub_data(table, prospect_id):
             return pd.DataFrame(columns=["id", "date", "type", "content"])
             
     if table == "contacts":
-        # Гарантируем колонки и типы
         for col in ["name", "role", "email", "phone"]:
             if col not in df.columns: df[col] = ""
             df[col] = df[col].astype(str).replace({"nan": "", "None": "", "none": ""})
@@ -143,16 +141,15 @@ def ai_email_assistant(context_text):
     return model.generate_content(prompt).text
 
 # --- 5. FICHE PROSPECT (MODAL) ---
-# Заголовок пустой (пробел), чтобы скрыть его через CSS
+# Заголовок пустой (" "), чтобы визуально его не было
 @st.dialog(" ", width="large")
 def show_prospect_card(pid, data):
     pid = int(pid)
     
-    # 1. ЗАГОЛОВОК - НАЗВАНИЕ КОМПАНИИ
-    # Используем HTML для красоты и удаления лишних отступов
+    # КАСТОМНЫЙ ЗАГОЛОВОК С ОТРИЦАТЕЛЬНЫМ ОТСТУПОМ (ЧТОБЫ БЫЛО КОМПАКТНО)
     company_name = data['company_name']
     st.markdown(f"""
-        <h2 style='margin-top: -40px; margin-bottom: 25px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-weight: 700;'>
+        <h2 style='margin-top: -45px; margin-bottom: 25px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-weight: 700;'>
             {company_name}
         </h2>
     """, unsafe_allow_html=True)
@@ -162,25 +159,23 @@ def show_prospect_card(pid, data):
     # --- ЛЕВАЯ КОЛОНКА (АДМИН) ---
     with c_left:
         with st.container(border=True):
-            # Редактируемое имя
             new_company_name = st.text_input("Société / Client", value=data['company_name'], key=f"title_{pid}")
             
-            # НОВЫЕ ИКОНКИ СТАТУСОВ (Строгие)
+            # СТАТУСЫ (Строгие иконки)
             status_opts = [
-                "🔭 Prospection",       # Телескоп
-                "📋 Qualification",     # Планшет
-                "📦 Echantillon",       # Коробка
-                "🔬 Test R&D",          # Микроскоп
-                "🏭 Essai industriel",  # Завод
-                "⚖️ Négociation",       # Весы/Баланс
-                "✅ Client signé"       # Галочка
+                "🔭 Prospection",       
+                "📋 Qualification",     
+                "📦 Echantillon",       
+                "🔬 Test R&D",          
+                "🏭 Essai industriel",  
+                "⚖️ Négociation",       
+                "✅ Client signé"       
             ]
             
-            # Логика поиска текущего статуса
             curr = data.get("status", "Prospection")
             idx = 0
+            # Поиск индекса статуса
             for i, s in enumerate(status_opts):
-                # Ищем совпадение текста статуса
                 clean_s = s.split(" ", 1)[1] if " " in s else s
                 if clean_s in curr or curr in s:
                     idx = i; break
@@ -255,44 +250,43 @@ def show_prospect_card(pid, data):
                             "tech_pain_points": pain, "tech_notes": notes
                         }).eq("id", pid).execute()
                         
-                        # 2. Update Contacts (ИСПРАВЛЕННАЯ ЛОГИКА)
+                        # 2. Update Contacts (ЖЕЛЕЗНОЕ СОХРАНЕНИЕ)
                         if not edited_contacts.empty:
                             records = edited_contacts.to_dict('records')
                             for row in records:
-                                # Извлекаем данные безопасно
                                 name_val = str(row.get("name") or "").strip()
                                 role_val = str(row.get("role") or "").strip()
                                 email_val = str(row.get("email") or "").strip()
                                 phone_val = str(row.get("phone") or "").strip()
                                 
-                                # Игнорируем строки без имени
-                                if not name_val or name_val.lower() == "nan":
-                                    continue
+                                # Пропускаем пустые строки
+                                if not name_val or name_val.lower() == "nan": continue
                                 
                                 contact_data = {
                                     "prospect_id": pid, "name": name_val, 
                                     "role": role_val, "email": email_val, "phone": phone_val
                                 }
                                 
-                                # Проверяем ID: Если есть и это число -> Upsert, иначе -> Insert
+                                # ID CHECK: Если ID существует и это число -> Upsert
                                 raw_id = row.get("id")
                                 if pd.notna(raw_id) and str(raw_id).replace('.', '', 1).isdigit():
                                      contact_data["id"] = int(float(raw_id))
                                      supabase.table("contacts").upsert(contact_data).execute()
                                 else:
+                                     # Если ID нет или пусто -> Insert (новый контакт)
                                      supabase.table("contacts").insert(contact_data).execute()
                                      
                         time.sleep(1)
                     st.toast("✅ Modifié !")
                     st.rerun()
 
-        # TAB 2: ОБРАЗЦЫ
+        # TAB 2: ОБРАЗЦЫ (Кнопка исправлена)
         with tab2:
             with st.form("sample_form", clear_on_submit=True):
                 c_s1, c_s2, c_s3 = st.columns([2, 1, 1])
                 ref = c_s1.text_input("Référence")
                 s_prod = c_s2.selectbox("Produit", ["LEN", "PEP", "NEW"])
-                # КНОПКА ЗАМЕНЕНА НА "SAUVEGARDER"
+                # КНОПКА ТЕПЕРЬ "SAUVEGARDER"
                 if c_s3.form_submit_button("Sauvegarder", use_container_width=True):
                     supabase.table("samples").insert({"prospect_id": pid, "reference": ref, "product_name": s_prod, "status": "Envoyé"}).execute()
                     time.sleep(1); st.rerun()
