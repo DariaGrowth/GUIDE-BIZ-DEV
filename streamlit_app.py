@@ -52,7 +52,7 @@ def get_sub_data(table, prospect_id):
     data = supabase.table(table).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
     df = pd.DataFrame(data)
     
-    # 1. Создаем каркас, если пусто
+    # Создаем структуру, если данных нет
     if df.empty:
         if table == "contacts":
             df = pd.DataFrame(columns=["id", "name", "role", "email"])
@@ -61,21 +61,17 @@ def get_sub_data(table, prospect_id):
         elif table == "activities":
             return pd.DataFrame(columns=["id", "date", "type", "content"])
             
-    # 2. ЖЕСТКАЯ ТИПИЗАЦИЯ ДЛЯ КОНТАКТОВ (Исправляет баг с Email)
+    # ЧИСТКА ДАННЫХ ДЛЯ КОНТАКТОВ
     if table == "contacts":
-        # Гарантируем, что колонки существуют
+        # Гарантируем наличие колонок
         for col in ["name", "role", "email"]:
             if col not in df.columns:
                 df[col] = ""
         
-        # Принудительно делаем всё строками (избавляемся от NaN/None)
-        df["name"] = df["name"].fillna("").astype(str)
-        df["role"] = df["role"].fillna("").astype(str)
-        df["email"] = df["email"].fillna("").astype(str)
-
-        # Убираем текстовые артефакты "None", если они вдруг появились
-        df["role"] = df["role"].replace({"None": "", "nan": ""})
-        df["email"] = df["email"].replace({"None": "", "nan": ""})
+        # Превращаем все в строки, чтобы не было NaN/Float ошибок
+        df["name"] = df["name"].astype(str).replace({"nan": "", "None": ""})
+        df["role"] = df["role"].astype(str).replace({"nan": "", "None": ""})
+        df["email"] = df["email"].astype(str).replace({"nan": "", "None": ""})
 
     return df
 
@@ -128,7 +124,6 @@ def show_prospect_card(pid, data):
 
     tab1, tab2, tab3 = st.tabs(["Contexte", "Échantillons", "Journal"])
 
-    # TAB 1: Contexte + Contacts
     with tab1:
         with st.form("main_form"):
             c1, c2 = st.columns([1, 2])
@@ -151,10 +146,11 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             st.markdown("**CONTACTS** (Ajoutez des lignes ici 👇)")
             
-            # Загрузка подготовленных данных
+            # 1. Загружаем данные
             contacts_df = get_sub_data("contacts", pid)
             
-            # Редактор таблицы
+            # 2. РЕДАКТОР С УНИКАЛЬНЫМ КЛЮЧОМ (ВАЖНО!)
+            # Ключ f"editor_{pid}" заставляет Streamlit создавать НОВУЮ таблицу для каждого клиента.
             edited_contacts = st.data_editor(
                 contacts_df,
                 column_config={
@@ -166,12 +162,12 @@ def show_prospect_card(pid, data):
                 column_order=("name", "role", "email"), 
                 num_rows="dynamic",
                 use_container_width=True,
-                key="contact_editor"
+                key=f"editor_{pid}" # <--- ДИНАМИЧЕСКИЙ КЛЮЧ
             )
 
             if st.form_submit_button("💾 Enregistrer Tout", type="primary"):
                 with st.spinner("Sauvegarde..."):
-                    # 1. Обновляем Проспект
+                    # 1. Сохраняем карточку
                     supabase.table("prospects").update({
                         "status": stat, "country": pays, "potential_volume": vol,
                         "last_salon": salon, "cfia_priority": cfia,
@@ -179,45 +175,38 @@ def show_prospect_card(pid, data):
                         "tech_pain_points": pain, "tech_notes": notes
                     }).eq("id", pid).execute()
                     
-                    # 2. Обновляем Контакты (Безопасный метод)
+                    # 2. Сохраняем контакты (ЖЕСТКАЯ ЗАЧИСТКА)
                     if not edited_contacts.empty:
-                        # Фильтруем пустые строки, если случайно создались
-                        edited_contacts = edited_contacts.replace({np.nan: None})
-                        
-                        count = 0
                         for index, row in edited_contacts.iterrows():
-                            # Берем значения как строки и чистим пробелы
-                            name_val = str(row["name"]).strip()
-                            role_val = str(row["role"]).strip()
-                            email_val = str(row["email"]).strip()
+                            # Превращаем всё в строки и чистим мусор
+                            name_v = str(row["name"]).strip()
+                            role_v = str(row["role"]).strip()
+                            email_v = str(row["email"]).strip()
                             
-                            # Убираем артефакты "None" и "nan"
-                            if role_val.lower() in ["none", "nan"]: role_val = ""
-                            if email_val.lower() in ["none", "nan"]: email_val = ""
+                            # Если "nan" или "None" просочились текстом - удаляем их
+                            if role_v.lower() in ["nan", "none"]: role_v = ""
+                            if email_v.lower() in ["nan", "none"]: email_v = ""
 
-                            if name_val: # Сохраняем, только если есть имя
+                            if name_v: # Сохраняем только если есть имя
                                 contact_data = {
-                                    "prospect_id": pid, 
-                                    "name": name_val,
-                                    "role": role_val, 
-                                    "email": email_val
+                                    "prospect_id": pid,
+                                    "name": name_v,
+                                    "role": role_v,
+                                    "email": email_v
                                 }
                                 
-                                # Если есть ID (существующий контакт) -> обновляем
+                                # Upsert (Обновление или Вставка)
                                 if row.get("id") and pd.notna(row["id"]):
                                      contact_data["id"] = int(row["id"])
                                      supabase.table("contacts").upsert(contact_data).execute()
-                                # Если нет ID (новый) -> создаем
                                 else:
                                      supabase.table("contacts").insert(contact_data).execute()
-                                count += 1
-                        
-                    time.sleep(1.2) # Пауза для синхронизации с базой
                     
-                st.toast(f"✅ Sauvegardé ! ({count if 'count' in locals() else 0} contacts mis à jour)")
+                    time.sleep(1) # Даем базе время на обработку
+                    
+                st.toast("✅ Données sauvegardées !")
                 st.rerun()
 
-    # TAB 2
     with tab2:
         with st.form("sample_form", clear_on_submit=True):
             c_s1, c_s2, c_s3 = st.columns([2, 1, 1])
@@ -232,7 +221,6 @@ def show_prospect_card(pid, data):
         samples = get_sub_data("samples", pid)
         st.dataframe(samples[["date_sent", "product_name", "reference", "status", "feedback"]], use_container_width=True, hide_index=True)
 
-    # TAB 3
     with tab3:
         with st.form("act_form", clear_on_submit=True):
             note = st.text_area("Note...")
