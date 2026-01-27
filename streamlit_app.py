@@ -52,7 +52,7 @@ def get_sub_data(table, prospect_id):
     data = supabase.table(table).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
     df = pd.DataFrame(data)
     
-    # Создаем структуру, если данных нет
+    # Каркас для пустых таблиц
     if df.empty:
         if table == "contacts":
             df = pd.DataFrame(columns=["id", "name", "role", "email"])
@@ -61,17 +61,22 @@ def get_sub_data(table, prospect_id):
         elif table == "activities":
             return pd.DataFrame(columns=["id", "date", "type", "content"])
             
-    # ЧИСТКА ДАННЫХ ДЛЯ КОНТАКТОВ
+    # СПЕЦИАЛЬНАЯ ПОДГОТОВКА КОНТАКТОВ
     if table == "contacts":
         # Гарантируем наличие колонок
         for col in ["name", "role", "email"]:
             if col not in df.columns:
                 df[col] = ""
         
-        # Превращаем все в строки, чтобы не было NaN/Float ошибок
-        df["name"] = df["name"].astype(str).replace({"nan": "", "None": ""})
-        df["role"] = df["role"].astype(str).replace({"nan": "", "None": ""})
-        df["email"] = df["email"].astype(str).replace({"nan": "", "None": ""})
+        # Превращаем все данные в строки, чтобы редактор не путался
+        # fillna("") убирает NaN, astype(str) делает текстом
+        df["name"] = df["name"].fillna("").astype(str)
+        df["role"] = df["role"].fillna("").astype(str)
+        df["email"] = df["email"].fillna("").astype(str)
+        
+        # Чистим артефакты, если база вернула слово "None" как текст
+        df["role"] = df["role"].replace("None", "")
+        df["email"] = df["email"].replace("None", "")
 
     return df
 
@@ -146,15 +151,14 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             st.markdown("**CONTACTS** (Ajoutez des lignes ici 👇)")
             
-            # 1. Загружаем данные
+            # Загрузка
             contacts_df = get_sub_data("contacts", pid)
             
-            # 2. РЕДАКТОР С УНИКАЛЬНЫМ КЛЮЧОМ (ВАЖНО!)
-            # Ключ f"editor_{pid}" заставляет Streamlit создавать НОВУЮ таблицу для каждого клиента.
+            # Редактор таблицы с динамическим ключом
             edited_contacts = st.data_editor(
                 contacts_df,
                 column_config={
-                    "id": None, # Скрываем ID
+                    "id": None, 
                     "name": st.column_config.TextColumn("Nom", required=True),
                     "role": st.column_config.TextColumn("Rôle"),
                     "email": st.column_config.TextColumn("Email")
@@ -162,12 +166,12 @@ def show_prospect_card(pid, data):
                 column_order=("name", "role", "email"), 
                 num_rows="dynamic",
                 use_container_width=True,
-                key=f"editor_{pid}" # <--- ДИНАМИЧЕСКИЙ КЛЮЧ
+                key=f"editor_{pid}"
             )
 
             if st.form_submit_button("💾 Enregistrer Tout", type="primary"):
-                with st.spinner("Sauvegarde..."):
-                    # 1. Сохраняем карточку
+                with st.spinner("Sauvegarde en cours..."):
+                    # 1. Update Prospect
                     supabase.table("prospects").update({
                         "status": stat, "country": pays, "potential_volume": vol,
                         "last_salon": salon, "cfia_priority": cfia,
@@ -175,36 +179,39 @@ def show_prospect_card(pid, data):
                         "tech_pain_points": pain, "tech_notes": notes
                     }).eq("id", pid).execute()
                     
-                    # 2. Сохраняем контакты (ЖЕСТКАЯ ЗАЧИСТКА)
+                    # 2. Update Contacts (SAFE MODE)
                     if not edited_contacts.empty:
+                        # Обрабатываем каждую строку вручную, чтобы точно взять данные
                         for index, row in edited_contacts.iterrows():
-                            # Превращаем всё в строки и чистим мусор
-                            name_v = str(row["name"]).strip()
-                            role_v = str(row["role"]).strip()
-                            email_v = str(row["email"]).strip()
+                            # Безопасное извлечение строк. "or ''" спасает от None
+                            name_val = str(row["name"] or "").strip()
+                            role_val = str(row["role"] or "").strip()
+                            email_val = str(row["email"] or "").strip()
                             
-                            # Если "nan" или "None" просочились текстом - удаляем их
-                            if role_v.lower() in ["nan", "none"]: role_v = ""
-                            if email_v.lower() in ["nan", "none"]: email_v = ""
+                            # Дополнительная очистка от слов-паразитов
+                            if role_val.lower() == "nan": role_val = ""
+                            if email_val.lower() == "nan": email_val = ""
 
-                            if name_v: # Сохраняем только если есть имя
+                            # Сохраняем только если есть имя
+                            if name_val:
                                 contact_data = {
                                     "prospect_id": pid,
-                                    "name": name_v,
-                                    "role": role_v,
-                                    "email": email_v
+                                    "name": name_val,
+                                    "role": role_val,
+                                    "email": email_val
                                 }
                                 
-                                # Upsert (Обновление или Вставка)
-                                if row.get("id") and pd.notna(row["id"]):
+                                # Логика Upsert
+                                # Проверяем, есть ли ID и оно не NaN
+                                if "id" in row and pd.notna(row["id"]) and row["id"] != "":
                                      contact_data["id"] = int(row["id"])
                                      supabase.table("contacts").upsert(contact_data).execute()
                                 else:
                                      supabase.table("contacts").insert(contact_data).execute()
                     
-                    time.sleep(1) # Даем базе время на обработку
+                    time.sleep(1.2) # Пауза для синхронизации
                     
-                st.toast("✅ Données sauvegardées !")
+                st.toast("✅ Sauvegardé !")
                 st.rerun()
 
     with tab2:
