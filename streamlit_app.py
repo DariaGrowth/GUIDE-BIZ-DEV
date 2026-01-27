@@ -46,11 +46,12 @@ def get_data():
     return pd.DataFrame(supabase.table("prospects").select("*").order("last_action_date", desc=True).execute().data)
 
 def get_sub_data(table, prospect_id):
-    """Получает данные и ГАРАНТИРУЕТ наличие колонок, даже если таблица пустая"""
-    data = supabase.table(table).select("*").eq("prospect_id", prospect_id).order("id", desc=True).execute().data
+    """Получает данные и ГАРАНТИРУЕТ наличие колонок"""
+    # Превращаем ID в int, чтобы избежать ошибок JSON
+    pid = int(prospect_id)
+    data = supabase.table(table).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
     df = pd.DataFrame(data)
     
-    # ЗАЩИТА ОТ ОШИБКИ KEYERROR:
     if df.empty:
         if table == "contacts":
             return pd.DataFrame(columns=["id", "name", "role", "email"])
@@ -73,6 +74,7 @@ def get_all_contacts():
     return contacts
 
 def add_log(pid, type_act, content):
+    pid = int(pid) # Исправление ошибки JSON
     supabase.table("activities").insert({"prospect_id": pid, "type": type_act, "content": content, "date": datetime.now().isoformat()}).execute()
     supabase.table("prospects").update({"last_action_date": datetime.now().strftime("%Y-%m-%d")}).eq("id", pid).execute()
 
@@ -91,6 +93,8 @@ def ai_email_assistant(context_text):
 # --- 5. FICHE PROSPECT (MODAL) ---
 @st.dialog("Fiche Prospect", width="large")
 def show_prospect_card(pid, data):
+    pid = int(pid) # Гарантируем, что это число
+    
     c_head1, c_head2 = st.columns([3, 1])
     c_head1.subheader(f"🏢 {data['company_name']}")
     c_head1.caption("Gestion et Suivi R&D")
@@ -106,7 +110,7 @@ def show_prospect_card(pid, data):
 
     tab1, tab2, tab3 = st.tabs(["Contexte", "Échantillons", "Journal"])
 
-    # TAB 1
+    # TAB 1: Контекст + Контакты
     with tab1:
         with st.form("main_form"):
             c1, c2 = st.columns([1, 2])
@@ -127,14 +131,15 @@ def show_prospect_card(pid, data):
                 notes = st.text_area("Notes", value=data.get("tech_notes", ""), height=100)
 
             st.markdown("---")
-            st.markdown("**CONTACTS**")
-            # Безопасное получение контактов
+            st.markdown("**CONTACTS** (Ajoutez des lignes ici 👇)")
+            
+            # Получаем контакты
             contacts_df = get_sub_data("contacts", pid)
-            # Теперь это безопасно, так как функция get_sub_data гарантирует наличие колонок
-            edited_contacts = st.data_editor(contacts_df[["name", "role", "email"]], num_rows="dynamic", use_container_width=True, key="contact_editor")
+            # Разрешаем добавлять строки (num_rows="dynamic")
+            edited_contacts = st.data_editor(contacts_df[["name", "role", "email", "id"]], column_config={"id": None}, num_rows="dynamic", use_container_width=True, key="contact_editor")
 
-            # Кнопка внутри формы - теперь до неё дойдет очередь выполнения
-            if st.form_submit_button("💾 Enregistrer", type="primary"):
+            if st.form_submit_button("💾 Enregistrer Tout", type="primary"):
+                # 1. Сохраняем Проспект
                 supabase.table("prospects").update({
                     "status": stat, "country": pays, "potential_volume": vol,
                     "last_salon": salon, "cfia_priority": cfia,
@@ -142,20 +147,34 @@ def show_prospect_card(pid, data):
                     "tech_pain_points": pain, "tech_notes": notes
                 }).eq("id", pid).execute()
                 
-                # Примечание: полноценное сохранение таблицы контактов требует сложной логики (upsert/delete).
-                # Пока что мы сохраняем только главную форму, а таблицу контактов оставим "визуальной" для заполнения в будущем обновлении
-                # или добавим простую логику добавления новых, если нужно.
+                # 2. Сохраняем Контакты (НОВАЯ ЛОГИКА)
+                # Проходим по таблице редактора и сохраняем каждого человека
+                if not edited_contacts.empty:
+                    for index, row in edited_contacts.iterrows():
+                        contact_data = {
+                            "prospect_id": pid,
+                            "name": row["name"],
+                            "role": row["role"],
+                            "email": row["email"]
+                        }
+                        # Если есть ID (старый контакт) -> обновляем, если нет (новый) -> вставляем
+                        if pd.notna(row.get("id")):
+                             contact_data["id"] = int(row["id"])
+                             supabase.table("contacts").upsert(contact_data).execute()
+                        else:
+                             supabase.table("contacts").insert(contact_data).execute()
                 
-                st.toast("Modifications enregistrées !")
+                st.toast("✅ Sauvegardé avec succès !")
                 st.rerun()
 
-    # TAB 2
+    # TAB 2: Образцы
     with tab2:
         with st.form("sample_form", clear_on_submit=True):
             c_s1, c_s2, c_s3 = st.columns([2, 1, 1])
             ref = c_s1.text_input("Ref (Lot)")
             s_prod = c_s2.selectbox("Produit", ["LENGOOD", "PEPTIPEA", "SULFODYNE"])
             if c_s3.form_submit_button("Envoyer 🚀"):
+                # Исправлена ошибка JSON (int(pid))
                 supabase.table("samples").insert({"prospect_id": pid, "reference": ref, "product_name": s_prod, "status": "Envoyé"}).execute()
                 add_log(pid, "Sample", f"Envoi échantillon {s_prod} ({ref})")
                 st.rerun()
@@ -163,7 +182,7 @@ def show_prospect_card(pid, data):
         samples = get_sub_data("samples", pid)
         st.dataframe(samples[["date_sent", "product_name", "reference", "status", "feedback"]], use_container_width=True, hide_index=True)
 
-    # TAB 3
+    # TAB 3: Журнал
     with tab3:
         with st.form("act_form", clear_on_submit=True):
             note = st.text_area("Note...")
@@ -196,7 +215,8 @@ with st.sidebar:
     st.divider()
     if st.button("➕ Nouveau Prospect", use_container_width=True):
         res = supabase.table("prospects").insert({"company_name": "NOUVEAU CLIENT"}).execute()
-        show_prospect_card(res.data[0]['id'], res.data[0])
+        # Исправлена ошибка JSON (int())
+        show_prospect_card(int(res.data[0]['id']), res.data[0])
 
 if page == "Dashboard":
     st.title("Tableau de Bord")
@@ -243,7 +263,8 @@ elif page == "Pipeline":
         sel = c_sel.selectbox("Dossier", df["company_name"].unique(), label_visibility="collapsed")
         if c_btn.button("Ouvrir", type="primary", use_container_width=True):
             row = df[df["company_name"] == sel].iloc[0]
-            show_prospect_card(row['id'], row)
+            # Исправлена ошибка JSON
+            show_prospect_card(int(row['id']), row)
 
 elif page == "Contacts":
     st.title("Contacts")
