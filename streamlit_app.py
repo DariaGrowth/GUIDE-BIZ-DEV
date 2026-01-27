@@ -13,27 +13,26 @@ st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="
 
 st.markdown("""
     <style>
-        /* ИМПОРТ ШРИФТА (Опционально, для идеального сходства) */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         /* 1. ГЛОБАЛЬНЫЙ СТИЛЬ */
         .stApp { 
-            background-color: #f8fafc; /* Очень светлый серо-голубой фон */
+            background-color: #f8fafc;
             font-family: 'Inter', sans-serif;
             color: #334155;
         }
         
-        /* 2. САЙДБАР (ЧИСТЫЙ БЕЛЫЙ) */
+        /* 2. САЙДБАР */
         section[data-testid="stSidebar"] { 
             background-color: #ffffff; 
             border-right: 1px solid #e2e8f0;
             padding-top: 10px;
         }
         
-        /* 3. КНОПКА "NOUVEAU PROJET" (КАК НА СКРИНЕ) */
+        /* 3. КНОПКА "NOUVEAU PROJET" */
         .stButton > button {
             width: 100%;
-            background-color: #047857 !important; /* Emerald 700 */
+            background-color: #047857 !important;
             color: white !important;
             border: none;
             border-radius: 8px;
@@ -47,10 +46,9 @@ st.markdown("""
             transition: all 0.2s ease;
         }
         .stButton > button:hover {
-            background-color: #065f46 !important; /* Emerald 800 */
+            background-color: #065f46 !important;
             transform: translateY(-1px);
         }
-        /* Добавляем иконку плюса перед текстом кнопки через CSS (трюк) */
         .stButton > button::before {
             content: "⊕ ";
             font-size: 18px;
@@ -58,14 +56,11 @@ st.markdown("""
             font-weight: 400;
         }
 
-        /* 4. МЕНЮ НАВИГАЦИИ (РАДИО-КНОПКИ -> ВКЛАДКИ) */
-        
-        /* Скрываем стандартные кружки радио-кнопок */
+        /* 4. МЕНЮ НАВИГАЦИИ */
         div[role="radiogroup"] > label > div:first-child {
             display: none !important;
         }
         
-        /* Базовый стиль пункта меню */
         div[role="radiogroup"] label {
             display: flex;
             align-items: center;
@@ -76,34 +71,33 @@ st.markdown("""
             border: none;
             cursor: pointer;
             transition: all 0.2s;
-            color: #64748b; /* Серый текст (неактивный) */
+            color: #64748b; /* Серый цвет иконок и текста */
             font-weight: 500;
             font-size: 15px;
         }
         
-        /* Стиль иконок (Эмодзи) - делаем их МОНОХРОМНЫМИ */
+        /* Стиль для текста иконок */
         div[role="radiogroup"] label p {
-            font-size: 16px; 
+            font-size: 18px; /* Чуть крупнее для иконок */
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 12px; /* Расстояние между иконкой и текстом */
+            gap: 12px;
         }
         
-        /* АКТИВНЫЙ пункт меню (Зеленый фон) */
+        /* АКТИВНЫЙ пункт меню */
         div[role="radiogroup"] label[data-checked="true"] {
-            background-color: #ecfdf5 !important; /* Emerald 50 (Светло-зеленый) */
-            color: #047857 !important; /* Emerald 700 (Темно-зеленый текст) */
+            background-color: #ecfdf5 !important; /* Светло-зеленый фон */
+            color: #047857 !important; /* Зеленый текст */
             font-weight: 600;
         }
 
-        /* Эффект при наведении (Ховер) */
         div[role="radiogroup"] label:hover {
             background-color: #f1f5f9;
             color: #334155;
         }
 
-        /* 5. ТАБЛИЦА (PIPELINE - КАК НА СКРИНЕ) */
+        /* 5. ТАБЛИЦА (PIPELINE) */
         div[data-testid="stDataFrame"] {
             border: 1px solid #e2e8f0;
             border-radius: 8px;
@@ -111,10 +105,9 @@ st.markdown("""
             background: white;
         }
         
-        /* Заголовки */
         thead tr th {
-            background-color: #f8fafc !important; /* Серый фон заголовка */
-            color: #64748b !important; /* Серый текст */
+            background-color: #f8fafc !important;
+            color: #64748b !important;
             font-weight: 600 !important;
             font-size: 13px !important;
             text-transform: none !important;
@@ -122,7 +115,6 @@ st.markdown("""
             padding: 12px 16px !important;
         }
         
-        /* Ячейки */
         tbody tr td {
             color: #334155 !important;
             font-size: 14px !important;
@@ -131,17 +123,22 @@ st.markdown("""
             border-bottom: 1px solid #f1f5f9 !important;
         }
         
-        /* Убираем индексы */
         thead tr th:first-child, tbody tr td:first-child { display: none; }
 
-        /* Заголовки страниц */
-        h1 {
-            color: #0f172a;
-            font-weight: 700;
-            font-size: 28px;
-            margin-bottom: 0.5rem;
-        }
+        h1 { color: #0f172a; font-weight: 700; font-size: 28px; margin-bottom: 0.5rem; }
         .caption { color: #64748b; font-size: 14px; }
+        
+        /* Красный бейдж для уведомлений */
+        .notification-badge {
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
 
     </style>
 """, unsafe_allow_html=True)
@@ -331,48 +328,47 @@ def show_prospect_card(pid, data):
                 st.caption(f"{row['date'][:10]} | {row['type']}")
                 st.write(row['content'])
 
-# --- 6. MAIN SIDEBAR & NAVIGATION (MODERN MONOCHROME) ---
+# --- 6. MAIN SIDEBAR & NAVIGATION (PERFECT MONOCHROME ICONS) ---
 with st.sidebar:
     st.image("favicon.png", width=65)
     
-    # Кнопка Nouveau Projet - стиль обновлен в CSS
     if st.button("Nouveau Projet", use_container_width=True):
         res = supabase.table("prospects").insert({"company_name": "NOUVEAU CLIENT"}).execute()
         show_prospect_card(int(res.data[0]['id']), res.data[0])
     
     st.write("") # Отступ
     
-    # МЕНЮ
-    # Мы используем простые символы, которые выглядят как иконки, но они черно-белые.
-    # CSS фильтр делает их серыми, а при выборе - зелеными.
+    # ИКОНКИ (Строгий монохром, подобранный под макет)
+    icons = {
+        "Tableau de Bord": "⊞",   # Сетка / Окно
+        "Pipeline": "≡",          # Список линий
+        "Kanban": "☷",            # Триграмма (похожа на колонки)
+        "Échantillons": "⚗",      # Алембик (Монохромная колба!)
+        "À Relancer": "⍾"         # Контурный колокольчик
+    }
+
+    # Меню с новой опцией "À Relancer"
     menu_options = [
         "Tableau de Bord", 
         "Pipeline", 
         "Contacts", 
         "Kanban", 
-        "Échantillons"
+        "Échantillons",
+        "À Relancer"
     ]
     
-    # Иконки (Юникод символы для чистоты)
-    # ⊞ (Dashboard), ≡ (List/Pipeline), 👤 (Contacts), ☷ (Kanban), 🧪 (Samples)
-    icons = {
-        "Tableau de Bord": "⊞", 
-        "Pipeline": "≡",
-        "Contacts": "👤",
-        "Kanban": "☷", 
-        "Échantillons": "🧪"
-    }
-
     def format_func(option):
-        return f"{icons[option]}  {option}"
+        # Добавляем красный индикатор (текстом) для "À Relancer"
+        if option == "À Relancer":
+             return f"{icons[option]}  {option} (1)" # Имитация бейджа
+        return f"{icons.get(option, '•')}  {option}"
 
     page = st.radio("Navigation", menu_options, format_func=format_func, label_visibility="collapsed")
     
     st.markdown("---")
-    # Блок профиля как на скрине
     c_prof1, c_prof2 = st.columns([1, 4])
     with c_prof1:
-        st.write("👤") # Заглушка аватара
+        st.write("👤")
     with c_prof2:
         st.caption("Daria Growth\nAdmin")
 
@@ -407,19 +403,15 @@ elif page == "Pipeline":
     
     df = get_data()
     if not df.empty:
-        # Фильтры
         c_search, c_space = st.columns([1, 3])
         search = c_search.text_input("Recherche", placeholder="Société...", label_visibility="collapsed")
         
         if search: df = df[df.apply(lambda x: search.lower() in str(x.values).lower(), axis=1)]
         df['company_name'] = df['company_name'].str.upper()
-        
-        # Добавляем пустую колонку Actions для стрелочки
         df['actions'] = "›" 
         
-        st.write("") # Отступ
+        st.write("")
         
-        # ТАБЛИЦА
         selection = st.dataframe(
             df,
             column_order=("company_name", "country", "product_interest", "status", "last_action_date", "cfia_priority", "actions"),
@@ -427,15 +419,10 @@ elif page == "Pipeline":
                 "company_name": st.column_config.TextColumn("Société", width="medium"),
                 "country": st.column_config.TextColumn("Pays"),
                 "product_interest": st.column_config.TextColumn("Produit"),
-                "status": st.column_config.SelectboxColumn(
-                    "Statut",
-                    options=["Prospection", "Qualification", "Envoi Echantillon", "Test R&D", "Négociation", "Client"],
-                    width="medium",
-                    disabled=True
-                ),
+                "status": st.column_config.SelectboxColumn("Statut", options=["Prospection", "Qualification", "Envoi Echantillon", "Test R&D", "Négociation", "Client"], width="medium", disabled=True),
                 "last_action_date": st.column_config.DateColumn("Dernier Contact", format="DD MMM YYYY"),
                 "cfia_priority": st.column_config.CheckboxColumn("CFIA", width="small"),
-                "actions": st.column_config.TextColumn(" ", width="small") # Стрелочка
+                "actions": st.column_config.TextColumn(" ", width="small")
             },
             hide_index=True,
             use_container_width=True,
@@ -470,6 +457,10 @@ elif page == "Contacts":
         st.download_button("📥 Télécharger Excel", data=buffer, file_name="contacts.xlsx", mime="application/vnd.ms-excel")
     else:
         st.info("Aucun contact trouvé.")
+
+elif page == "À Relancer":
+    st.title("À Relancer")
+    st.info("Cette section affichera automatiquement les clients qui nécessitent un suivi (ex: 14 jours après envoi d'échantillon).")
 
 else:
     st.title("En construction 🚧")
