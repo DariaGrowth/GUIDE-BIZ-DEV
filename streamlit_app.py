@@ -15,26 +15,22 @@ st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        /* ФОН ПРИЛОЖЕНИЯ */
+        /* BASIC SETUP */
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
-        
+        div[data-testid="stVerticalBlock"] { gap: 0rem; }
         button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
-        div[data-testid="stVerticalBlock"] { gap: 0rem; } 
         
-        /* ТЕКСТ */
-        .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p, .stDateInput label p {
-            color: #64748b !important; font-size: 11px !important; font-weight: 700 !important;
-            text-transform: uppercase !important; letter-spacing: 0.5px;
+        /* TEXT UTILS */
+        .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p {
+            color: #64748b !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: 0.5px;
         }
-
-        /* ИКОНКИ */
         .stSelectbox div[data-baseweb="select"], div[role="radiogroup"] label p, .stMarkdown p { 
             filter: grayscale(100%) contrast(120%); color: #334155;
         }
-        
-        /* --- КНОПКИ --- */
-        /* Зеленые кнопки (Sidebar и Modal) */
+
+        /* --- BUTTONS (GLOBAL) --- */
+        /* Primary Green Buttons (Sidebar & Modals) */
         [data-testid="stSidebar"] .stButton > button, 
         button[kind="primary"] {
             width: 100%; background-color: #047857 !important; color: white !important;
@@ -46,79 +42,81 @@ st.markdown("""
             background-color: #065f46 !important; transform: translateY(-1px); 
         }
         
-        /* Кнопка удаления */
+        /* Red Delete Button */
         button[kind="secondary"] {
             background-color: white !important; border: 1px solid #fee2e2 !important; color: #ef4444 !important;
         }
 
-        /* --- СТИЛИ ПАЙПЛАЙНА --- */
+        /* --- PIPELINE TABLE STYLING (FIXED) --- */
         
-        /* Контейнер таблицы */
+        /* 1. Main Table Container */
         div[data-testid="stVerticalBlockBorderWrapper"] {
-            background-color: white; border-radius: 8px; border: 1px solid #e2e8f0;
-            padding: 0px; overflow: visible;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            background-color: white; border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 0px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
 
-        /* HEADER */
+        /* 2. Header */
         .header-container {
-            padding: 16px 20px; background-color: #ffffff; border-bottom: 1px solid #f1f5f9;
+            padding: 12px 20px; background-color: #ffffff; border-bottom: 1px solid #f1f5f9;
         }
         .header-text { 
             color: #047857; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; 
         }
 
-        /* DATA ROWS - HOVER EFFECT */
-        /* Мы используем хитрый селектор, чтобы найти строки внутри таблицы */
-        /* Это применяет эффект при наведении на контейнер с колонками */
-        div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
-             border-radius: 6px;
-             transition: background-color 0.15s ease;
-             padding-left: 10px; padding-right: 10px; /* Отступы для красоты hover */
-        }
-        /* Цвет при наведении (Светло-зеленый Ingood) */
-        div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"]:hover {
-             background-color: #f0fdf4 !important;
-             cursor: pointer;
-        }
-
-        /* СТИЛЬ КНОПКИ-ССЫЛКИ (Название компании) */
-        /* Превращаем кнопку Streamlit в обычный текст */
-        .company-btn > button {
+        /* 3. INVISIBLE BUTTON HACK (FOR COMPANY NAME) */
+        /* This specifically targets the button in the first column of our data rows */
+        div[data-testid="column"]:first-child .stButton > button {
             background-color: transparent !important;
             border: none !important;
-            color: #0f172a !important;
+            color: #0f172a !important; /* Dark Text Color */
             font-weight: 700 !important;
             font-size: 14px !important;
             text-align: left !important;
-            padding: 0 !important;
+            padding: 0px !important;
+            margin: 0px !important;
             box-shadow: none !important;
-            margin: 0 !important;
-            display: flex;
-            justify-content: flex-start;
+            height: auto !important;
+            min-height: 0px !important;
+            line-height: 1.5 !important;
+            display: block !important;
         }
-        .company-btn > button:hover {
-            color: #047857 !important; /* Зеленеет при наведении */
-            text-decoration: underline;
-        }
-        .company-btn > button:active, .company-btn > button:focus {
-            color: #047857 !important;
+        div[data-testid="column"]:first-child .stButton > button:hover {
+            color: #047857 !important; /* Green on hover */
             background-color: transparent !important;
-            border: none !important;
-            outline: none !important;
+            text-decoration: none !important;
+        }
+        div[data-testid="column"]:first-child .stButton > button:active,
+        div[data-testid="column"]:first-child .stButton > button:focus {
+             box-shadow: none !important;
+             background-color: transparent !important;
+             border: none !important;
+             color: #047857 !important;
         }
 
-        /* TYPOGRAPHY */
-        .cell-text { color: #64748b; font-size: 13px; font-weight: 400; }
+        /* 4. Cell Styling */
+        .cell-text { color: #64748b; font-size: 13px; font-weight: 400; line-height: 1.5; }
         .cell-prod { color: #047857; font-weight: 700; font-size: 13px; }
         .cell-link { color: #3b82f6; font-size: 13px; font-weight: 500; }
         
+        /* 5. Row Hover Effect */
+        /* Styling the vertical block that holds the row columns */
+        div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
+             border-radius: 0px;
+             padding: 8px 20px; /* Vertical padding for the row */
+             border-bottom: 1px solid #f8fafc; /* Very subtle separator */
+             transition: background-color 0.1s ease;
+        }
+        /* Hover color */
+        div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"]:hover {
+             background-color: #f0fdf4 !important; /* Light green tint */
+        }
+
         /* Badges */
-        .badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
         .bg-gray { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
         .bg-green { background: #dcfce7; color: #166534; }
-        .bg-sample { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; padding: 3px 10px; }
+        .bg-sample { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; padding: 2px 8px; }
 
         /* MENU */
         div[role="radiogroup"] > label > div:first-child { display: none !important; }
@@ -213,7 +211,7 @@ def show_prospect_card(pid, data):
             if st.button("📧 Email AI"): st.code(ai_mail(f"Client: {data['company_name']}"))
 
     with c_right:
-        t1, t2, t3 = st.tabs(["Contexte", "Suivi Échantillons", "Journal d'Activité"])
+        t1, t2, t3 = st.tabs(["Contexte", "Suivi Échantillons", "Journal"])
         with t1:
             c1, c2 = st.columns(2)
             with c1: prod = st.selectbox("Ingrédient", ["LEN", "PEP", "NEW"], index=["LEN", "PEP", "NEW"].index(data.get("product_interest", "LEN")))
@@ -301,7 +299,7 @@ if pg == "Tableau de Bord":
         with cr: st.plotly_chart(px.bar(df['status'].value_counts(), color_discrete_sequence=['#047857']), use_container_width=True)
 
 elif pg == "Pipeline":
-    # --- 1. FILTER BOX ---
+    # --- FILTER BOX ---
     with st.container(border=True):
         f1, f2, f3, f4 = st.columns(4)
         with f1: st.selectbox("Produits", ["Tous Produits", "LEN", "PEP"], label_visibility="collapsed")
@@ -311,64 +309,56 @@ elif pg == "Pipeline":
     
     st.write("")
     
-    # --- 2. TABLE ---
+    # --- TABLE CONTAINER ---
     with st.container(border=True):
-        # HEADER
+        # HEADER (Align weights with data)
         st.markdown('<div class="header-container">', unsafe_allow_html=True)
-        # Убрали колонку Actions (было 8, стало 7)
-        h1, h2, h3, h4, h5, h6, h7 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1])
+        # Weights: [3, 1, 1.2, 1.2, 1.2, 1.5, 1] - TOTAL 10.1 (Approx)
+        h1, h2, h3, h4, h5, h6, h7 = st.columns([3, 1, 1.2, 1.2, 1.2, 1.5, 1])
         def header(t): return f"<span class='header-text'>{t}</span>"
         h1.markdown(header("SOCIÉTÉ"), unsafe_allow_html=True)
         h2.markdown(header("PAYS"), unsafe_allow_html=True)
         h3.markdown(header("PRODUIT"), unsafe_allow_html=True)
         h4.markdown(header("STATUT"), unsafe_allow_html=True)
         h5.markdown(header("D. CONTACT"), unsafe_allow_html=True)
-        h6.markdown(header("ACTION"), unsafe_allow_html=True)
+        h6.markdown(header("DERNIER SALON"), unsafe_allow_html=True)
         h7.markdown(header("ÉCHANTILLONS"), unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # DATA ROWS
+        # DATA
         df = get_data()
         samples_all = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
         
+        # Iterating Rows
         for index, row in df.iterrows():
-            # Обертка для отступа и hover-эффекта
-            with st.container():
-                st.markdown('<div style="height: 5px;"></div>', unsafe_allow_html=True)
-                c1, c2, c3, c4, c5, c6, c7 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1])
-                
-                # C1: BUTTON AS TEXT (CLICKABLE COMPANY)
-                # Используем markdown-hack для стилизации кнопки
-                st.markdown('<style>div[data-testid="column"]:first-child button {width: 100%; text-align: left;}</style>', unsafe_allow_html=True)
-                with c1:
-                    # Применяем класс .company-btn к контейнеру кнопки
-                    st.markdown('<div class="company-btn">', unsafe_allow_html=True)
-                    if st.button(row['company_name'], key=f"btn_{row['id']}"):
-                         st.session_state['active_prospect_id'] = row['id']
-                         st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
+            # Use same weights as header
+            c1, c2, c3, c4, c5, c6, c7 = st.columns([3, 1, 1.2, 1.2, 1.2, 1.5, 1])
+            
+            # C1: CLICKABLE TEXT (BUTTON STYLED AS TEXT)
+            with c1:
+                # Button has no border, no bg, bold text.
+                if st.button(row['company_name'], key=f"b_{row['id']}"):
+                    st.session_state['active_prospect_id'] = row['id']; st.rerun()
 
-                # Другие колонки - статика
-                with c2: st.markdown(f"<div style='margin-top:5px'><span class='cell-text'>{row['country']}</span></div>", unsafe_allow_html=True)
-                with c3: st.markdown(f"<div style='margin-top:5px'><span class='cell-prod'>{row['product_interest']}</span></div>", unsafe_allow_html=True)
-                
-                status = row['status'] or "Prospection"
-                cls = "bg-green" if "Client" in status else "bg-yellow" if "Test" in status else "bg-gray"
-                with c4: st.markdown(f"<div style='margin-top:3px'><span class='badge {cls}'>{status.split(' ')[1] if ' ' in status else status}</span></div>", unsafe_allow_html=True)
-                
-                d_fmt = "-"
-                if row['last_action_date']:
-                    d_fmt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d").strftime("%d %b. %y")
-                with c5: st.markdown(f"<div style='margin-top:5px'><span class='cell-text'>{d_fmt}</span></div>", unsafe_allow_html=True)
-                
-                with c6: st.markdown(f"<div style='margin-top:5px'><span class='cell-link'>{row.get('marketing_campaign') or '-'}</span></div>", unsafe_allow_html=True)
-                
-                has_s = False
-                if not samples_all.empty:
-                    if not samples_all[samples_all['prospect_id'] == row['id']].empty: has_s = True
-                with c7: st.markdown(f"<div style='margin-top:3px'><span class='badge bg-sample'>⚗ En test</span></div>" if has_s else "<div style='margin-top:5px'>-</div>", unsafe_allow_html=True)
-                
-                st.markdown("<hr style='margin: 5px 0 0 0; border: 0; border-top: 1px solid #f8fafc;'>", unsafe_allow_html=True)
+            # OTHER COLUMNS (PLAIN TEXT)
+            with c2: st.markdown(f"<span class='cell-text'>{row['country']}</span>", unsafe_allow_html=True)
+            with c3: st.markdown(f"<span class='cell-prod'>{row['product_interest']}</span>", unsafe_allow_html=True)
+            
+            status = row['status'] or "Prospection"
+            cls = "bg-green" if "Client" in status else "bg-yellow" if "Test" in status else "bg-gray"
+            with c4: st.markdown(f"<span class='badge {cls}'>{status.split(' ')[1] if ' ' in status else status}</span>", unsafe_allow_html=True)
+            
+            d_fmt = "-"
+            if row['last_action_date']:
+                d_fmt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d").strftime("%d %b. %y")
+            with c5: st.markdown(f"<span class='cell-text'>{d_fmt}</span>", unsafe_allow_html=True)
+            
+            with c6: st.markdown(f"<span class='cell-link'>{row.get('marketing_campaign') or '-'}</span>", unsafe_allow_html=True)
+            
+            has_s = False
+            if not samples_all.empty:
+                if not samples_all[samples_all['prospect_id'] == row['id']].empty: has_s = True
+            with c7: st.markdown(f"<span class='badge bg-sample'>⚗ En test</span>" if has_s else "-", unsafe_allow_html=True)
 
 elif pg == "Contacts":
     st.title("Annuaire Contacts")
