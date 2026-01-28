@@ -13,20 +13,23 @@ st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="
 
 st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
         button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
         
-        /* ТЕКСТ И ЗАГОЛОВКИ */
+        /* 1. ГЛОБАЛЬНАЯ КОМПАКТНОСТЬ */
+        div[data-testid="stVerticalBlock"] { gap: 0.2rem; } /* Уменьшаем расстояние между блоками */
+        
+        /* ТЕКСТ */
         .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p, .stDateInput label p {
             color: #64748b !important; font-size: 11px !important; font-weight: 700 !important;
             text-transform: uppercase !important; letter-spacing: 0.5px;
         }
 
-        /* МОНОХРОМНЫЕ ИКОНКИ (Фильтр) */
+        /* МОНОХРОМНЫЕ ИКОНКИ */
         .stSelectbox div[data-baseweb="select"], div[role="radiogroup"] label p, .stMarkdown p { 
             filter: grayscale(100%) contrast(120%); color: #334155;
         }
@@ -42,7 +45,7 @@ st.markdown("""
         }
         .stButton > button:hover { background-color: #065f46 !important; transform: translateY(-1px); }
 
-        /* КНОПКА УДАЛЕНИЯ (КРАСНАЯ ИСКЛЮЧЕНИЕ) */
+        /* КНОПКА УДАЛЕНИЯ (КРАСНАЯ) */
         div[data-testid="column"] button[kind="secondary"] {
             background-color: white !important; border: 1px solid #fee2e2 !important; color: #ef4444 !important;
         }
@@ -50,13 +53,13 @@ st.markdown("""
             background-color: #fef2f2 !important; border-color: #ef4444 !important;
         }
 
-        /* КНОПКА СТРЕЛКА В ПАЙПЛАЙНЕ (ПРОЗРАЧНАЯ) */
+        /* КНОПКА СТРЕЛКА (ПРОЗРАЧНАЯ) */
         .action-btn button {
             background-color: transparent !important; color: #94a3b8 !important; box-shadow: none !important; padding: 0 !important; font-size: 18px !important; border: none !important;
         }
         .action-btn button:hover { color: #047857 !important; transform: translateX(3px); background-color: transparent !important; }
 
-        /* СТИЛИ ДЛЯ ПАЙПЛАЙНА (КАРТОЧКИ) */
+        /* СТИЛИ ПАЙПЛАЙНА */
         .badge-status {
             padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block;
         }
@@ -64,18 +67,18 @@ st.markdown("""
         .bg-gray { background-color: #f1f5f9; color: #475569; }
         .bg-green { background-color: #dcfce7; color: #166534; }
         
-        .product-text { color: #047857; font-weight: 700; } /* Зеленый продукт */
+        .product-text { color: #047857; font-weight: 700; }
         .action-link { color: #3b82f6; font-weight: 500; font-size: 13px; }
         .sample-badge { 
             background-color: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; 
             padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px; width: fit-content;
         }
 
-        /* MENU */
+        /* МЕНЮ */
         div[role="radiogroup"] > label > div:first-child { display: none !important; }
         div[role="radiogroup"] label {
-            display: flex; align-items: center; width: 100%; padding: 10px 16px;
-            margin-bottom: 4px; border-radius: 6px; border: none; cursor: pointer;
+            display: flex; align-items: center; width: 100%; padding: 8px 16px; /* Чуть компактнее */
+            margin-bottom: 2px; border-radius: 6px; border: none; cursor: pointer;
             color: #64748b; font-weight: 500; font-size: 15px; transition: all 0.2s;
         }
         div[role="radiogroup"] label[data-checked="true"] { background-color: rgba(16, 185, 129, 0.1) !important; color: #047857 !important; font-weight: 600; }
@@ -115,6 +118,10 @@ def get_sub_data(t, pid):
             if c not in df.columns: df[c] = ""
             df[c] = df[c].astype(str).replace({"nan": "", "None": "", "none": ""})
     return df
+def get_all_contacts():
+    c = pd.DataFrame(supabase.table("contacts").select("*").execute().data)
+    if c.empty: return pd.DataFrame(columns=["name", "role", "company_name", "email", "phone"])
+    return c
 def count_relances():
     s = pd.DataFrame(supabase.table("samples").select("*").execute().data)
     if s.empty: return 0
@@ -134,12 +141,9 @@ def ai_mail(ctx):
 @st.dialog(" ", width="large")
 def show_prospect_card(pid, data):
     pid = int(pid)
-    # Header
     st.markdown(f"<h2 style='margin-top: -30px; margin-bottom: 25px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-weight: 700;'>{data['company_name']}</h2>", unsafe_allow_html=True)
-    
     c_left, c_right = st.columns([1, 2], gap="large")
 
-    # LEFT (ADMIN)
     with c_left:
         with st.container(border=True):
             name = st.text_input("Société", value=data['company_name'], key=f"n_{pid}")
@@ -152,7 +156,7 @@ def show_prospect_card(pid, data):
             salon = st.text_input("Source", value=data.get("last_salon", ""))
             st.write("")
             c_m1, c_m2 = st.columns([1.5, 1])
-            with c_m1: camp = st.text_input("Dernière Action", value=data.get("marketing_campaign", ""), placeholder="Ex: Promo...")
+            with c_m1: camp = st.text_input("Dernière Action", value=data.get("marketing_campaign", "") or "", placeholder="Ex: Promo...")
             with c_m2: 
                 d_val = datetime.now().date()
                 if data.get("last_action_date"): 
@@ -162,32 +166,28 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             if st.button("📧 Email AI"): st.code(ai_mail(f"Client: {data['company_name']}"))
 
-    # RIGHT (TABS)
     with c_right:
         t1, t2, t3 = st.tabs(["Contexte", "Suivi Échantillons", "Journal d'Activité"])
-        
-        # TAB 1: CONTEXTE
         with t1:
             c1, c2 = st.columns(2)
             with c1: prod = st.selectbox("Ingrédient", ["LEN", "PEP", "NEW"], index=["LEN", "PEP", "NEW"].index(data.get("product_interest", "LEN")))
             with c2: app = st.selectbox("Application", ["Boulangerie", "Sauces", "Confiserie"], index=0)
             pain = st.text_area("Besoin", value=data.get("tech_pain_points", ""), height=80)
             notes = st.text_area("Notes", value=data.get("tech_notes", ""), height=80)
-            st.markdown("---"); st.caption("CONTACTS CLÉS")
+            st.markdown("---"); st.markdown("<p style='font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;'>CONTACTS CLÉS</p>", unsafe_allow_html=True)
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
-        # TAB 2: SAMPLES
         with t2:
             st.info("ℹ️ Valider fiche technique.")
             with st.container(border=True):
-                c1, c2, _, c3 = st.columns([1.5, 2, 0.1, 1.2])
+                c1, c2, _, c3 = st.columns([1.5, 2, 0.1, 1.2]) 
                 with c1: ref = st.text_input("Ref", key="nr")
-                with c2: pr = st.selectbox("Produit", ["LEN", "PEP"], key="np")
+                with c2: pr = st.selectbox("Produit", ["LEN", "PEP", "NEW"], key="np")
                 with c3: 
                     st.write(""); st.write("")
                     if st.button("Sauvegarder", key="ss"): 
                         supabase.table("samples").insert({"prospect_id": pid, "reference": ref, "product_name": pr, "status": "Envoyé", "date_sent": datetime.now().isoformat()}).execute(); st.rerun()
-            st.write(""); st.caption("Historique")
+            st.write(""); st.markdown("##### Historique")
             for _, r in get_sub_data("samples", pid).iterrows():
                 with st.container(border=True):
                     c_i, c_d = st.columns([9, 1])
@@ -199,13 +199,11 @@ def show_prospect_card(pid, data):
                         if st.button("🗑️", key=f"d_{r['id']}", type="secondary"): supabase.table("samples").delete().eq("id", r['id']).execute(); st.rerun()
                     if fb != (r['feedback'] or ""): supabase.table("samples").update({"feedback": fb}).eq("id", r['id']).execute(); st.toast("Saved")
 
-        # TAB 3: JOURNAL
         with t3:
             n = st.text_area("Note...", key="nn"); 
             if st.button("Ajouter"): add_log(pid, "Note", n); st.rerun()
             for _, r in get_sub_data("activities", pid).iterrows(): st.caption(f"{r['date'][:10]}"); st.write(r['content'])
 
-    # FOOTER ACTIONS
     st.markdown("---")
     cd, cs = st.columns([1, 4])
     with cd: 
@@ -257,7 +255,7 @@ if pg == "Tableau de Bord":
         with cr: st.plotly_chart(px.bar(df['status'].value_counts(), color_discrete_sequence=['#047857']), use_container_width=True)
 
 elif pg == "Pipeline":
-    # --- FILTERS ROW ---
+    # FILTERS
     f1, f2, f3, f4 = st.columns(4)
     with f1: st.selectbox("Produits", ["Tous Produits", "LEN", "PEP"], label_visibility="collapsed")
     with f2: st.selectbox("Statuts", ["Tous Statuts", "Prospection", "Test"], label_visibility="collapsed")
@@ -266,18 +264,20 @@ elif pg == "Pipeline":
     
     st.write("")
     
-    # --- TABLE HEADER ---
-    h1, h2, h3, h4, h5, h6, h7, h8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
-    h1.markdown("<small style='color:#94a3b8; font-weight:700'>SOCIÉTÉ</small>", unsafe_allow_html=True)
-    h2.markdown("<small style='color:#94a3b8; font-weight:700'>PAYS</small>", unsafe_allow_html=True)
-    h3.markdown("<small style='color:#94a3b8; font-weight:700'>PRODUIT</small>", unsafe_allow_html=True)
-    h4.markdown("<small style='color:#94a3b8; font-weight:700'>STATUT</small>", unsafe_allow_html=True)
-    h5.markdown("<small style='color:#94a3b8; font-weight:700'>DERNIER CONTACT</small>", unsafe_allow_html=True)
-    h6.markdown("<small style='color:#94a3b8; font-weight:700'>DERNIER ACTION</small>", unsafe_allow_html=True)
-    h7.markdown("<small style='color:#94a3b8; font-weight:700'>ÉCHANTILLONS</small>", unsafe_allow_html=True)
-    h8.markdown("<small style='color:#94a3b8; font-weight:700'>ACT</small>", unsafe_allow_html=True)
+    # TABLE HEADERS (GREEN INGOOD, BIGGER, NO BOLD)
+    h_style = "color:#047857; font-size:14px; font-weight:500; letter-spacing:0.5px;"
     
-    # --- DATA ROWS (NO DATAFRAME, CUSTOM CARD LAYOUT) ---
+    h1, h2, h3, h4, h5, h6, h7, h8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
+    h1.markdown(f"<span style='{h_style}'>SOCIÉTÉ</span>", unsafe_allow_html=True)
+    h2.markdown(f"<span style='{h_style}'>PAYS</span>", unsafe_allow_html=True)
+    h3.markdown(f"<span style='{h_style}'>PRODUIT</span>", unsafe_allow_html=True)
+    h4.markdown(f"<span style='{h_style}'>STATUT</span>", unsafe_allow_html=True)
+    h5.markdown(f"<span style='{h_style}'>DERNIER CONTACT</span>", unsafe_allow_html=True)
+    h6.markdown(f"<span style='{h_style}'>DERNIER ACTION</span>", unsafe_allow_html=True)
+    h7.markdown(f"<span style='{h_style}'>ÉCHANTILLONS</span>", unsafe_allow_html=True)
+    h8.markdown(f"<span style='{h_style}'>ACT</span>", unsafe_allow_html=True)
+    
+    # DATA ROWS
     df = get_data()
     samples_all = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
     
@@ -285,47 +285,40 @@ elif pg == "Pipeline":
         with st.container():
             c1, c2, c3, c4, c5, c6, c7, c8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
             
-            # 1. Company
             c1.markdown(f"**{row['company_name']}**")
-            # 2. Country
             c2.markdown(f"<span style='color:#64748b'>{row['country']}</span>", unsafe_allow_html=True)
-            # 3. Product (Green)
             c3.markdown(f"<span class='product-text'>{row['product_interest']}</span>", unsafe_allow_html=True)
-            # 4. Status Badge
+            
             status = row['status'] or "Prospection"
             badge_class = "bg-green" if "Client" in status else "bg-yellow" if "Test" in status else "bg-gray"
             short_stat = status.split(" ")[1] if " " in status else status
             c4.markdown(f"<span class='badge-status {badge_class}'>{short_stat}</span>", unsafe_allow_html=True)
-            # 5. Date
-            date_fmt = "-"
+            
+            d_fmt = "-"
             if row['last_action_date']:
-                d = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d")
-                date_fmt = d.strftime("%d %b. %y")
-            c5.markdown(f"<span style='color:#64748b; font-size:13px'>{date_fmt}</span>", unsafe_allow_html=True)
-            # 6. Action
-            action = row.get('marketing_campaign') or "-"
-            c6.markdown(f"<span class='action-link'>{action}</span>", unsafe_allow_html=True)
-            # 7. Samples
+                d_fmt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d").strftime("%d %b. %y")
+            c5.markdown(f"<span style='color:#64748b; font-size:13px'>{d_fmt}</span>", unsafe_allow_html=True)
+            
+            act = row.get('marketing_campaign') or "-"
+            c6.markdown(f"<span class='action-link'>{act}</span>", unsafe_allow_html=True)
+            
             has_s = False
             if not samples_all.empty:
                 if not samples_all[samples_all['prospect_id'] == row['id']].empty: has_s = True
             c7.markdown(f"<div class='sample-badge'>⚗ En test</div>" if has_s else "-", unsafe_allow_html=True)
             
-            # 8. Action Arrow Button (Transparent CSS class)
+            # Action Arrow
             c8.markdown('<div class="action-btn">', unsafe_allow_html=True)
-            if c8.button("›", key=f"row_{row['id']}"):
+            if c8.button("›", key=f"r_{row['id']}"):
                 st.session_state['active_prospect_id'] = row['id']; st.rerun()
             c8.markdown('</div>', unsafe_allow_html=True)
             
-            st.markdown("<hr style='margin: 4px 0; border-top: 1px solid #f1f5f9;'>", unsafe_allow_html=True)
+            # Thin separator with minimal margin
+            st.markdown("<hr style='margin: 2px 0; border-top: 1px solid #f1f5f9;'>", unsafe_allow_html=True)
 
 elif pg == "Contacts":
     st.title("Annuaire Contacts")
-    all_c = get_all_contacts()
-    if not all_c.empty:
-        search = st.text_input("Recherche contact...", placeholder="Nom, email...")
-        if search: mask = all_c.apply(lambda x: search.lower() in str(x.values).lower(), axis=1); all_c = all_c[mask]
-        st.dataframe(all_c, column_order=("name", "role", "company_name", "email", "phone"), hide_index=True, use_container_width=True)
+    st.dataframe(get_all_contacts(), use_container_width=True)
 
 elif pg == "À Relancer":
     st.title("À Relancer 🔔")
