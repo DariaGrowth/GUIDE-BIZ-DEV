@@ -15,26 +15,26 @@ st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        /* BACKGROUND */
+        /* ФОН ПРИЛОЖЕНИЯ */
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
         button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
         div[data-testid="stVerticalBlock"] { gap: 0rem; } 
         
-        /* TEXT STYLES */
+        /* ТЕКСТ */
         .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p, .stDateInput label p {
             color: #64748b !important; font-size: 11px !important; font-weight: 700 !important;
             text-transform: uppercase !important; letter-spacing: 0.5px;
         }
 
-        /* ICONS FILTER */
+        /* ИКОНКИ */
         .stSelectbox div[data-baseweb="select"], div[role="radiogroup"] label p, .stMarkdown p { 
             filter: grayscale(100%) contrast(120%); color: #334155;
         }
         
-        /* --- BUTTONS --- */
-        /* Sidebar & Modal Buttons (Visible Green) */
+        /* --- КНОПКИ --- */
+        /* Зеленые кнопки (Sidebar и Modal) */
         [data-testid="stSidebar"] .stButton > button, 
         button[kind="primary"] {
             width: 100%; background-color: #047857 !important; color: white !important;
@@ -46,49 +46,69 @@ st.markdown("""
             background-color: #065f46 !important; transform: translateY(-1px); 
         }
         
-        /* Delete Button */
+        /* Кнопка удаления */
         button[kind="secondary"] {
             background-color: white !important; border: 1px solid #fee2e2 !important; color: #ef4444 !important;
         }
 
-        /* --- PIPELINE ROW STYLING (THE POLISH) --- */
+        /* --- СТИЛИ ПАЙПЛАЙНА --- */
         
-        /* 1. Container for the whole table to give it white bg */
+        /* Контейнер таблицы */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             background-color: white; border-radius: 8px; border: 1px solid #e2e8f0;
-            padding: 0px; overflow: hidden; /* Important for hover effect on edges */
+            padding: 0px; overflow: visible;
             box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }
 
-        /* 2. HEADER ROW */
+        /* HEADER */
         .header-container {
-            padding: 16px 20px;
-            background-color: #ffffff;
-            border-bottom: 1px solid #f1f5f9;
+            padding: 16px 20px; background-color: #ffffff; border-bottom: 1px solid #f1f5f9;
         }
         .header-text { 
             color: #047857; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; 
         }
 
-        /* 3. DATA ROWS (Hover & Spacing) */
-        /* We can't style the st.columns container directly easily, so we style the content wrapper */
-        
-        /* INVISIBLE BUTTON (The clickable area) */
-        /* This makes the button in the last column transparent but clickable */
-        div[data-testid="column"] .stButton > button {
-            background-color: transparent !important;
-            color: transparent !important; /* Hide text */
-            border: none !important;
-            box-shadow: none !important;
-            height: 40px !important; /* Make click area tall */
+        /* DATA ROWS - HOVER EFFECT */
+        /* Мы используем хитрый селектор, чтобы найти строки внутри таблицы */
+        /* Это применяет эффект при наведении на контейнер с колонками */
+        div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
+             border-radius: 6px;
+             transition: background-color 0.15s ease;
+             padding-left: 10px; padding-right: 10px; /* Отступы для красоты hover */
         }
-        /* No hover effect on the button itself, handled by row */
-        div[data-testid="column"] .stButton > button:hover {
-            background-color: transparent !important;
+        /* Цвет при наведении (Светло-зеленый Ingood) */
+        div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"]:hover {
+             background-color: #f0fdf4 !important;
+             cursor: pointer;
         }
 
-        /* ROW VISUALS */
-        .cell-company { color: #0f172a; font-weight: 600; font-size: 14px; }
+        /* СТИЛЬ КНОПКИ-ССЫЛКИ (Название компании) */
+        /* Превращаем кнопку Streamlit в обычный текст */
+        .company-btn > button {
+            background-color: transparent !important;
+            border: none !important;
+            color: #0f172a !important;
+            font-weight: 700 !important;
+            font-size: 14px !important;
+            text-align: left !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            display: flex;
+            justify-content: flex-start;
+        }
+        .company-btn > button:hover {
+            color: #047857 !important; /* Зеленеет при наведении */
+            text-decoration: underline;
+        }
+        .company-btn > button:active, .company-btn > button:focus {
+            color: #047857 !important;
+            background-color: transparent !important;
+            border: none !important;
+            outline: none !important;
+        }
+
+        /* TYPOGRAPHY */
         .cell-text { color: #64748b; font-size: 13px; font-weight: 400; }
         .cell-prod { color: #047857; font-weight: 700; font-size: 13px; }
         .cell-link { color: #3b82f6; font-size: 13px; font-weight: 500; }
@@ -281,7 +301,7 @@ if pg == "Tableau de Bord":
         with cr: st.plotly_chart(px.bar(df['status'].value_counts(), color_discrete_sequence=['#047857']), use_container_width=True)
 
 elif pg == "Pipeline":
-    # --- 1. FILTER BOX (White Window) ---
+    # --- 1. FILTER BOX ---
     with st.container(border=True):
         f1, f2, f3, f4 = st.columns(4)
         with f1: st.selectbox("Produits", ["Tous Produits", "LEN", "PEP"], label_visibility="collapsed")
@@ -291,11 +311,12 @@ elif pg == "Pipeline":
     
     st.write("")
     
-    # --- 2. TABLE (White Window) ---
+    # --- 2. TABLE ---
     with st.container(border=True):
         # HEADER
         st.markdown('<div class="header-container">', unsafe_allow_html=True)
-        h1, h2, h3, h4, h5, h6, h7, h8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
+        # Убрали колонку Actions (было 8, стало 7)
+        h1, h2, h3, h4, h5, h6, h7 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1])
         def header(t): return f"<span class='header-text'>{t}</span>"
         h1.markdown(header("SOCIÉTÉ"), unsafe_allow_html=True)
         h2.markdown(header("PAYS"), unsafe_allow_html=True)
@@ -304,68 +325,50 @@ elif pg == "Pipeline":
         h5.markdown(header("D. CONTACT"), unsafe_allow_html=True)
         h6.markdown(header("ACTION"), unsafe_allow_html=True)
         h7.markdown(header("ÉCHANTILLONS"), unsafe_allow_html=True)
-        h8.markdown(header("ACT"), unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
         # DATA ROWS
         df = get_data()
         samples_all = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
         
-        # Hover logic is handled by global CSS for the columns container
         for index, row in df.iterrows():
-            # Injecting a unique class for hover effect on the specific row block is hard in streamlit loop
-            # BUT we set global styles for buttons inside columns to be transparent
-            
-            # CSS hack: We wrap the row in a div with hover effect? 
-            # Streamlit doesn't allow nesting st.columns inside html.
-            # We will use the native layout but rely on the "invisible button" to capture clicks.
-            
-            # Spacer for padding top
-            st.markdown(f"""
-            <style>
-            div[data-testid="column"] {{
-                transition: background-color 0.2s;
-            }}
-            /* Make this specific row hoverable? Hard to scope. 
-               We will just render the content cleanly with padding. */
-            </style>
-            <div style="padding: 18px 20px; border-bottom: 1px solid #f8fafc; transition: background 0.2s;" onmouseover="this.style.background='#f0fdf4';" onmouseout="this.style.background='transparent';">
-            """, unsafe_allow_html=True)
-            
-            # Note: The onmouseover hack above affects only the div, NOT the st.columns which are rendered separately by Streamlit.
-            # Streamlit renders columns in a flex container. We can't wrap them easily.
-            # We revert to simple clean spacing.
-            
-            c1, c2, c3, c4, c5, c6, c7, c8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
-            
-            # Vertical Align Hack (using newlines or css) -> We use CSS on classes
-            c1.markdown(f"<div style='margin-top:8px'><span class='cell-company'>{row['company_name']}</span></div>", unsafe_allow_html=True)
-            c2.markdown(f"<div style='margin-top:8px'><span class='cell-text'>{row['country']}</span></div>", unsafe_allow_html=True)
-            c3.markdown(f"<div style='margin-top:8px'><span class='cell-prod'>{row['product_interest']}</span></div>", unsafe_allow_html=True)
-            
-            status = row['status'] or "Prospection"
-            cls = "bg-green" if "Client" in status else "bg-yellow" if "Test" in status else "bg-gray"
-            c4.markdown(f"<div style='margin-top:6px'><span class='badge {cls}'>{status.split(' ')[1] if ' ' in status else status}</span></div>", unsafe_allow_html=True)
-            
-            d_fmt = "-"
-            if row['last_action_date']:
-                d_fmt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d").strftime("%d %b. %y")
-            c5.markdown(f"<div style='margin-top:8px'><span class='cell-text'>{d_fmt}</span></div>", unsafe_allow_html=True)
-            
-            c6.markdown(f"<div style='margin-top:8px'><span class='cell-link'>{row.get('marketing_campaign') or '-'}</span></div>", unsafe_allow_html=True)
-            
-            has_s = False
-            if not samples_all.empty:
-                if not samples_all[samples_all['prospect_id'] == row['id']].empty: has_s = True
-            c7.markdown(f"<div style='margin-top:6px'><span class='badge bg-sample'>⚗ En test</span></div>" if has_s else "<div style='margin-top:8px'>-</div>", unsafe_allow_html=True)
-            
-            # Invisible Button covers this area
-            if c8.button("Open", key=f"r_{row['id']}"):
-                st.session_state['active_prospect_id'] = row['id']; st.rerun()
-            
-            # Close wrapper (visual separator mainly)
-            st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
-            st.markdown("<hr style='margin: 0; border: 0; border-top: 1px solid #f8fafc;'>", unsafe_allow_html=True)
+            # Обертка для отступа и hover-эффекта
+            with st.container():
+                st.markdown('<div style="height: 5px;"></div>', unsafe_allow_html=True)
+                c1, c2, c3, c4, c5, c6, c7 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1])
+                
+                # C1: BUTTON AS TEXT (CLICKABLE COMPANY)
+                # Используем markdown-hack для стилизации кнопки
+                st.markdown('<style>div[data-testid="column"]:first-child button {width: 100%; text-align: left;}</style>', unsafe_allow_html=True)
+                with c1:
+                    # Применяем класс .company-btn к контейнеру кнопки
+                    st.markdown('<div class="company-btn">', unsafe_allow_html=True)
+                    if st.button(row['company_name'], key=f"btn_{row['id']}"):
+                         st.session_state['active_prospect_id'] = row['id']
+                         st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+                # Другие колонки - статика
+                with c2: st.markdown(f"<div style='margin-top:5px'><span class='cell-text'>{row['country']}</span></div>", unsafe_allow_html=True)
+                with c3: st.markdown(f"<div style='margin-top:5px'><span class='cell-prod'>{row['product_interest']}</span></div>", unsafe_allow_html=True)
+                
+                status = row['status'] or "Prospection"
+                cls = "bg-green" if "Client" in status else "bg-yellow" if "Test" in status else "bg-gray"
+                with c4: st.markdown(f"<div style='margin-top:3px'><span class='badge {cls}'>{status.split(' ')[1] if ' ' in status else status}</span></div>", unsafe_allow_html=True)
+                
+                d_fmt = "-"
+                if row['last_action_date']:
+                    d_fmt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d").strftime("%d %b. %y")
+                with c5: st.markdown(f"<div style='margin-top:5px'><span class='cell-text'>{d_fmt}</span></div>", unsafe_allow_html=True)
+                
+                with c6: st.markdown(f"<div style='margin-top:5px'><span class='cell-link'>{row.get('marketing_campaign') or '-'}</span></div>", unsafe_allow_html=True)
+                
+                has_s = False
+                if not samples_all.empty:
+                    if not samples_all[samples_all['prospect_id'] == row['id']].empty: has_s = True
+                with c7: st.markdown(f"<div style='margin-top:3px'><span class='badge bg-sample'>⚗ En test</span></div>" if has_s else "<div style='margin-top:5px'>-</div>", unsafe_allow_html=True)
+                
+                st.markdown("<hr style='margin: 5px 0 0 0; border: 0; border-top: 1px solid #f8fafc;'>", unsafe_allow_html=True)
 
 elif pg == "Contacts":
     st.title("Annuaire Contacts")
