@@ -8,41 +8,42 @@ import io
 import numpy as np
 import time
 
-# --- 1. CONFIGURATION & STYLE ---
+# --- 1. CONFIGURATION & STYLE (MODERN UI) ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        .stApp { background-color: #f1f5f9; font-family: 'Inter', sans-serif; color: #334155; }
+        /* GLOBAL APP STYLE */
+        .stApp { background-color: #f1f5f9; font-family: 'Inter', sans-serif; color: #0f172a; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
+        /* HIDE DEFAULT STREAMLIT ELEMENTS */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
         button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
-        
-        /* 1. TEXT STYLES */
-        .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p, .stDateInput label p {
-            color: #64748b !important; font-size: 11px !important; font-weight: 700 !important;
-            text-transform: uppercase !important; letter-spacing: 0.5px;
-        }
 
-        /* 2. MONOCHROME ICONS */
+        /* --- TYPOGRAPHY & COLORS --- */
+        .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p {
+            color: #64748b !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        
+        /* MONOCHROME ICONS FILTER */
         .stSelectbox div[data-baseweb="select"], div[role="radiogroup"] label p, .stMarkdown p { 
             filter: grayscale(100%) contrast(120%); color: #334155;
         }
-        
-        /* 3. BUTTONS (INGOOD GREEN) */
+
+        /* --- BUTTONS (INGOOD GREEN) --- */
         .stButton > button {
-            width: 100%; 
-            background-color: #047857 !important; 
-            color: white !important;
-            border: none; border-radius: 6px; padding: 10px 16px; 
-            font-weight: 600; font-size: 14px;
+            width: 100%; background-color: #047857 !important; color: white !important;
+            border: none; border-radius: 6px; padding: 10px 16px; font-weight: 600; font-size: 14px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s ease;
         }
         .stButton > button:hover { background-color: #065f46 !important; transform: translateY(-1px); }
 
-        /* Delete Button (Red Exception) */
+        /* RED DELETE BUTTON */
         div[data-testid="column"] button[kind="secondary"] {
             background-color: white !important; border: 1px solid #fee2e2 !important; color: #ef4444 !important;
         }
@@ -50,86 +51,75 @@ st.markdown("""
             background-color: #fef2f2 !important; border-color: #ef4444 !important;
         }
 
-        /* Action Arrow Button (Transparent) */
+        /* TRANSPARENT ACTION BUTTON (ARROW) */
         .action-btn button {
-            background-color: transparent !important; color: #94a3b8 !important; box-shadow: none !important; padding: 0 !important; font-size: 20px !important;
+            background-color: transparent !important; border: none !important; color: #94a3b8 !important; 
+            box-shadow: none !important; font-size: 18px !important; padding: 0 !important;
         }
-        .action-btn button:hover { color: #047857 !important; background-color: transparent !important; }
+        .action-btn button:hover { color: #047857 !important; background-color: transparent !important; transform: translateX(2px); }
 
-        /* --- 4. PIPELINE DESIGN (NEW) --- */
+        /* --- MODERN PIPELINE DESIGN (CSS GRID) --- */
         
-        /* Filter Box (Separate Window) */
-        .filter-container {
-            background-color: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        /* 1. Filter Container */
+        .filter-box {
+            background-color: white; border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
 
-        /* Table Main Window */
-        .table-window {
-            background-color: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-            overflow: hidden; /* Clips content to rounded corners */
+        /* 2. Table Container */
+        .table-container {
+            background-color: white; border: 1px solid #e2e8f0; border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02); overflow: hidden;
         }
 
-        /* Table Header Row (Gray Background) */
-        .table-header {
-            background-color: #f8fafc;
+        /* 3. Header Row */
+        .header-row {
+            display: grid;
+            grid-template-columns: 2.5fr 1fr 1.2fr 1.2fr 1.2fr 1.5fr 1fr 0.5fr;
+            background-color: #f8fafc; /* Light Gray Header */
             border-bottom: 1px solid #e2e8f0;
-            padding: 12px 20px;
+            padding: 12px 24px;
+            align-items: center;
         }
         
-        /* Column Titles (Dark Green like LENGOOD) */
-        .col-title {
-            color: #047857; /* Ingood Green */
+        /* Header Text (Dark Green, Bold like LENGOOD) */
+        .header-title {
+            color: #047857; /* Pantone Ingood Green */
             font-weight: 800; /* Extra Bold */
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        /* Table Data Rows */
-        .table-row {
-            border-bottom: 1px solid #e2e8f0;
-            padding: 8px 20px; /* Compact padding */
-            transition: background 0.15s ease;
+        /* 4. Data Row */
+        .data-row {
+            display: grid;
+            grid-template-columns: 2.5fr 1fr 1.2fr 1.2fr 1.2fr 1.5fr 1fr 0.5fr;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 10px 24px;
+            align-items: center;
             background-color: white;
+            transition: background 0.15s;
         }
-        .table-row:hover {
-            background-color: #f8fafc;
-            cursor: pointer;
-        }
-        .table-row:last-child {
-            border-bottom: none;
-        }
+        .data-row:hover { background-color: #f8fafc; }
+        .data-row:last-child { border-bottom: none; }
 
-        /* Cell Styling */
-        .cell-text { color: #0f172a; font-size: 13px; font-weight: 600; }
-        .cell-sub { color: #64748b; font-size: 13px; }
-        .cell-prod { color: #047857; font-weight: 700; font-size: 13px; } /* Green Product */
-        .cell-link { color: #2563eb; font-size: 13px; font-weight: 500; } /* Blue Action Link */
+        /* Cell Typography */
+        .cell-company { font-weight: 700; color: #0f172a; font-size: 13px; }
+        .cell-text { color: #64748b; font-size: 13px; font-weight: 500; }
+        .cell-product { color: #047857; font-weight: 700; font-size: 12px; } /* Green Product */
+        .cell-action { color: #3b82f6; font-size: 13px; font-weight: 500; cursor: pointer; } /* Blue Link */
 
-        /* Status Badges */
-        .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
-        .b-gray { background: #f1f5f9; color: #475569; }
-        .b-yellow { background: #fef9c3; color: #854d0e; }
-        .b-green { background: #dcfce7; color: #166534; }
-        .b-sample { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; display: flex; align-items: center; gap: 4px; width: fit-content; padding: 2px 6px;}
+        /* Badges */
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; }
+        .bg-yellow { background: #fef9c3; color: #854d0e; } /* Test */
+        .bg-gray { background: #f1f5f9; color: #475569; } /* Prospection */
+        .bg-green { background: #dcfce7; color: #166534; } /* Client */
+        .bg-sample { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; padding: 2px 8px; gap: 4px; } /* Sample */
 
-        /* Menu */
-        div[role="radiogroup"] > label > div:first-child { display: none !important; }
-        div[role="radiogroup"] label {
-            display: flex; align-items: center; width: 100%; padding: 10px 16px;
-            margin-bottom: 4px; border-radius: 6px; border: none; cursor: pointer;
-            color: #64748b; font-weight: 500; font-size: 15px; transition: all 0.2s;
-        }
-        div[role="radiogroup"] label[data-checked="true"] { background-color: rgba(16, 185, 129, 0.1) !important; color: #047857 !important; font-weight: 600; }
-        div[role="radiogroup"] label[data-checked="true"] p { filter: none !important; color: #047857 !important; }
+        /* Override Streamlit Column Spacing for tight table */
+        div[data-testid="column"] { padding: 0 !important; }
+        div[data-testid="stVerticalBlock"] { gap: 0 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -297,9 +287,9 @@ if pg == "Tableau de Bord":
         with cr: st.plotly_chart(px.bar(df['status'].value_counts(), color_discrete_sequence=['#047857']), use_container_width=True)
 
 elif pg == "Pipeline":
-    # 1. FILTERS (SEPARATE BOX)
+    # 1. FILTERS (SEPARATE CARD)
     with st.container():
-        st.markdown('<div class="filter-container">', unsafe_allow_html=True)
+        st.markdown('<div class="filter-box">', unsafe_allow_html=True)
         f1, f2, f3, f4 = st.columns(4)
         with f1: st.selectbox("Produits", ["Tous", "LEN", "PEP"], label_visibility="collapsed")
         with f2: st.selectbox("Statuts", ["Tous", "Prospection", "Test"], label_visibility="collapsed")
@@ -307,63 +297,80 @@ elif pg == "Pipeline":
         with f4: st.selectbox("Pays", ["Tous", "France"], label_visibility="collapsed")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 2. TABLE (MAIN WINDOW)
+    # 2. TABLE (SEPARATE CARD)
     with st.container():
-        st.markdown('<div class="table-window">', unsafe_allow_html=True)
+        st.markdown('<div class="table-container">', unsafe_allow_html=True)
         
-        # Header Row
-        st.markdown('<div class="table-header">', unsafe_allow_html=True)
-        h1, h2, h3, h4, h5, h6, h7, h8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
-        h1.markdown('<span class="col-title">SOCIÉTÉ</span>', unsafe_allow_html=True)
-        h2.markdown('<span class="col-title">PAYS</span>', unsafe_allow_html=True)
-        h3.markdown('<span class="col-title">PRODUIT</span>', unsafe_allow_html=True)
-        h4.markdown('<span class="col-title">STATUT</span>', unsafe_allow_html=True)
-        h5.markdown('<span class="col-title">DERNIER CONTACT</span>', unsafe_allow_html=True)
-        h6.markdown('<span class="col-title">DERNIER ACTION</span>', unsafe_allow_html=True)
-        h7.markdown('<span class="col-title">ÉCHANTILLONS</span>', unsafe_allow_html=True)
-        h8.markdown('<span class="col-title">ACT</span>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True) # End Header
+        # TABLE HEADER (GREY BG, DARK GREEN TEXT)
+        st.markdown('''
+            <div class="header-row">
+                <span class="header-title">SOCIÉTÉ</span>
+                <span class="header-title">PAYS</span>
+                <span class="header-title">PRODUIT</span>
+                <span class="header-title">STATUT</span>
+                <span class="header-title">DERNIER CONTACT</span>
+                <span class="header-title">DERNIER ACTION</span>
+                <span class="header-title">ÉCHANTILLONS</span>
+                <span class="header-title">ACT</span>
+            </div>
+        ''', unsafe_allow_html=True)
 
-        # Data Rows
+        # DATA ROWS
         df = get_data()
         samples_all = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
         
         for index, row in df.iterrows():
-            st.markdown('<div class="table-row">', unsafe_allow_html=True)
-            c1, c2, c3, c4, c5, c6, c7, c8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
-            
-            # Content
-            c1.markdown(f"<span class='cell-text'>{row['company_name']}</span>", unsafe_allow_html=True)
-            c2.markdown(f"<span class='cell-sub'>{row['country']}</span>", unsafe_allow_html=True)
-            c3.markdown(f"<span class='cell-prod'>{row['product_interest']}</span>", unsafe_allow_html=True)
-            
-            stat = row['status'] or "Prospection"
-            cls = "b-green" if "Client" in stat else "b-yellow" if "Test" in stat else "b-gray"
-            short_stat = stat.split(" ")[1] if " " in stat else stat
-            c4.markdown(f"<span class='badge {cls}'>{short_stat}</span>", unsafe_allow_html=True)
+            # PREPARE DATA FOR HTML
+            status = row['status'] or "Prospection"
+            badge_class = "bg-green" if "Client" in status else "bg-yellow" if "Test" in status else "bg-gray"
+            short_stat = status.split(" ")[1] if " " in status else status
             
             d_fmt = "-"
             if row['last_action_date']:
                 d_fmt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d").strftime("%d %b. %y")
-            c5.markdown(f"<span class='cell-sub'>{d_fmt}</span>", unsafe_allow_html=True)
             
             act = row.get('marketing_campaign') or "-"
-            c6.markdown(f"<span class='cell-link'>{act}</span>", unsafe_allow_html=True)
             
             has_s = False
             if not samples_all.empty:
                 if not samples_all[samples_all['prospect_id'] == row['id']].empty: has_s = True
-            c7.markdown(f"<span class='badge b-sample'>⚗ En test</span>" if has_s else "-", unsafe_allow_html=True)
             
-            # Action Button (Invisible transparent button over arrow)
-            c8.markdown('<div class="action-btn">', unsafe_allow_html=True)
-            if c8.button("›", key=f"r_{row['id']}"):
-                st.session_state['active_prospect_id'] = row['id']; st.rerun()
-            c8.markdown('</div>', unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True) # End Row
+            sample_html = f'<span class="badge bg-sample">⚗ En test</span>' if has_s else "-"
 
-        st.markdown('</div>', unsafe_allow_html=True) # End Table Window
+            # RENDER ROW USING COLUMNS TO ALLOW CLICKABLE BUTTON
+            c1, c2, c3, c4, c5, c6, c7, c8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
+            
+            # CSS WRAPPER START
+            st.markdown('<div class="data-row" style="margin-top:-10px; margin-bottom:-10px; padding-top:12px; padding-bottom:12px;">', unsafe_allow_html=True)
+            
+            # INJECT CONTENT INTO COLUMNS (To align with the grid)
+            # Note: We rely on the CSS grid defined in .data-row, so we just populate the streamlit columns to hold the button logic
+            # This is a hybrid approach: Streamlit handles the button, CSS handles the look.
+            
+            # We construct a single HTML block for the non-interactive parts to ensure perfect alignment
+            # But wait, st.columns inside a loop creates separate divs. 
+            # BEST APPROACH: Use a single markdown block for the visual row, and a transparent button overlaid or next to it.
+            # However, overlaying is hard in Streamlit.
+            # Let's use the native columns but style them.
+            
+            with c1: st.markdown(f'<span class="cell-company">{row["company_name"]}</span>', unsafe_allow_html=True)
+            with c2: st.markdown(f'<span class="cell-text">{row["country"]}</span>', unsafe_allow_html=True)
+            with c3: st.markdown(f'<span class="cell-product">{row["product_interest"]}</span>', unsafe_allow_html=True)
+            with c4: st.markdown(f'<span class="badge {badge_class}">{short_stat}</span>', unsafe_allow_html=True)
+            with c5: st.markdown(f'<span class="cell-text">{d_fmt}</span>', unsafe_allow_html=True)
+            with c6: st.markdown(f'<span class="cell-action">{act}</span>', unsafe_allow_html=True)
+            with c7: st.markdown(sample_html, unsafe_allow_html=True)
+            with c8: 
+                # Transparent Button via CSS class 'action-btn'
+                st.markdown('<div class="action-btn">', unsafe_allow_html=True)
+                if st.button("›", key=f"r_{row['id']}"):
+                    st.session_state['active_prospect_id'] = row['id']; st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True) # End Row CSS wrapper
+            st.markdown("<div style='border-bottom: 1px solid #f1f5f9;'></div>", unsafe_allow_html=True) # Separator
+
+        st.markdown('</div>', unsafe_allow_html=True) # End Table Container
 
 elif pg == "Contacts":
     st.title("Annuaire"); st.dataframe(get_all_contacts(), use_container_width=True)
