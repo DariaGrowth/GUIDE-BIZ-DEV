@@ -18,49 +18,33 @@ st.markdown("""
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
-        /* КНОПКА ЗАКРЫТИЯ ОКНА */
         button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
         
-        /* ЗАГОЛОВКИ ПОЛЕЙ (ГРАФИТ) */
+        /* ЗАГОЛОВКИ */
         .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p, .stDateInput label p {
             color: #64748b !important; font-size: 11px !important; font-weight: 700 !important;
             text-transform: uppercase !important; letter-spacing: 0.5px;
         }
 
-        /* МОНОХРОМНЫЕ ИКОНКИ */
-        .stSelectbox div[data-baseweb="select"], 
-        div[role="radiogroup"] label p,
-        .stMarkdown p { 
-            filter: grayscale(100%) contrast(120%); 
-            color: #334155;
+        /* МОНОХРОМ */
+        .stSelectbox div[data-baseweb="select"], div[role="radiogroup"] label p, .stMarkdown p { 
+            filter: grayscale(100%) contrast(120%); color: #334155;
         }
         
-        /* ЗЕЛЕНЫЕ КНОПКИ (ГЛАВНЫЕ) */
+        /* ЗЕЛЕНЫЕ КНОПКИ */
         .stButton > button {
-            width: 100%;
-            background-color: #047857 !important; /* Ingood Green */
-            color: white !important;
-            border: none; border-radius: 6px; padding: 10px 16px; 
-            font-weight: 600; font-size: 14px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
-            transition: all 0.2s ease;
+            width: 100%; background-color: #047857 !important; color: white !important;
+            border: none; border-radius: 6px; padding: 10px 16px; font-weight: 600; font-size: 14px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s ease;
         }
-        .stButton > button:hover { 
-            background-color: #065f46 !important; 
-            transform: translateY(-1px); 
-        }
+        .stButton > button:hover { background-color: #065f46 !important; transform: translateY(-1px); }
         
-        /* КНОПКА "УДАЛИТЬ" (ВТОРИЧНАЯ - СЕРАЯ) */
-        div[data-testid="column"] button[kind="secondary"] {
-            background-color: transparent !important;
-            border: 1px solid #e2e8f0 !important;
-            color: #94a3b8 !important;
-            box-shadow: none !important;
+        /* КНОПКА УДАЛЕНИЯ (КРАСНАЯ) */
+        button[kind="secondary"] {
+            background-color: white !important; border: 1px solid #fee2e2 !important; color: #ef4444 !important;
         }
-        div[data-testid="column"] button[kind="secondary"]:hover {
-            border-color: #ef4444 !important;
-            color: #ef4444 !important; /* Красный при наведении */
-            background-color: #fef2f2 !important;
+        button[kind="secondary"]:hover {
+            background-color: #fef2f2 !important; border-color: #ef4444 !important;
         }
 
         /* МЕНЮ */
@@ -70,20 +54,12 @@ st.markdown("""
             margin-bottom: 4px; border-radius: 6px; border: none; cursor: pointer;
             color: #64748b; font-weight: 500; font-size: 15px; transition: all 0.2s;
         }
-        div[role="radiogroup"] label[data-checked="true"] { 
-            background-color: rgba(16, 185, 129, 0.1) !important; 
-            color: #047857 !important; font-weight: 600; 
-        }
+        div[role="radiogroup"] label[data-checked="true"] { background-color: rgba(16, 185, 129, 0.1) !important; color: #047857 !important; font-weight: 600; }
         div[role="radiogroup"] label[data-checked="true"] p { filter: none !important; color: #047857 !important; }
 
-        /* КАРТОЧКА ОБРАЗЦА */
-        .sample-card { 
-            border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px; 
-            background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-        }
-        .warning-badge { 
-            background-color: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 700;
-        }
+        /* КАРТОЧКИ */
+        .sample-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px; background: white; }
+        .warning-badge { background-color: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -99,7 +75,17 @@ def init_connections():
 supabase, _ = init_connections()
 if not supabase: st.stop()
 
-# --- 3. DATA FUNCTIONS ---
+# --- 3. INIT SESSION STATE (FOR REFRESH LOGIC) ---
+if 'pipeline_key' not in st.session_state:
+    st.session_state['pipeline_key'] = 0
+
+def reset_pipeline_selection():
+    """Меняет ключ таблицы, чтобы сбросить выделение и закрыть окно"""
+    st.session_state['pipeline_key'] += 1
+    if 'active_prospect_id' in st.session_state:
+        del st.session_state['active_prospect_id']
+
+# --- 4. DATA FUNCTIONS ---
 def get_data():
     return pd.DataFrame(supabase.table("prospects").select("*").order("last_action_date", desc=True).execute().data)
 
@@ -107,15 +93,10 @@ def get_sub_data(table, prospect_id):
     pid = int(prospect_id)
     data = supabase.table(table).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
     df = pd.DataFrame(data)
-    
     if df.empty:
-        if table == "contacts":
-            df = pd.DataFrame(columns=["id", "name", "role", "email", "phone"])
-        elif table == "samples":
-            return pd.DataFrame(columns=["id", "date_sent", "product_name", "reference", "status", "feedback"])
-        elif table == "activities":
-            return pd.DataFrame(columns=["id", "date", "type", "content"])
-            
+        if table == "contacts": df = pd.DataFrame(columns=["id", "name", "role", "email", "phone"])
+        elif table == "samples": return pd.DataFrame(columns=["id", "date_sent", "product_name", "reference", "status", "feedback"])
+        elif table == "activities": return pd.DataFrame(columns=["id", "date", "type", "content"])
     if table == "contacts":
         for col in ["name", "role", "email", "phone"]:
             if col not in df.columns: df[col] = ""
@@ -145,12 +126,6 @@ def add_log(pid, type_act, content):
     supabase.table("activities").insert({"prospect_id": pid, "type": type_act, "content": content, "date": datetime.now().isoformat()}).execute()
     supabase.table("prospects").update({"last_action_date": datetime.now().strftime("%Y-%m-%d")}).eq("id", pid).execute()
 
-# --- 4. AI ---
-def transcribe_audio(audio_file):
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    response = model.generate_content([ "Transcribe to French.", {"mime_type": "audio/wav", "data": audio_file.read()}])
-    return response.text
-
 def ai_email_assistant(context_text):
     model = genai.GenerativeModel("gemini-1.5-flash")
     return model.generate_content(f"Act as email assistant. French. Context: {context_text}.").text
@@ -159,13 +134,11 @@ def ai_email_assistant(context_text):
 @st.dialog(" ", width="large")
 def show_prospect_card(pid, data):
     pid = int(pid)
-    
-    # Custom Header
     st.markdown(f"<h2 style='margin-top: -30px; margin-bottom: 25px; font-size: 26px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-weight: 700;'>{data['company_name']}</h2>", unsafe_allow_html=True)
 
     c_left, c_right = st.columns([1, 2], gap="large")
 
-    # --- LEFT COLUMN (ADMIN) ---
+    # --- LEFT COLUMN ---
     with c_left:
         with st.container(border=True):
             new_company_name = st.text_input("Société / Client", value=data['company_name'], key=f"name_{pid}")
@@ -184,16 +157,14 @@ def show_prospect_card(pid, data):
             salon = st.text_input("Source / Salon", value=data.get("last_salon", ""))
             
             st.write("")
-            # Поля маркетинга
             c_m1, c_m2 = st.columns([1.5, 1])
             with c_m1:
-                marketing_camp = st.text_input("Dernière Action", value=data.get("marketing_campaign", "") or "", placeholder="Ex: Promo, Emailing...")
+                marketing_camp = st.text_input("Dernière Action", value=data.get("marketing_campaign", "") or "", placeholder="Ex: Promo...")
             with c_m2:
                 raw_date = data.get("last_action_date")
                 default_date = datetime.now().date()
                 if raw_date:
-                    try:
-                        default_date = datetime.strptime(str(raw_date)[:10], "%Y-%m-%d").date()
+                    try: default_date = datetime.strptime(str(raw_date)[:10], "%Y-%m-%d").date()
                     except: pass
                 marketing_date = st.date_input("Date", value=default_date, format="DD/MM/YYYY")
 
@@ -202,11 +173,10 @@ def show_prospect_card(pid, data):
                  res = ai_email_assistant(f"Client: {data['company_name']}")
                  st.code(res)
 
-    # --- RIGHT COLUMN (WORK) ---
+    # --- RIGHT COLUMN ---
     with c_right:
         tab1, tab2, tab3 = st.tabs(["Contexte & Technique", "Suivi Échantillons", "Journal d'Activité"])
 
-        # TAB 1: TECH + CONTACTS
         with tab1:
             c_t1, c_t2 = st.columns(2)
             with c_t1:
@@ -223,57 +193,30 @@ def show_prospect_card(pid, data):
 
             st.markdown("---")
             st.markdown("<p style='font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;'>CONTACTS CLÉS</p>", unsafe_allow_html=True)
-            
             contacts_df = get_sub_data("contacts", pid)
-            edited_contacts = st.data_editor(
-                contacts_df,
-                column_config={
-                    "id": None, 
-                    "name": st.column_config.TextColumn("Nom", required=True),
-                    "role": st.column_config.TextColumn("Poste"),
-                    "email": st.column_config.TextColumn("Email"),
-                    "phone": st.column_config.TextColumn("Tél")
-                },
-                column_order=("name", "role", "email", "phone"), 
-                num_rows="dynamic",
-                use_container_width=True,
-                key=f"editor_{pid}"
-            )
+            edited_contacts = st.data_editor(contacts_df, column_config={"id": None, "name": "Nom", "role": "Poste", "email": "Email", "phone": "Tél"}, column_order=("name", "role", "email", "phone"), num_rows="dynamic", use_container_width=True, key=f"editor_{pid}")
 
-        # TAB 2: SAMPLES
         with tab2:
-            st.info("ℹ️ Protocole R&D : Toujours valider la fiche technique avant envoi.")
-            
+            st.info("ℹ️ Valider la fiche technique avant envoi.")
             with st.container(border=True):
                 c_s1, c_s2, c_sp, c_s3 = st.columns([1.5, 2, 0.1, 1.2]) 
-                
-                with c_s1:
-                    new_ref = st.text_input("Référence (ex: Lot A12)", key="new_ref")
-                with c_s2:
-                    new_prod = st.selectbox("Produit", ["LEN", "PEP", "NEW"], key="new_prod")
+                with c_s1: new_ref = st.text_input("Référence (ex: Lot A12)", key="new_ref")
+                with c_s2: new_prod = st.selectbox("Produit", ["LEN", "PEP", "NEW"], key="new_prod")
                 with c_s3:
-                    st.write("") 
-                    st.write("") 
+                    st.write(""); st.write("")
                     if st.button("Sauvegarder", key="save_sample"):
                         if new_ref:
-                            supabase.table("samples").insert({
-                                "prospect_id": pid, "reference": new_ref, "product_name": new_prod, 
-                                "status": "Envoyé", "date_sent": datetime.now().isoformat()
-                            }).execute()
+                            supabase.table("samples").insert({"prospect_id": pid, "reference": new_ref, "product_name": new_prod, "status": "Envoyé", "date_sent": datetime.now().isoformat()}).execute()
                             st.rerun()
 
-            st.write("")
-            st.markdown("##### Historique")
-            
+            st.write(""); st.markdown("##### Historique")
             samples = get_sub_data("samples", pid)
             if not samples.empty:
                 for idx, row in samples.iterrows():
                     sent_date = datetime.strptime(row['date_sent'][:10], "%Y-%m-%d")
                     days_diff = (datetime.now() - sent_date).days
-                    
                     with st.container(border=True):
                         c_card_info, c_card_del = st.columns([9, 1])
-                        
                         date_str = sent_date.strftime("%d %b %Y")
                         warning_html = ""
                         current_feedback = str(row['feedback'] or "")
@@ -283,18 +226,15 @@ def show_prospect_card(pid, data):
                         with c_card_info:
                             st.markdown(f"**{row['product_name']}** | {row['reference']} <span style='color:gray; font-size:12px'>({date_str})</span> {warning_html}", unsafe_allow_html=True)
                             new_fb = st.text_area("Feedback", value=current_feedback if current_feedback != "None" else "", key=f"fb_{row['id']}", height=60, placeholder="En attente...", label_visibility="collapsed")
-                        
                         with c_card_del:
                             st.write("")
                             if st.button("🗑️", key=f"del_spl_{row['id']}", type="secondary"):
                                 supabase.table("samples").delete().eq("id", row['id']).execute()
                                 st.rerun()
-                        
                         if new_fb != current_feedback:
                             supabase.table("samples").update({"feedback": new_fb}).eq("id", row['id']).execute()
                             st.toast("Feedback sauvé")
 
-        # TAB 3: JOURNAL
         with tab3:
             note = st.text_area("Nouvelle note...", key="new_note")
             if st.button("Ajouter Note", key="add_note"):
@@ -307,102 +247,80 @@ def show_prospect_card(pid, data):
                     st.caption(f"{row['date'][:10]} | {row['type']}")
                     st.write(row['content'])
 
-    # --- GLOBAL SAVE BUTTON ---
+    # --- FOOTER BUTTONS ---
     st.markdown("---")
-    if st.button("Enregistrer & Fermer", use_container_width=True):
-        with st.spinner("Sauvegarde en cours..."):
-            try:
-                # 1. Проспект
-                supabase.table("prospects").update({
-                    "company_name": new_company_name, "status": stat, "country": pays, 
-                    "potential_volume": vol, "last_salon": salon, 
-                    "marketing_campaign": marketing_camp,
-                    "last_action_date": marketing_date.isoformat(),
-                    "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
-                }).eq("id", pid).execute()
-                
-                # 2. Контакты
-                if not edited_contacts.empty:
-                    records = edited_contacts.to_dict('records')
-                    for row in records:
-                        name_val = str(row.get("name") or "").strip()
-                        if not name_val or name_val.lower() == "nan": continue
-                        
-                        c_data = {
-                            "prospect_id": pid, "name": name_val,
-                            "role": str(row.get("role") or "").strip(),
-                            "email": str(row.get("email") or "").strip(),
-                            "phone": str(row.get("phone") or "").strip()
-                        }
-                        
-                        raw_id = row.get("id")
-                        has_valid_id = False
-                        if pd.notna(raw_id) and str(raw_id).strip() != "":
-                            try:
-                                c_data["id"] = int(float(raw_id))
-                                has_valid_id = True
-                            except: pass
-                        
-                        if has_valid_id:
-                            supabase.table("contacts").upsert(c_data).execute()
-                        else:
-                            supabase.table("contacts").insert(c_data).execute()
-
-                st.toast("✅ Sauvegardé !")
-                
-                # SAFE CLOSE (Защита от ошибки KeyError)
-                if 'active_prospect_id' in st.session_state: 
-                    del st.session_state['active_prospect_id']
-                if 'open_new_id' in st.session_state: 
-                    del st.session_state['open_new_id']
-                
+    c_btn_del, c_btn_save = st.columns([1, 4])
+    
+    # КНОПКА УДАЛЕНИЯ КЛИЕНТА (Слева, Красная/Белая)
+    with c_btn_del:
+        if st.button("🗑️ Supprimer Fiche", type="secondary", use_container_width=True):
+            with st.spinner("Suppression..."):
+                supabase.table("prospects").delete().eq("id", pid).execute()
+                reset_pipeline_selection() # Сброс, чтобы не открылось снова
+                st.toast("Prospect supprimé")
                 time.sleep(0.5)
                 st.rerun()
-                
-            except Exception as e:
-                st.error(f"Erreur: {e}")
+
+    # КНОПКА СОХРАНИТЬ И ЗАКРЫТЬ (Справа, Зеленая)
+    with c_btn_save:
+        if st.button("Enregistrer & Fermer", use_container_width=True):
+            with st.spinner("Sauvegarde..."):
+                try:
+                    supabase.table("prospects").update({
+                        "company_name": new_company_name, "status": stat, "country": pays, 
+                        "potential_volume": vol, "last_salon": salon, 
+                        "marketing_campaign": marketing_camp, "last_action_date": marketing_date.isoformat(),
+                        "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
+                    }).eq("id", pid).execute()
+                    
+                    if not edited_contacts.empty:
+                        records = edited_contacts.to_dict('records')
+                        for row in records:
+                            name_val = str(row.get("name") or "").strip()
+                            if not name_val or name_val.lower() == "nan": continue
+                            c_data = {"prospect_id": pid, "name": name_val, "role": str(row.get("role") or "").strip(), "email": str(row.get("email") or "").strip(), "phone": str(row.get("phone") or "").strip()}
+                            raw_id = row.get("id")
+                            if pd.notna(raw_id) and str(raw_id).strip() != "":
+                                try: c_data["id"] = int(float(raw_id)); supabase.table("contacts").upsert(c_data).execute()
+                                except: pass
+                            else: supabase.table("contacts").insert(c_data).execute()
+
+                    reset_pipeline_selection() # Сброс, чтобы закрыть и забыть
+                    st.toast("✅ Sauvegardé !")
+                    time.sleep(0.5)
+                    st.rerun()
+                except Exception as e: st.error(f"Erreur: {e}")
 
 # --- 6. SIDEBAR ---
 with st.sidebar:
     st.image("favicon.png", width=65)
-    
     if st.button("Nouveau Projet", use_container_width=True):
         res = supabase.table("prospects").insert({"company_name": "Nouveau Prospect"}).execute()
         if res.data:
             st.session_state['open_new_id'] = res.data[0]['id']
             st.rerun()
-    
     st.write("") 
     relance_count = count_relances()
     icons = {"Tableau de Bord": "⊞", "Pipeline": "≡", "Contacts": "👤", "Kanban": "☷", "Échantillons": "⚗", "À Relancer": "🔔"}
-    
-    def format_func(option):
-        if option == "À Relancer" and relance_count > 0:
-            return f"{icons[option]}  {option} ({relance_count})"
-        return f"{icons[option]}  {option}"
-
+    def format_func(option): return f"{icons[option]}  {option} ({relance_count})" if option == "À Relancer" and relance_count > 0 else f"{icons[option]}  {option}"
     menu_options = ["Tableau de Bord", "Pipeline", "Contacts", "Kanban", "Échantillons", "À Relancer"]
     page = st.radio("Navigation", menu_options, format_func=format_func, label_visibility="collapsed")
-    st.markdown("---")
-    st.caption("👤 Daria Growth")
+    st.markdown("---"); st.caption("👤 Daria Growth")
 
-# --- 7. AUTO-OPEN ---
+# --- 7. AUTO-OPEN LOGIC ---
 if 'open_new_id' in st.session_state:
     new_pid = st.session_state['open_new_id']
     st.session_state['active_prospect_id'] = new_pid 
-    # Безопасное удаление
-    if 'open_new_id' in st.session_state:
-        del st.session_state['open_new_id']
+    del st.session_state['open_new_id']
 
+# Если активный ID есть в состоянии - открываем окно
 if 'active_prospect_id' in st.session_state:
     try:
         pid = st.session_state['active_prospect_id']
         data = supabase.table("prospects").select("*").eq("id", pid).execute().data[0]
         show_prospect_card(pid, data)
     except:
-        # Если ID не найден, чистим состояние, чтобы не было вечной ошибки
-        if 'active_prospect_id' in st.session_state:
-            del st.session_state['active_prospect_id']
+        del st.session_state['active_prospect_id']
 
 # --- 8. PAGES ---
 if page == "Tableau de Bord":
@@ -414,17 +332,9 @@ if page == "Tableau de Bord":
         c2.metric("En Test", len(df[df['status'].astype(str).str.contains('Test')]))
         c3.metric("Volume", f"{df['potential_volume'].sum():.0f}")
         c4.metric("Clients", len(df[df['status'].astype(str).str.contains('Client')]))
-        
         cl, cr = st.columns(2)
-        with cl:
-            fig = px.pie(df, names='segment', color_discrete_sequence=['#047857', '#10b981', '#34d399', '#6ee7b7'], hole=0.7)
-            fig.update_layout(showlegend=True, margin=dict(t=0, b=0, l=0, r=0), paper_bgcolor="rgba(0,0,0,0)")
-            st.plotly_chart(fig, use_container_width=True)
-        with cr:
-            cnt = df['status'].value_counts().reset_index()
-            fig = px.bar(cnt, x='status', y='count', color_discrete_sequence=['#047857'])
-            fig.update_layout(xaxis_title=None, yaxis_title=None, margin=dict(t=0, b=0, l=0, r=0), paper_bgcolor="rgba(0,0,0,0)")
-            st.plotly_chart(fig, use_container_width=True)
+        with cl: st.plotly_chart(px.pie(df, names='segment', color_discrete_sequence=['#047857', '#10b981'], hole=0.7), use_container_width=True)
+        with cr: st.plotly_chart(px.bar(df['status'].value_counts().reset_index(), x='status', y='count', color_discrete_sequence=['#047857']), use_container_width=True)
 
 elif page == "Pipeline":
     st.title("Pipeline")
@@ -436,22 +346,26 @@ elif page == "Pipeline":
         if search: df = df[df.apply(lambda x: search.lower() in str(x.values).lower(), axis=1)]
         df['company_name'] = df['company_name'].str.upper()
         df['actions'] = "›" 
-        
         df = df.reset_index(drop=True)
         st.write("")
+        
+        # КЛЮЧЕВОЙ МОМЕНТ: Используем dynamic key для сброса выделения
+        pipeline_key = f"pipeline_table_{st.session_state['pipeline_key']}"
+        
         selection = st.dataframe(
             df,
-            column_order=("company_name", "country", "product_interest", "status", "last_action_date", "cfia_priority", "actions"),
+            # Убрал "cfia_priority" из колонок
+            column_order=("company_name", "country", "product_interest", "status", "last_action_date", "actions"),
             column_config={
                 "company_name": st.column_config.TextColumn("Société", width="medium"),
                 "country": st.column_config.TextColumn("Pays"),
                 "product_interest": st.column_config.TextColumn("Produit"),
                 "status": st.column_config.TextColumn("Statut", width="medium"),
                 "last_action_date": st.column_config.DateColumn("Dernier Contact", format="DD MMM YYYY"),
-                "cfia_priority": st.column_config.CheckboxColumn("CFIA", width="small"),
                 "actions": st.column_config.TextColumn(" ", width="small")
             },
-            hide_index=True, use_container_width=True, on_select="rerun", selection_mode="single-row"
+            hide_index=True, use_container_width=True, on_select="rerun", selection_mode="single-row",
+            key=pipeline_key # <- Это сбрасывает выбор при изменении ключа
         )
         if selection.selection.rows:
             idx = selection.selection.rows[0]
@@ -463,34 +377,24 @@ elif page == "Contacts":
     all_c = get_all_contacts()
     if not all_c.empty:
         search = st.text_input("Recherche contact...", placeholder="Nom, email...")
-        if search:
-            mask = all_c.apply(lambda x: search.lower() in str(x.values).lower(), axis=1)
-            all_c = all_c[mask]
+        if search: mask = all_c.apply(lambda x: search.lower() in str(x.values).lower(), axis=1); all_c = all_c[mask]
         st.dataframe(all_c, column_order=("name", "role", "company_name", "email", "phone"), hide_index=True, use_container_width=True)
-    else: st.info("Aucun contact trouvé.")
 
 elif page == "À Relancer":
     st.title("À Relancer 🔔")
     samples = pd.DataFrame(supabase.table("samples").select("*").execute().data)
     if not samples.empty:
-        today = datetime.now()
-        alerts = []
+        today = datetime.now(); alerts = []
         for _, row in samples.iterrows():
             if row.get("date_sent"):
-                sent_date = datetime.strptime(row["date_sent"][:10], "%Y-%m-%d")
-                delta = (today - sent_date).days
+                sent_date = datetime.strptime(row["date_sent"][:10], "%Y-%m-%d"); delta = (today - sent_date).days
                 feedback = str(row.get("feedback") or "").strip()
                 if delta > 15 and (not feedback or feedback.lower() == "none"):
                     p_data = supabase.table("prospects").select("company_name").eq("id", row['prospect_id']).execute().data
                     p_name = p_data[0]['company_name'] if p_data else "Inconnu"
                     alerts.append({"Société": p_name, "Produit": row['product_name'], "Ref": row['reference'], "Envoyé le": row['date_sent'][:10], "Retard": f"+{delta} jours"})
-        
-        if alerts:
-            st.warning(f"Vous avez {len(alerts)} échantillon(s) sans feedback depuis plus de 15 jours.")
-            st.dataframe(pd.DataFrame(alerts), use_container_width=True)
-        else: st.success("Aucune relance nécessaire. Tout est à jour ! 🎉")
+        if alerts: st.warning(f"{len(alerts)} relances nécessaires."); st.dataframe(pd.DataFrame(alerts), use_container_width=True)
+        else: st.success("Tout est à jour ! 🎉")
     else: st.info("Aucun échantillon envoyé.")
 
-else:
-    st.title("En construction 🚧")
-    st.info("Module bientôt disponible.")
+else: st.title("En construction 🚧"); st.info("Module bientôt disponible.")
