@@ -31,20 +31,38 @@ st.markdown("""
             filter: grayscale(100%) contrast(120%); color: #334155;
         }
         
-        /* ЗЕЛЕНЫЕ КНОПКИ */
+        /* --- 1. ЗЕЛЕНЫЕ КНОПКИ (INGOOD PANTONE) --- */
+        /* Применяем ко всем кнопкам Primary и Secondary по умолчанию */
         .stButton > button {
-            width: 100%; background-color: #047857 !important; color: white !important;
-            border: none; border-radius: 6px; padding: 10px 16px; font-weight: 600; font-size: 14px;
+            width: 100%; 
+            background-color: #047857 !important; /* Ingood Green */
+            color: white !important;
+            border: none; border-radius: 6px; padding: 10px 16px; 
+            font-weight: 600; font-size: 14px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s ease;
         }
-        .stButton > button:hover { background-color: #065f46 !important; transform: translateY(-1px); }
-        
-        /* КНОПКА УДАЛЕНИЯ (КРАСНАЯ) */
-        button[kind="secondary"] {
-            background-color: white !important; border: 1px solid #fee2e2 !important; color: #ef4444 !important;
+        .stButton > button:hover { 
+            background-color: #065f46 !important; /* Darker Green */
+            transform: translateY(-1px); 
         }
-        button[kind="secondary"]:hover {
-            background-color: #fef2f2 !important; border-color: #ef4444 !important;
+
+        /* --- ИСКЛЮЧЕНИЕ: КНОПКА УДАЛЕНИЯ (КРАСНАЯ) --- */
+        /* Используем специфичный класс для кнопки внутри колонки удаления */
+        div[data-testid="column"] button[kind="secondary"] {
+            background-color: white !important; 
+            border: 1px solid #fee2e2 !important; 
+            color: #ef4444 !important;
+        }
+        div[data-testid="column"] button[kind="secondary"]:hover {
+            background-color: #fef2f2 !important; 
+            border-color: #ef4444 !important;
+        }
+
+        /* --- 2. СКРЫТИЕ КОЛОНКИ С ГАЛОЧКАМИ В ТАБЛИЦЕ --- */
+        /* Скрываем первую колонку (index/selection) в таблице Pipeline */
+        [data-testid="stDataFrame"] table tbody td:first-child, 
+        [data-testid="stDataFrame"] table thead th:first-child {
+            display: none;
         }
 
         /* МЕНЮ */
@@ -80,7 +98,7 @@ if 'pipeline_key' not in st.session_state:
     st.session_state['pipeline_key'] = 0
 
 def reset_pipeline_selection():
-    """Меняет ключ таблицы, чтобы сбросить выделение и закрыть окно"""
+    """Сбрасывает выделение таблицы"""
     st.session_state['pipeline_key'] += 1
     if 'active_prospect_id' in st.session_state:
         del st.session_state['active_prospect_id']
@@ -251,17 +269,17 @@ def show_prospect_card(pid, data):
     st.markdown("---")
     c_btn_del, c_btn_save = st.columns([1, 4])
     
-    # КНОПКА УДАЛЕНИЯ КЛИЕНТА (Слева, Красная/Белая)
+    # КНОПКА УДАЛЕНИЯ (КРАСНАЯ)
     with c_btn_del:
         if st.button("🗑️ Supprimer Fiche", type="secondary", use_container_width=True):
             with st.spinner("Suppression..."):
                 supabase.table("prospects").delete().eq("id", pid).execute()
-                reset_pipeline_selection() # Сброс, чтобы не открылось снова
+                reset_pipeline_selection()
                 st.toast("Prospect supprimé")
                 time.sleep(0.5)
                 st.rerun()
 
-    # КНОПКА СОХРАНИТЬ И ЗАКРЫТЬ (Справа, Зеленая)
+    # КНОПКА СОХРАНИТЬ (ЗЕЛЕНАЯ)
     with c_btn_save:
         if st.button("Enregistrer & Fermer", use_container_width=True):
             with st.spinner("Sauvegarde..."):
@@ -285,7 +303,7 @@ def show_prospect_card(pid, data):
                                 except: pass
                             else: supabase.table("contacts").insert(c_data).execute()
 
-                    reset_pipeline_selection() # Сброс, чтобы закрыть и забыть
+                    reset_pipeline_selection()
                     st.toast("✅ Sauvegardé !")
                     time.sleep(0.5)
                     st.rerun()
@@ -311,9 +329,10 @@ with st.sidebar:
 if 'open_new_id' in st.session_state:
     new_pid = st.session_state['open_new_id']
     st.session_state['active_prospect_id'] = new_pid 
+    # Сразу сбрасываем таблицу, чтобы не мешала
+    st.session_state['pipeline_key'] += 1
     del st.session_state['open_new_id']
 
-# Если активный ID есть в состоянии - открываем окно
 if 'active_prospect_id' in st.session_state:
     try:
         pid = st.session_state['active_prospect_id']
@@ -349,12 +368,11 @@ elif page == "Pipeline":
         df = df.reset_index(drop=True)
         st.write("")
         
-        # КЛЮЧЕВОЙ МОМЕНТ: Используем dynamic key для сброса выделения
+        # Ключевой фикс: dynamic key для сброса выделения
         pipeline_key = f"pipeline_table_{st.session_state['pipeline_key']}"
         
         selection = st.dataframe(
             df,
-            # Убрал "cfia_priority" из колонок
             column_order=("company_name", "country", "product_interest", "status", "last_action_date", "actions"),
             column_config={
                 "company_name": st.column_config.TextColumn("Société", width="medium"),
@@ -365,11 +383,13 @@ elif page == "Pipeline":
                 "actions": st.column_config.TextColumn(" ", width="small")
             },
             hide_index=True, use_container_width=True, on_select="rerun", selection_mode="single-row",
-            key=pipeline_key # <- Это сбрасывает выбор при изменении ключа
+            key=pipeline_key
         )
         if selection.selection.rows:
             idx = selection.selection.rows[0]
             st.session_state['active_prospect_id'] = int(df.iloc[idx]['id'])
+            # СРАЗУ сбрасываем таблицу, чтобы при закрытии окна выделение не триггерило его снова
+            st.session_state['pipeline_key'] += 1
             st.rerun()
 
 elif page == "Contacts":
