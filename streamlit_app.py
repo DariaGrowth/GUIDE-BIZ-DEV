@@ -15,13 +15,14 @@ st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+        /* ФОН ПРИЛОЖЕНИЯ - Светло-серый, чтобы таблица была контрастной */
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
         button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
         
-        /* 1. ГЛОБАЛЬНАЯ КОМПАКТНОСТЬ */
-        div[data-testid="stVerticalBlock"] { gap: 0.2rem; } /* Уменьшаем расстояние между блоками */
+        /* ГЛОБАЛЬНАЯ КОМПАКТНОСТЬ */
+        div[data-testid="stVerticalBlock"] { gap: 0rem; } 
         
         /* ТЕКСТ */
         .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p, .stDateInput label p {
@@ -34,8 +35,10 @@ st.markdown("""
             filter: grayscale(100%) contrast(120%); color: #334155;
         }
         
-        /* --- КНОПКИ (ЗЕЛЕНЫЕ INGOOD) --- */
-        .stButton > button {
+        /* --- 1. ГЛАВНЫЕ КНОПКИ (ЗЕЛЕНЫЕ) --- */
+        /* Применяем ТОЛЬКО к кнопкам в сайдбаре и модальных окнах, чтобы не ломать таблицу */
+        [data-testid="stSidebar"] .stButton > button, 
+        [data-testid="stDialog"] .stButton > button {
             width: 100%; 
             background-color: #047857 !important; /* Ingood Green */
             color: white !important;
@@ -43,41 +46,67 @@ st.markdown("""
             font-weight: 600; font-size: 14px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s ease;
         }
-        .stButton > button:hover { background-color: #065f46 !important; transform: translateY(-1px); }
+        [data-testid="stSidebar"] .stButton > button:hover,
+        [data-testid="stDialog"] .stButton > button:hover { 
+            background-color: #065f46 !important; transform: translateY(-1px); 
+        }
 
-        /* КНОПКА УДАЛЕНИЯ (КРАСНАЯ) */
-        div[data-testid="column"] button[kind="secondary"] {
+        /* --- 2. КНОПКА УДАЛЕНИЯ (КРАСНАЯ) ВНУТРИ ДИАЛОГА --- */
+        [data-testid="stDialog"] button[kind="secondary"] {
             background-color: white !important; border: 1px solid #fee2e2 !important; color: #ef4444 !important;
         }
-        div[data-testid="column"] button[kind="secondary"]:hover {
-            background-color: #fef2f2 !important; border-color: #ef4444 !important;
-        }
 
-        /* КНОПКА СТРЕЛКА (ПРОЗРАЧНАЯ) */
-        .action-btn button {
-            background-color: transparent !important; color: #94a3b8 !important; box-shadow: none !important; padding: 0 !important; font-size: 18px !important; border: none !important;
-        }
-        .action-btn button:hover { color: #047857 !important; transform: translateX(3px); background-color: transparent !important; }
-
-        /* СТИЛИ ПАЙПЛАЙНА */
-        .badge-status {
-            padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block;
-        }
-        .bg-yellow { background-color: #fef9c3; color: #854d0e; }
-        .bg-gray { background-color: #f1f5f9; color: #475569; }
-        .bg-green { background-color: #dcfce7; color: #166534; }
+        /* --- 3. СТИЛИ ТАБЛИЦЫ (PIPELINE) --- */
         
-        .product-text { color: #047857; font-weight: 700; }
-        .action-link { color: #3b82f6; font-weight: 500; font-size: 13px; }
-        .sample-badge { 
-            background-color: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; 
-            padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px; width: fit-content;
+        /* Контейнер строки (Белый фон, тонкая линия) */
+        .pipeline-row {
+            background-color: #ffffff;
+            border-bottom: 1px solid #f1f5f9; /* Очень светлая линия */
+            padding: 12px 0px;
+            transition: background 0.1s;
         }
+        .pipeline-row:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Кнопка-стрелка ВНУТРИ ТАБЛИЦЫ (Прозрачная!) */
+        /* Мы используем специфичный селектор для колонок внутри основного контейнера */
+        div[data-testid="stVerticalBlock"] .stButton > button {
+            background-color: transparent;
+            color: #047857;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+        }
+        div[data-testid="stVerticalBlock"] .stButton > button:hover {
+            background-color: transparent;
+            color: #065f46;
+            transform: translateX(3px);
+        }
+        /* Возвращаем стиль для кнопки "Enregistrer" внизу (она тоже в vertical block) */
+        /* Это костыль Streamlit, но рабочий: если кнопка имеет ширину контейнера, она зеленая */
+        div[data-testid="stVerticalBlock"] .stButton > button[data-testid="baseButton-secondary"] {
+             background-color: #047857 !important; color: white !important;
+        }
+
+        /* ТИПОГРАФИКА ТАБЛИЦЫ */
+        .header-text { color: #047857; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .cell-company { color: #0f172a; font-weight: 700; font-size: 14px; }
+        .cell-text { color: #64748b; font-size: 13px; }
+        .cell-prod { color: #047857; font-weight: 700; font-size: 13px; }
+        .cell-link { color: #3b82f6; font-size: 13px; font-weight: 500; }
+        
+        /* Badges */
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .bg-yellow { background: #fef9c3; color: #854d0e; }
+        .bg-gray { background: #f1f5f9; color: #475569; }
+        .bg-green { background: #dcfce7; color: #166534; }
+        .bg-sample { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; padding: 2px 8px; }
 
         /* МЕНЮ */
         div[role="radiogroup"] > label > div:first-child { display: none !important; }
         div[role="radiogroup"] label {
-            display: flex; align-items: center; width: 100%; padding: 8px 16px; /* Чуть компактнее */
+            display: flex; align-items: center; width: 100%; padding: 8px 16px;
             margin-bottom: 2px; border-radius: 6px; border: none; cursor: pointer;
             color: #64748b; font-weight: 500; font-size: 15px; transition: all 0.2s;
         }
@@ -210,7 +239,8 @@ def show_prospect_card(pid, data):
         if st.button("🗑️ Supprimer", type="secondary"): 
             supabase.table("prospects").delete().eq("id", pid).execute(); reset_pipeline(); st.rerun()
     with cs:
-        if st.button("Enregistrer & Fermer"):
+        # ГЛАВНАЯ КНОПКА ЗЕЛЕНАЯ - ИСПОЛЬЗУЕМ "PRIMARY" STYLE
+        if st.button("Enregistrer & Fermer", type="primary", use_container_width=True):
             supabase.table("prospects").update({
                 "company_name": name, "status": stat, "country": pays, "potential_volume": vol, "last_salon": salon,
                 "marketing_campaign": camp, "last_action_date": date_act.isoformat(), "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
@@ -255,70 +285,77 @@ if pg == "Tableau de Bord":
         with cr: st.plotly_chart(px.bar(df['status'].value_counts(), color_discrete_sequence=['#047857']), use_container_width=True)
 
 elif pg == "Pipeline":
-    # FILTERS
-    f1, f2, f3, f4 = st.columns(4)
-    with f1: st.selectbox("Produits", ["Tous Produits", "LEN", "PEP"], label_visibility="collapsed")
-    with f2: st.selectbox("Statuts", ["Tous Statuts", "Prospection", "Test"], label_visibility="collapsed")
-    with f3: st.selectbox("Salons", ["Tous Salons", "CFIA"], label_visibility="collapsed")
-    with f4: st.selectbox("Pays", ["Tous Pays", "France"], label_visibility="collapsed")
+    # FILTERS (IN A WHITE BOX)
+    with st.container():
+        st.markdown('<div style="background:white; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:15px;">', unsafe_allow_html=True)
+        f1, f2, f3, f4 = st.columns(4)
+        with f1: st.selectbox("Produits", ["Tous Produits", "LEN", "PEP"], label_visibility="collapsed")
+        with f2: st.selectbox("Statuts", ["Tous Statuts", "Prospection", "Test"], label_visibility="collapsed")
+        with f3: st.selectbox("Salons", ["Tous Salons", "CFIA"], label_visibility="collapsed")
+        with f4: st.selectbox("Pays", ["Tous Pays", "France"], label_visibility="collapsed")
+        st.markdown('</div>', unsafe_allow_html=True)
     
-    st.write("")
+    # TABLE HEADER (GRAY BG, GREEN TEXT)
+    with st.container():
+        st.markdown('<div style="background:#f8fafc; border:1px solid #e2e8f0; border-bottom:none; border-top-left-radius:8px; border-top-right-radius:8px; padding:10px 0;">', unsafe_allow_html=True)
+        h1, h2, h3, h4, h5, h6, h7, h8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
+        def header(t): return f"<span class='header-text'>{t}</span>"
+        h1.markdown(header("SOCIÉTÉ"), unsafe_allow_html=True)
+        h2.markdown(header("PAYS"), unsafe_allow_html=True)
+        h3.markdown(header("PRODUIT"), unsafe_allow_html=True)
+        h4.markdown(header("STATUT"), unsafe_allow_html=True)
+        h5.markdown(header("D. CONTACT"), unsafe_allow_html=True)
+        h6.markdown(header("ACTION"), unsafe_allow_html=True)
+        h7.markdown(header("ÉCHANTILLONS"), unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     
-    # TABLE HEADERS (GREEN INGOOD, BIGGER, NO BOLD)
-    h_style = "color:#047857; font-size:14px; font-weight:500; letter-spacing:0.5px;"
-    
-    h1, h2, h3, h4, h5, h6, h7, h8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
-    h1.markdown(f"<span style='{h_style}'>SOCIÉTÉ</span>", unsafe_allow_html=True)
-    h2.markdown(f"<span style='{h_style}'>PAYS</span>", unsafe_allow_html=True)
-    h3.markdown(f"<span style='{h_style}'>PRODUIT</span>", unsafe_allow_html=True)
-    h4.markdown(f"<span style='{h_style}'>STATUT</span>", unsafe_allow_html=True)
-    h5.markdown(f"<span style='{h_style}'>DERNIER CONTACT</span>", unsafe_allow_html=True)
-    h6.markdown(f"<span style='{h_style}'>DERNIER ACTION</span>", unsafe_allow_html=True)
-    h7.markdown(f"<span style='{h_style}'>ÉCHANTILLONS</span>", unsafe_allow_html=True)
-    h8.markdown(f"<span style='{h_style}'>ACT</span>", unsafe_allow_html=True)
-    
-    # DATA ROWS
+    # DATA ROWS (WHITE BG)
     df = get_data()
     samples_all = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
     
+    # WRAPPER FOR TABLE BODY TO HAVE BORDER
+    st.markdown('<div style="background:white; border:1px solid #e2e8f0; border-bottom-left-radius:8px; border-bottom-right-radius:8px;">', unsafe_allow_html=True)
+    
     for index, row in df.iterrows():
-        with st.container():
-            c1, c2, c3, c4, c5, c6, c7, c8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
-            
-            c1.markdown(f"**{row['company_name']}**")
-            c2.markdown(f"<span style='color:#64748b'>{row['country']}</span>", unsafe_allow_html=True)
-            c3.markdown(f"<span class='product-text'>{row['product_interest']}</span>", unsafe_allow_html=True)
-            
-            status = row['status'] or "Prospection"
-            badge_class = "bg-green" if "Client" in status else "bg-yellow" if "Test" in status else "bg-gray"
-            short_stat = status.split(" ")[1] if " " in status else status
-            c4.markdown(f"<span class='badge-status {badge_class}'>{short_stat}</span>", unsafe_allow_html=True)
-            
-            d_fmt = "-"
-            if row['last_action_date']:
-                d_fmt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d").strftime("%d %b. %y")
-            c5.markdown(f"<span style='color:#64748b; font-size:13px'>{d_fmt}</span>", unsafe_allow_html=True)
-            
-            act = row.get('marketing_campaign') or "-"
-            c6.markdown(f"<span class='action-link'>{act}</span>", unsafe_allow_html=True)
-            
-            has_s = False
-            if not samples_all.empty:
-                if not samples_all[samples_all['prospect_id'] == row['id']].empty: has_s = True
-            c7.markdown(f"<div class='sample-badge'>⚗ En test</div>" if has_s else "-", unsafe_allow_html=True)
-            
-            # Action Arrow
-            c8.markdown('<div class="action-btn">', unsafe_allow_html=True)
-            if c8.button("›", key=f"r_{row['id']}"):
-                st.session_state['active_prospect_id'] = row['id']; st.rerun()
-            c8.markdown('</div>', unsafe_allow_html=True)
-            
-            # Thin separator with minimal margin
-            st.markdown("<hr style='margin: 2px 0; border-top: 1px solid #f1f5f9;'>", unsafe_allow_html=True)
+        # ROW CONTAINER
+        st.markdown('<div class="pipeline-row">', unsafe_allow_html=True)
+        c1, c2, c3, c4, c5, c6, c7, c8 = st.columns([2.5, 1, 1.2, 1.2, 1.2, 1.5, 1, 0.5])
+        
+        c1.markdown(f"<span class='cell-company'>{row['company_name']}</span>", unsafe_allow_html=True)
+        c2.markdown(f"<span class='cell-text'>{row['country']}</span>", unsafe_allow_html=True)
+        c3.markdown(f"<span class='cell-prod'>{row['product_interest']}</span>", unsafe_allow_html=True)
+        
+        status = row['status'] or "Prospection"
+        cls = "bg-green" if "Client" in status else "bg-yellow" if "Test" in status else "bg-gray"
+        c4.markdown(f"<span class='badge {cls}'>{status.split(' ')[1] if ' ' in status else status}</span>", unsafe_allow_html=True)
+        
+        d_fmt = "-"
+        if row['last_action_date']:
+            d_fmt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d").strftime("%d %b. %y")
+        c5.markdown(f"<span class='cell-text'>{d_fmt}</span>", unsafe_allow_html=True)
+        
+        c6.markdown(f"<span class='cell-link'>{row.get('marketing_campaign') or '-'}</span>", unsafe_allow_html=True)
+        
+        has_s = False
+        if not samples_all.empty:
+            if not samples_all[samples_all['prospect_id'] == row['id']].empty: has_s = True
+        c7.markdown(f"<span class='badge bg-sample'>⚗ En test</span>" if has_s else "-", unsafe_allow_html=True)
+        
+        # INVISIBLE BUTTON OVERLAY
+        if c8.button("›", key=f"r_{row['id']}"):
+            st.session_state['active_prospect_id'] = row['id']; st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True) # End Row
+    
+    st.markdown('</div>', unsafe_allow_html=True) # End Table Body
 
 elif pg == "Contacts":
     st.title("Annuaire Contacts")
-    st.dataframe(get_all_contacts(), use_container_width=True)
+    all_c = get_all_contacts()
+    if not all_c.empty:
+        search = st.text_input("Recherche contact...", placeholder="Nom, email...")
+        if search: mask = all_c.apply(lambda x: search.lower() in str(x.values).lower(), axis=1); all_c = all_c[mask]
+        st.dataframe(all_c, column_order=("name", "role", "company_name", "email", "phone"), hide_index=True, use_container_width=True)
 
 elif pg == "À Relancer":
     st.title("À Relancer 🔔")
