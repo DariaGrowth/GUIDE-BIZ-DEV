@@ -184,13 +184,11 @@ def show_prospect_card(pid, data):
             salon = st.text_input("Source / Salon", value=data.get("last_salon", ""))
             
             st.write("")
-            # НОВОЕ: Поля маркетинга вместо Prio CFIA
+            # Поля маркетинга
             c_m1, c_m2 = st.columns([1.5, 1])
             with c_m1:
-                # Поле для названия акции (нужна колонка marketing_campaign в Supabase!)
-                marketing_camp = st.text_input("Dernière Action", value=data.get("marketing_campaign", ""), placeholder="Ex: Promo, Emailing...")
+                marketing_camp = st.text_input("Dernière Action", value=data.get("marketing_campaign", "") or "", placeholder="Ex: Promo, Emailing...")
             with c_m2:
-                # Поле даты (обновляет last_action_date)
                 raw_date = data.get("last_action_date")
                 default_date = datetime.now().date()
                 if raw_date:
@@ -314,11 +312,10 @@ def show_prospect_card(pid, data):
     if st.button("Enregistrer & Fermer", use_container_width=True):
         with st.spinner("Sauvegarde en cours..."):
             try:
-                # 1. Проспект (Включая новые поля маркетинга)
+                # 1. Проспект
                 supabase.table("prospects").update({
                     "company_name": new_company_name, "status": stat, "country": pays, 
                     "potential_volume": vol, "last_salon": salon, 
-                    # НОВЫЕ ПОЛЯ:
                     "marketing_campaign": marketing_camp,
                     "last_action_date": marketing_date.isoformat(),
                     "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
@@ -352,14 +349,18 @@ def show_prospect_card(pid, data):
                             supabase.table("contacts").insert(c_data).execute()
 
                 st.toast("✅ Sauvegardé !")
-                if 'active_prospect_id' in st.session_state: del st.session_state['active_prospect_id']
-                if 'open_new_id' in st.session_state: del st.session_state['open_new_id']
+                
+                # SAFE CLOSE (Защита от ошибки KeyError)
+                if 'active_prospect_id' in st.session_state: 
+                    del st.session_state['active_prospect_id']
+                if 'open_new_id' in st.session_state: 
+                    del st.session_state['open_new_id']
+                
                 time.sleep(0.5)
                 st.rerun()
                 
             except Exception as e:
                 st.error(f"Erreur: {e}")
-                st.warning("Ajoutez la colonne 'marketing_campaign' (text) dans Supabase !")
 
 # --- 6. SIDEBAR ---
 with st.sidebar:
@@ -389,7 +390,9 @@ with st.sidebar:
 if 'open_new_id' in st.session_state:
     new_pid = st.session_state['open_new_id']
     st.session_state['active_prospect_id'] = new_pid 
-    del st.session_state['open_new_id']
+    # Безопасное удаление
+    if 'open_new_id' in st.session_state:
+        del st.session_state['open_new_id']
 
 if 'active_prospect_id' in st.session_state:
     try:
@@ -397,7 +400,9 @@ if 'active_prospect_id' in st.session_state:
         data = supabase.table("prospects").select("*").eq("id", pid).execute().data[0]
         show_prospect_card(pid, data)
     except:
-        del st.session_state['active_prospect_id']
+        # Если ID не найден, чистим состояние, чтобы не было вечной ошибки
+        if 'active_prospect_id' in st.session_state:
+            del st.session_state['active_prospect_id']
 
 # --- 8. PAGES ---
 if page == "Tableau de Bord":
