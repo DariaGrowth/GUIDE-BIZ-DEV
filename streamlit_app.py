@@ -65,19 +65,20 @@ st.markdown("""
         }
         div[data-testid="column"]:first-child .stButton > button:hover { text-decoration: underline !important; color: #065f46 !important; }
 
-        /* Контейнер для мусорки (центрирование) */
+        /* Контейнер для мусорки (центрирование и выравнивание) */
         .trash-container { 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            height: 38px; /* Совпадает с высотой st.text_input */
-            margin-top: 0px;
+            height: 38px; /* Высота совпадает с полем ввода */
+            margin-top: 18px; /* Опускаем кнопку, чтобы она была в ряд с полем ввода */
         }
         .trash-container button {
             background: transparent !important; border: none !important; box-shadow: none !important;
             color: #94a3b8 !important; padding: 0 !important; font-size: 18px !important;
+            width: 32px !important; height: 32px !important;
         }
-        .trash-container button:hover { color: #ef4444 !important; }
+        .trash-container button:hover { color: #ef4444 !important; background: #fee2e2 !important; border-radius: 4px !important; }
 
         .badge-ui { padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; display: inline-block; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
@@ -85,13 +86,13 @@ st.markdown("""
         .bg-green { background: #dcfce7; color: #166534; }
         .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
 
-        /* Поля контактов в карточке */
+        /* Заголовки контактов */
         .contact-header {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 800;
             color: #94a3b8;
             text-transform: uppercase;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
             padding-left: 2px;
         }
         
@@ -213,30 +214,24 @@ def show_prospect_card(pid, data):
                 db_contacts = get_sub_data("contacts", pid)
                 st.session_state['editing_contacts'] = db_contacts.to_dict('records') if not db_contacts.empty else []
 
-            # Заголовки колонок
-            h1, h2, h3, h4, h5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
-            h1.markdown('<div class="contact-header">Nom</div>', unsafe_allow_html=True)
-            h2.markdown('<div class="contact-header">Poste</div>', unsafe_allow_html=True)
-            h3.markdown('<div class="contact-header">Email</div>', unsafe_allow_html=True)
-            h4.markdown('<div class="contact-header">Téléphone</div>', unsafe_allow_html=True)
-            h5.write("")
-
-            # Список контактов
+            # Список контактов с заголовками
             for i, c in enumerate(st.session_state['editing_contacts']):
-                r1, r2, r3, r4, r5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
-                st.session_state['editing_contacts'][i]['name'] = r1.text_input("N", value=c.get('name',''), key=f"c_name_{i}", label_visibility="collapsed")
-                st.session_state['editing_contacts'][i]['role'] = r2.text_input("R", value=c.get('role',''), key=f"c_role_{i}", label_visibility="collapsed")
-                st.session_state['editing_contacts'][i]['email'] = r3.text_input("E", value=c.get('email',''), key=f"c_mail_{i}", label_visibility="collapsed")
-                st.session_state['editing_contacts'][i]['phone'] = r4.text_input("P", value=c.get('phone',''), key=f"c_phone_{i}", label_visibility="collapsed")
-                with r5:
-                    st.markdown('<div class="trash-container">', unsafe_allow_html=True)
-                    if st.button("🗑️", key=f"del_contact_{i}"):
-                        if c.get('id'):
-                            if 'contacts_to_delete' not in st.session_state: st.session_state['contacts_to_delete'] = []
-                            st.session_state['contacts_to_delete'].append(c['id'])
-                        st.session_state['editing_contacts'].pop(i)
-                        st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
+                with st.container():
+                    r1, r2, r3, r4, r5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
+                    # Заголовки отображаются над каждым полем, если это первая строка, либо через st.text_input label
+                    st.session_state['editing_contacts'][i]['name'] = r1.text_input("Nom", value=c.get('name',''), key=f"c_name_{i}")
+                    st.session_state['editing_contacts'][i]['role'] = r2.text_input("Poste", value=c.get('role',''), key=f"c_role_{i}")
+                    st.session_state['editing_contacts'][i]['email'] = r3.text_input("Email", value=c.get('email',''), key=f"c_mail_{i}")
+                    st.session_state['editing_contacts'][i]['phone'] = r4.text_input("Téléphone", value=c.get('phone',''), key=f"c_phone_{i}")
+                    with r5:
+                        st.markdown('<div class="trash-container">', unsafe_allow_html=True)
+                        if st.button("🗑️", key=f"del_contact_{i}", help="Supprimer ce contact"):
+                            if c.get('id'):
+                                if 'contacts_to_delete' not in st.session_state: st.session_state['contacts_to_delete'] = []
+                                st.session_state['contacts_to_delete'].append(c['id'])
+                            st.session_state['editing_contacts'].pop(i)
+                            st.rerun()
+                        st.markdown('</div>', unsafe_allow_html=True)
 
             if st.button("⊕ Ajouter un contact", key="add_btn_new"):
                 st.session_state['editing_contacts'].append({"id": None, "name": "", "email": "", "role": "", "phone": ""})
@@ -264,7 +259,7 @@ def show_prospect_card(pid, data):
                         new_s = st.selectbox("Status", s_opt, index=s_opt.index(r['status']) if r['status'] in s_opt else 0, key=f"st_{r['id']}", label_visibility="collapsed")
                         if new_s != r['status']: supabase.table("samples").update({"status": new_s}).eq("id", r['id']).execute()
                     with ch3:
-                        st.markdown('<div class="trash-container">', unsafe_allow_html=True)
+                        st.markdown('<div class="trash-container" style="margin-top:0px;">', unsafe_allow_html=True)
                         if st.button("🗑️", key=f"ds_{r['id']}"): supabase.table("samples").delete().eq("id", r['id']).execute(); st.rerun()
                         st.markdown('</div>', unsafe_allow_html=True)
                     new_f = st.text_area("Feedback...", value=r.get("feedback", ""), key=f"f_{r['id']}", height=60, placeholder="Feedback R&D client...", label_visibility="collapsed")
@@ -310,7 +305,7 @@ with st.sidebar:
     
     rc_cnt = count_relances()
     nav = {"Tableau de Bord": "❒ Dashboard", "Pipeline": "☰ Pipeline", "Kanban": "▦ Kanban", "Échantillons": "🧪 Samples", "Contacts": "👤 Contacts", "Alertes": "🔔 Alerts"}
-    sel = st.radio("Nav", list(nav.keys()), format_func=lambda x: nav[x], label_visibility="collapsed", index=1)
+    sel = st.radio("Nav", list(nav_opts.keys()), format_func=lambda x: nav[x], label_visibility="collapsed", index=1)
     
     if rc_cnt > 0:
          st.markdown(f"""<style>div[role="radiogroup"] label:nth-child(6)::after {{content: '{rc_cnt}'; background: #fee2e2; color: #ef4444; display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; margin-left: auto;}}</style>""", unsafe_allow_html=True)
