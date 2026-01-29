@@ -42,7 +42,7 @@ st.markdown("""
             background-color: white !important; border: 1px solid #fee2e2 !important; color: #ef4444 !important;
         }
 
-        /* --- САЙДБАР (МОНОХРОМ) --- */
+        /* --- САЙДБАР (МОНОХРОМНЫЙ СТИЛЬ) --- */
         div[role="radiogroup"] > label > div:first-child { display: none !important; }
         div[role="radiogroup"] label {
             display: flex; align-items: center; width: 100%; padding: 10px 16px;
@@ -54,38 +54,51 @@ st.markdown("""
             color: #047857 !important; font-weight: 600; 
         }
         
-        /* Красный индикатор уведомлений */
-        .notif-dot {
+        /* Индикатор уведомлений (красный кружок) */
+        div[role="radiogroup"] label:nth-child(5)::after {
+            content: attr(data-notif);
             background-color: #fee2e2; color: #ef4444; font-size: 11px; font-weight: 700;
             padding: 2px 8px; border-radius: 10px; margin-left: auto;
+            display: none;
         }
 
         /* --- ПАЙПЛАЙН --- */
-        .filter-panel {
-            background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 20px;
+        .filter-panel-box {
+            background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; 
+            padding: 12px; margin-bottom: 20px;
         }
-        .filter-label {
+        .filter-label-text {
             display: flex; align-items: center; gap: 10px; color: #64748b; font-weight: 600; font-size: 14px;
         }
 
         .pipeline-header-container {
-            background-color: rgba(4, 120, 87, 0.03) !important;
-            border-bottom: 1px solid #f1f5f9; padding: 12px 10px; margin-bottom: 5px;
+            background-color: rgba(4, 120, 87, 0.08) !important;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 10px;
+            margin-bottom: 15px;
+            margin-top: 10px;
         }
 
-        .header-text { color: #64748b !important; font-size: 12px !important; font-weight: 600 !important; text-transform: uppercase; }
+        .header-text { 
+            color: #000000 !important; 
+            font-size: 14px !important; 
+            font-weight: 800 !important; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+        }
 
         div[data-testid="stVerticalBlockBorderWrapper"] {
-            background-color: white !important; border: none !important;
-            border-bottom: 1px solid #f8fafc !important; border-radius: 0px !important;
-            padding: 8px 0px !important; margin-bottom: 0px !important;
+            background-color: white !important; border: 1px solid #e2e8f0 !important;
+            border-radius: 8px !important; padding: 5px 0px !important; margin-bottom: 8px !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
         }
-        div[data-testid="stVerticalBlockBorderWrapper"]:hover { background-color: #fcfdfd !important; }
+        div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #10b981 !important; }
 
-        .cell-text { color: #64748b; font-size: 14px; }
-        .cell-company { color: #0f172a; font-weight: 700; font-size: 14px; }
-        .cell-prod { color: #047857; font-weight: 700; font-size: 13px; text-transform: uppercase; }
-        .cell-salon { color: #6366f1; font-weight: 500; font-size: 13px; }
+        .cell-text { color: #64748b; font-size: 14px; font-weight: 500; }
+        .cell-company { color: #0f172a; font-weight: 700; font-size: 15px; }
+        .cell-prod { color: #047857; font-weight: 700; font-size: 13px; }
+        .cell-salon { color: #6366f1; font-weight: 600; font-size: 13px; }
 
         .badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
@@ -146,7 +159,7 @@ def add_log(pid, t, c):
 
 def ai_mail(ctx):
     model = genai.GenerativeModel("gemini-1.5-flash")
-    return model.generate_content(f"Act as B2B assistant. Context: {ctx}.").text
+    return model.generate_content(f"Act as professional B2B assistant. Context: {ctx}.").text
 
 # --- 5. КАРТОЧКА КЛИЕНТА ---
 @st.dialog(" ", width="large")
@@ -200,7 +213,11 @@ def show_prospect_card(pid, data):
 
     st.markdown("---")
     if st.button("Enregistrer & Fermer", type="primary", use_container_width=True):
-        supabase.table("prospects").update({"company_name": name, "status": stat, "country": pays, "potential_volume": vol, "last_salon": salon_input, "product_interest": prod, "segment": app}).eq("id", pid).execute()
+        supabase.table("prospects").update({
+            "company_name": name, "status": stat, "country": pays, 
+            "potential_volume": vol, "last_salon": salon_input, 
+            "product_interest": prod, "segment": app
+        }).eq("id", pid).execute()
         reset_pipeline(); st.rerun()
 
 # --- 6. SIDEBAR ---
@@ -213,27 +230,24 @@ with st.sidebar:
     st.write("")
     
     rc = count_relances()
+    # Монохромные современные иконки (Unicode geometric)
     nav_opts = {
-        "Tableau de Bord": "⊞ Tableau de Bord",
-        "Pipeline": "≣ Pipeline",
+        "Tableau de Bord": "❒ Tableau de Bord",
+        "Pipeline": "☰ Pipeline",
         "Kanban": "▦ Kanban",
-        "Échantillons": "🧪 Échantillons",
-        "À Relancer": "🔔 À Relancer"
+        "Échantillons": "⬒ Échantillons",
+        "À Relancer": "❍ À Relancer"
     }
     
-    def format_nav(x):
-        label = nav_opts[x]
-        return label
-
-    pg = st.radio("Nav", list(nav_opts.keys()), format_func=format_nav, label_visibility="collapsed", index=1)
+    pg = st.radio("Nav", list(nav_opts.keys()), format_func=lambda x: nav_opts[x], label_visibility="collapsed", index=1)
     
-    # Индикатор уведомлений
+    # Индикатор уведомлений (CSS-хак)
     if rc > 0:
          st.markdown(f"""<style>
             div[role="radiogroup"] label:nth-child(5)::after {{
                 content: '{rc}'; background: #fee2e2; color: #ef4444; 
-                font-size: 10px; font-weight: 700; padding: 1px 6px; 
-                border-radius: 10px; margin-left: auto;
+                display: inline-block; font-size: 10px; font-weight: 700; 
+                padding: 1px 7px; border-radius: 10px; margin-left: auto;
             }}
          </style>""", unsafe_allow_html=True)
     
@@ -254,22 +268,22 @@ if pg == "Pipeline":
     
     df_raw = get_data()
     
-    with st.container():
-        st.markdown('<div class="filter-panel">', unsafe_allow_html=True)
-        f_cols = st.columns([1, 2, 2, 2, 2])
-        with f_cols[0]: st.markdown('<div class="filter-label">▽ Filtres:</div>', unsafe_allow_html=True)
-        with f_cols[1]: p_f = st.selectbox("Produit", ["Tous Produits"] + list(df_raw['product_interest'].dropna().unique()), label_visibility="collapsed")
-        with f_cols[2]: s_f = st.selectbox("Statut", ["Tous Statuts", "Prospection", "Qualification", "Echantillon", "Test", "Client"], label_visibility="collapsed")
-        with f_cols[3]: sl_f = st.selectbox("Salon", ["Tous Salons"] + list(df_raw['last_salon'].dropna().unique()), label_visibility="collapsed")
-        with f_cols[4]: py_f = st.selectbox("Pays", ["Tous Pays"] + list(df_raw['country'].dropna().unique()), label_visibility="collapsed")
-        st.markdown('</div>', unsafe_allow_html=True)
+    # --- БЛОК ФИЛЬТРОВ (ЧИСТЫЙ ВИД БЕЗ ЛИШНИХ РАМОК) ---
+    st.markdown('<div class="filter-panel-box">', unsafe_allow_html=True)
+    f_cols = st.columns([1, 2, 2, 2, 2])
+    with f_cols[0]: st.markdown('<div class="filter-label-text">▽ Filtres:</div>', unsafe_allow_html=True)
+    with f_cols[1]: p_f = st.selectbox("Produit", ["Produit: Tous"] + list(df_raw['product_interest'].dropna().unique()), label_visibility="collapsed")
+    with f_cols[2]: s_f = st.selectbox("Statut", ["Statut: Tous", "Prospection", "Qualification", "Echantillon", "Test", "Client"], label_visibility="collapsed")
+    with f_cols[3]: sl_f = st.selectbox("Salon", ["Salon: Tous"] + list(df_raw['last_salon'].dropna().unique()), label_visibility="collapsed")
+    with f_cols[4]: py_f = st.selectbox("Pays", ["Pays: Tous"] + list(df_raw['country'].dropna().unique()), label_visibility="collapsed")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     df = df_raw.copy()
-    if p_f != "Tous Produits": df = df[df['product_interest'] == p_f]
-    if s_f != "Tous Statuts": df = df[df['status'].str.contains(s_f, na=False)]
+    if p_f != "Produit: Tous": df = df[df['product_interest'] == p_f]
+    if s_f != "Statut: Tous": df = df[df['status'].str.contains(s_f, na=False)]
     
     st.write("")
-    # ШАПКА (7 колонок вместо 8)
+    # ШАПКА ТАБЛИЦЫ (Зеленая линия с черным текстом)
     weights = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
     st.markdown('<div class="pipeline-header-container">', unsafe_allow_html=True)
     h = st.columns(weights)
@@ -277,9 +291,9 @@ if pg == "Pipeline":
     h[1].markdown('<span class="header-text">PAYS</span>', unsafe_allow_html=True)
     h[2].markdown('<span class="header-text">PRODUIT</span>', unsafe_allow_html=True)
     h[3].markdown('<span class="header-text">STATUT</span>', unsafe_allow_html=True)
-    h[4].markdown('<span class="header-text">DERNIER CONTACT</span>', unsafe_allow_html=True)
-    h[5].markdown('<span class="header-text">DERNIER SALON</span>', unsafe_allow_html=True)
-    h[6].markdown('<span class="header-text">ÉCHANTILLONS</span>', unsafe_allow_html=True)
+    h[4].markdown('<span class="header-text">CONTACT</span>', unsafe_allow_html=True)
+    h[5].markdown('<span class="header-text">SALON</span>', unsafe_allow_html=True)
+    h[6].markdown('<span class="header-text">SAMPLES</span>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
@@ -302,13 +316,13 @@ if pg == "Pipeline":
                 dt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d")
                 d_contact = dt.strftime("%d %b. %y")
                 color = "#ef4444" if (datetime.now() - dt).days > 30 else "#64748b"
-                r[4].markdown(f"<span style='color:{color}; font-weight:600; font-size:14px;'>{d_contact}</span>", unsafe_allow_html=True)
+                r[4].markdown(f"<span style='color:{color}; font-weight:700; font-size:14px;'>{d_contact}</span>", unsafe_allow_html=True)
             else: r[4].write("-")
             
             r[5].markdown(f"<span class='cell-salon'>{row.get('last_salon') or '-'}</span>", unsafe_allow_html=True)
             
             has_s = not samples_data.empty and row['id'] in samples_data['prospect_id'].values
-            if has_s: r[6].markdown("<span class='badge bg-blue'>🧪 En test</span>", unsafe_allow_html=True)
+            if has_s: r[6].markdown("<span class='badge bg-blue'>⬒ En test</span>", unsafe_allow_html=True)
             else: r[6].write("-")
 
 elif pg == "Tableau de Bord":
@@ -321,7 +335,7 @@ elif pg == "Tableau de Bord":
 
 elif pg == "Kanban":
     st.title("Board")
-    st.info("Vue Kanban en développement.")
+    st.info("Vue Kanban en разработке.")
 
 elif pg == "Échantillons":
     st.title("Gestion des Échantillons")
@@ -329,8 +343,8 @@ elif pg == "Échantillons":
     st.dataframe(s, use_container_width=True)
 
 elif pg == "À Relancer":
-    st.title("Relances 🔔")
+    st.title("Relances ❍")
     fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
     s = pd.DataFrame(supabase.table("samples").select("*").is_("feedback", "null").lte("date_sent", fifteen_days_ago).execute().data)
     if not s.empty: st.dataframe(s, use_container_width=True)
-    else: st.success("Aucun retard !")
+    else: st.success("Tout est à jour !")
