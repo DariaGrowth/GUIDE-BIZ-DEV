@@ -66,7 +66,7 @@ st.markdown("""
             align-items: center;
         }
         .header-text-style { 
-            color: #047857 !important; /* Цвет как лого Ingood */
+            color: #047857 !important; 
             font-size: 14px !important; 
             font-weight: 800 !important; 
             text-transform: uppercase; 
@@ -109,10 +109,6 @@ st.markdown("""
             text-decoration: underline !important;
             background: transparent !important;
             color: #065f46 !important;
-        }
-        div[data-testid="column"]:first-child .stButton > button:active {
-            background: transparent !important;
-            color: #047857 !important;
         }
 
         /* 8. САЙДБАР И УВЕДОМЛЕНИЯ */
@@ -194,45 +190,59 @@ def show_prospect_card(pid, data):
 
     with c_left:
         with st.container(border=True):
-            name = st.text_input("Société", value=data['company_name'], key=f"n_{pid}")
+            name = st.text_input("SOCIÉTÉ / CLIENT", value=data['company_name'], key=f"n_{pid}")
             opts = ["Prospection", "Qualification", "Echantillon", "Test R&D", "Essai industriel", "Négociation", "Client signé"]
             curr = data.get("status", "Prospection")
-            stat = st.selectbox("Statut", opts, index=next((i for i, s in enumerate(opts) if s in curr), 0))
+            stat = st.selectbox("STATUT PIPELINE", opts, index=next((i for i, s in enumerate(opts) if s in curr), 0))
             
             c1, c2 = st.columns(2)
-            with c1: pays = st.text_input("Pays", value=data.get("country", ""))
-            with c2: vol = st.number_input("Potentiel (T)", value=float(data.get("potential_volume") or 0))
-            salon_input = st.text_input("Source", value=data.get("last_salon", ""))
+            with c1: pays = st.text_input("PAYS", value=data.get("country", ""))
+            with c2: vol = st.number_input("POTENTIEL (T)", value=float(data.get("potential_volume") or 0))
+            
+            # Замена Dernier Salon на Dernier Contact
+            last_contact_val = data.get("last_action_date", datetime.now().strftime("%Y-%m-%d"))
+            if not last_contact_val: last_contact_val = datetime.now().strftime("%Y-%m-%d")
+            last_contact_date = st.date_input("DERNIER CONTACT", value=datetime.strptime(last_contact_val[:10], "%Y-%m-%d"))
             
             st.markdown("---")
             if st.button("🪄 Générer Email"):
                 model = genai.GenerativeModel("gemini-1.5-flash")
-                res = model.generate_content(f"Write a short professional B2B email for {data['company_name']} in French.").text
+                res = model.generate_content(f"Ecrire un court email professionnel pour {data['company_name']}").text
                 st.session_state['ai_draft'] = res
             if 'ai_draft' in st.session_state:
                 st.text_area("Brouillon AI", value=st.session_state['ai_draft'], height=150)
 
     with c_right:
-        t1, t2, t3 = st.tabs(["Contexte", "Échantillons", "Journal"])
+        # Восстановление вкладок как на скриншоте
+        t1, t2, t3 = st.tabs(["Contexte & Technique", "Suivi Échantillons", "Journal d'Activité"])
         with t1:
-            prod_list, app_list = ["LEN", "PEP", "NEW"], ["Boulangerie", "Sauces", "Confiserie"]
-            p_val = data.get("product_interest")
+            prod_list = ["LENGOOD® (Substitut Œuf)", "PEPTIPEA® (Protéine)", "NEWGOOD® (Nouveauté)"]
+            p_val = data.get("product_interest", "LENGOOD® (Substitut Œuf)")
             p_idx = prod_list.index(p_val) if p_val in prod_list else 0
-            a_val = data.get("segment")
+            
+            app_list = ["Boulangerie / Pâtisserie", "Sauces / Mayonnaise", "Confiserie", "Plats cuisinés"]
+            a_val = data.get("segment", "Boulangerie / Pâtisserie")
             a_idx = app_list.index(a_val) if a_val in app_list else 0
 
             c1, c2 = st.columns(2)
-            with c1: prod = st.selectbox("Ingrédient", prod_list, index=p_idx)
-            with c2: app = st.selectbox("Application", app_list, index=a_idx)
+            with c1: prod = st.selectbox("INGRÉDIENT INGOOD", prod_list, index=p_idx)
+            with c2: app = st.selectbox("APPLICATION FINALE", app_list, index=a_idx)
+            
+            pain_point = st.text_area("PROBLÉMATIQUE / BESOIN (PAIN POINT)", value=data.get("notes", ""))
+            tech_notes = st.text_area("NOTES TECHNIQUES", value=data.get("tech_notes", ""))
+            
+            st.markdown("##### CONTACTS")
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
         with t2:
+            st.markdown("##### HISTORIQUE DES ENVOIS")
             for _, r in get_sub_data("samples", pid).iterrows():
                 with st.container(border=True): st.markdown(f"**{r['product_name']}** ({r['date_sent'][:10]})")
 
         with t3:
-            n = st.text_area("Note...", key="nn")
-            if st.button("Ajouter"):
+            st.markdown("##### JOURNAL DES ACTIONS")
+            n = st.text_area("Ajouter une note...", key="nn")
+            if st.button("Ajouter à l'activité"):
                 supabase.table("activities").insert({"prospect_id": pid, "type": "Note", "content": n, "date": datetime.now().isoformat()}).execute()
                 st.rerun()
             for _, r in get_sub_data("activities", pid).iterrows(): st.caption(f"{r['date'][:10]}"); st.write(r['content'])
@@ -240,9 +250,15 @@ def show_prospect_card(pid, data):
     st.markdown("---")
     if st.button("Enregistrer & Fermer", type="primary", use_container_width=True):
         supabase.table("prospects").update({
-            "company_name": name, "status": stat, "country": pays, 
-            "potential_volume": vol, "last_salon": salon_input, 
-            "product_interest": prod, "segment": app
+            "company_name": name, 
+            "status": stat, 
+            "country": pays, 
+            "potential_volume": vol, 
+            "last_action_date": last_contact_date.isoformat(),
+            "product_interest": prod, 
+            "segment": app,
+            "notes": pain_point,
+            "tech_notes": tech_notes
         }).eq("id", pid).execute()
         reset_pipeline(); st.rerun()
 
