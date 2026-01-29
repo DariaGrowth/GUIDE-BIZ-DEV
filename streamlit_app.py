@@ -8,28 +8,24 @@ import io
 import numpy as np
 import time
 
-# --- 1. CONFIGURATION & STYLE ---
+# --- 1. КОНФИГУРАЦИЯ И СТИЛИ ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        /* BASIC SETUP */
+        /* БАЗОВЫЕ НАСТРОЙКИ */
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         div[data-testid="stVerticalBlock"] { gap: 0rem; }
-        button[aria-label="Close"] { margin-top: 8px; margin-right: 8px; }
         
-        /* TEXT UTILS */
+        /* СТИЛИЗАЦИЯ ПОЛЕЙ ВВОДА */
         .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p {
             color: #64748b !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: 0.5px;
         }
-        .stSelectbox div[data-baseweb="select"], div[role="radiogroup"] label p, .stMarkdown p { 
-            filter: grayscale(100%) contrast(120%); color: #334155;
-        }
 
-        /* --- BUTTONS (GLOBAL) --- */
+        /* КНОПКИ ГЛОБАЛЬНО */
         [data-testid="stSidebar"] .stButton > button, 
         button[kind="primary"] {
             width: 100%; background-color: #047857 !important; color: white !important;
@@ -37,64 +33,32 @@ st.markdown("""
             box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s ease;
         }
         [data-testid="stSidebar"] .stButton > button:hover,
-        button[kind="primary"]:hover { 
-            background-color: #065f46 !important; transform: translateY(-1px); 
-        }
+        button[kind="primary"]:hover { background-color: #065f46 !important; transform: translateY(-1px); }
         
         button[kind="secondary"] {
             background-color: white !important; border: 1px solid #fee2e2 !important; color: #ef4444 !important;
         }
 
-        /* --- PIPELINE TABLE STYLING --- */
-        div[data-testid="stVerticalBlockBorderWrapper"] {
-            background-color: white; border: 1px solid #e2e8f0; border-radius: 8px;
-            padding: 0px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        /* КАНБАН-КАРТОЧКИ */
+        .kanban-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
         }
+        .kanban-card:hover { border-color: #10b981; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .kanban-title { font-weight: 700; color: #1e293b; font-size: 14px; margin-bottom: 5px; }
+        .kanban-sub { color: #64748b; font-size: 11px; margin-bottom: 10px; line-height: 1.4; }
 
-        .header-container {
-            padding: 12px 20px; background-color: #ffffff; border-bottom: 1px solid #f1f5f9;
-        }
-        .header-text { 
-            color: #047857; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; 
-        }
-
+        /* ХАКИ ДЛЯ ПАЙПЛАЙНА */
         div[data-testid="column"]:first-child .stButton > button {
             background-color: transparent !important; border: none !important;
             color: #0f172a !important; font-weight: 700 !important; font-size: 14px !important;
-            text-align: left !important; padding: 0px !important; margin: 0px !important;
-            box-shadow: none !important; height: auto !important; min-height: 0px !important;
-            line-height: 1.5 !important; display: block !important;
+            text-align: left !important; padding: 0px !important; box-shadow: none !important;
         }
-        div[data-testid="column"]:first-child .stButton > button:hover {
-            color: #047857 !important;
-        }
-
-        .cell-text { color: #64748b; font-size: 13px; font-weight: 400; line-height: 1.5; }
-        .cell-prod { color: #047857; font-weight: 700; font-size: 13px; }
-        .cell-link { color: #3b82f6; font-size: 13px; font-weight: 500; }
-        
-        div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"]:hover {
-             background-color: #f0fdf4 !important;
-        }
-
-        .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
-        .bg-yellow { background: #fef9c3; color: #854d0e; }
-        .bg-gray { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
-        .bg-green { background: #dcfce7; color: #166534; }
-        .bg-sample { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; padding: 2px 8px; }
-
-        /* MENU */
-        div[role="radiogroup"] > label > div:first-child { display: none !important; }
-        div[role="radiogroup"] label {
-            display: flex; align-items: center; width: 100%; padding: 8px 16px;
-            margin-bottom: 2px; border-radius: 6px; border: none; cursor: pointer;
-            color: #64748b; font-weight: 500; font-size: 15px; transition: all 0.2s;
-        }
-        div[role="radiogroup"] label[data-checked="true"] { background-color: rgba(16, 185, 129, 0.1) !important; color: #047857 !important; font-weight: 600; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. CONNECTIONS ---
+# --- 2. ПОДКЛЮЧЕНИЯ ---
 @st.cache_resource
 def init_connections():
     try:
@@ -106,17 +70,19 @@ def init_connections():
 supabase, _ = init_connections()
 if not supabase: st.stop()
 
-# --- 3. HELPERS ---
+# --- 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 if 'pipeline_key' not in st.session_state: st.session_state['pipeline_key'] = 0
+
 def reset_pipeline(): 
     st.session_state['pipeline_key'] += 1
     st.cache_data.clear()
     safe_del('active_prospect_id')
+    safe_del('ai_draft')
 
 def safe_del(key): 
     if key in st.session_state: del st.session_state[key]
 
-# --- 4. DATA ---
+# --- 4. РАБОТА С ДАННЫМИ ---
 @st.cache_data(ttl=60)
 def get_data(): 
     return pd.DataFrame(supabase.table("prospects").select("*").order("last_action_date", desc=True).execute().data)
@@ -131,6 +97,7 @@ def get_sub_data(t, pid):
     return df
 
 def count_relances():
+    # Быстрый фильтр на стороне базы: нет фидбека и отправлено более 15 дней назад
     fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
     try:
         res = supabase.table("samples").select("id", count="exact").is_("feedback", "null").lte("date_sent", fifteen_days_ago).execute()
@@ -142,9 +109,10 @@ def add_log(pid, t, c):
     supabase.table("prospects").update({"last_action_date": datetime.now().strftime("%Y-%m-%d")}).eq("id", pid).execute()
 
 def ai_mail(ctx):
-    return genai.GenerativeModel("gemini-1.5-flash").generate_content(f"Act as email assistant. French. Context: {ctx}.").text
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    return model.generate_content(f"Act as B2B email assistant. French language. Context: {ctx}. Short and professional.").text
 
-# --- 5. FICHE PROSPECT (MODAL) ---
+# --- 5. FICHE PROSPECT (МОДАЛЬНОЕ ОКНО) ---
 @st.dialog(" ", width="large")
 def show_prospect_card(pid, data):
     pid = int(pid)
@@ -154,22 +122,14 @@ def show_prospect_card(pid, data):
     with c_left:
         with st.container(border=True):
             name = st.text_input("Société", value=data['company_name'], key=f"n_{pid}")
+            # Маппинг статусов
             opts = ["🔭 Prospection", "📋 Qualification", "📦 Echantillon", "🔬 Test R&D", "🏭 Essai industriel", "⚖️ Négociation", "✅ Client signé"]
             curr = data.get("status", "Prospection")
             stat = st.selectbox("Statut", opts, index=next((i for i, s in enumerate(opts) if curr in s), 0))
+            
             c1, c2 = st.columns(2)
             with c1: pays = st.text_input("Pays", value=data.get("country", ""))
             with c2: vol = st.number_input("Potentiel (T)", value=float(data.get("potential_volume") or 0))
-            salon = st.text_input("Source", value=data.get("last_salon", ""))
-            st.write("")
-            c_m1, c_m2 = st.columns([1.5, 1])
-            with c_m1: camp = st.text_input("Dernière Action", value=data.get("marketing_campaign", "") or "", placeholder="Ex: Promo...")
-            with c_m2: 
-                d_val = datetime.now().date()
-                if data.get("last_action_date"): 
-                    try: d_val = datetime.strptime(str(data["last_action_date"])[:10], "%Y-%m-%d").date()
-                    except: pass
-                date_act = st.date_input("Date", value=d_val, format="DD/MM/YYYY")
             
             st.markdown("---")
             st.markdown("<p style='font-size:11px; font-weight:700; color:#64748b;'>AI ASSISTANT</p>", unsafe_allow_html=True)
@@ -181,12 +141,12 @@ def show_prospect_card(pid, data):
             
             if 'ai_draft' in st.session_state:
                 st.text_area("Brouillon AI", value=st.session_state['ai_draft'], height=150)
+                st.caption("Copy-paste with Ctrl+C")
 
     with c_right:
-        t1, t2, t3 = st.tabs(["Contexte", "Suivi Échantillons", "Journal"])
+        t1, t2, t3 = st.tabs(["Contexte", "Échantillons", "Journal"])
         with t1:
-            c1, c2 = st.columns(2)
-            # --- FIX FOR VALUE ERROR ---
+            # Защита от ValueError: проверка наличия значения в списке
             prod_list = ["LEN", "PEP", "NEW"]
             p_val = data.get("product_interest")
             p_idx = prod_list.index(p_val) if p_val in prod_list else 0
@@ -195,12 +155,12 @@ def show_prospect_card(pid, data):
             a_val = data.get("segment")
             a_idx = app_list.index(a_val) if a_val in app_list else 0
 
+            c1, c2 = st.columns(2)
             with c1: prod = st.selectbox("Ingrédient", prod_list, index=p_idx)
             with c2: app = st.selectbox("Application", app_list, index=a_idx)
-            # ---------------------------
-            pain = st.text_area("Besoin", value=data.get("tech_pain_points", ""), height=80)
-            notes = st.text_area("Notes", value=data.get("tech_notes", ""), height=80)
-            st.markdown("---"); st.markdown("<p style='font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;'>CONTACTS CLÉS</p>", unsafe_allow_html=True)
+            
+            st.markdown("---")
+            st.markdown("<p style='font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;'>CONTACTS CLÉS</p>", unsafe_allow_html=True)
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
         with t2:
@@ -210,19 +170,13 @@ def show_prospect_card(pid, data):
                 with c2: pr = st.selectbox("Produit", ["LEN", "PEP", "NEW"], key="np")
                 with c3: 
                     st.write(""); st.write("")
-                    if st.button("Sauvegarder", key="ss", type="primary"): 
+                    if st.button("Enregistrer", key="ss", type="primary"): 
                         supabase.table("samples").insert({"prospect_id": pid, "reference": ref, "product_name": pr, "status": "Envoyé", "date_sent": datetime.now().isoformat()}).execute(); st.rerun()
             st.write(""); st.markdown("##### Historique")
             for _, r in get_sub_data("samples", pid).iterrows():
                 with st.container(border=True):
-                    c_i, c_d = st.columns([9, 1])
-                    with c_i: 
-                        st.markdown(f"**{r['product_name']}** | {r['reference']} <span style='color:gray; font-size:12px'>({r['date_sent'][:10]})</span>", unsafe_allow_html=True)
-                        fb = st.text_area("Feedback", value=r['feedback'] or "", key=f"fb_{r['id']}", height=60, label_visibility="collapsed")
-                    with c_d:
-                        st.write("")
-                        if st.button("🗑️", key=f"d_{r['id']}", type="secondary"): supabase.table("samples").delete().eq("id", r['id']).execute(); st.rerun()
-                    if fb != (r['feedback'] or ""): supabase.table("samples").update({"feedback": fb}).eq("id", r['id']).execute(); st.toast("Saved")
+                    st.markdown(f"**{r['product_name']}** | {r['reference']} <span style='color:gray; font-size:12px'>({r['date_sent'][:10]})</span>", unsafe_allow_html=True)
+                    st.caption(f"Status: {r['status']}")
 
         with t3:
             n = st.text_area("Note...", key="nn")
@@ -237,22 +191,26 @@ def show_prospect_card(pid, data):
     with cs:
         if st.button("Enregistrer & Fermer", type="primary", use_container_width=True):
             supabase.table("prospects").update({
-                "company_name": name, "status": stat, "country": pays, "potential_volume": vol, "last_salon": salon,
-                "marketing_campaign": camp, "last_action_date": date_act.isoformat(), "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
+                "company_name": name, "status": stat, "country": pays, "potential_volume": vol,
+                "product_interest": prod, "segment": app, "last_action_date": datetime.now().isoformat()
             }).eq("id", pid).execute()
             
+            # Логика обновления/удаления контактов
             if not contacts.empty:
-                current_ids = contacts['id'].dropna().astype(int).tolist() if 'id' in contacts.columns else []
+                current_ids = [int(x) for x in contacts['id'].dropna() if str(x).isdigit()] if 'id' in contacts.columns else []
                 old_contacts = get_sub_data("contacts", pid)
                 if not old_contacts.empty:
-                    to_delete = [oid for oid in old_contacts['id'].tolist() if oid not in current_ids]
+                    old_ids = old_contacts['id'].tolist()
+                    to_delete = [oid for oid in old_ids if oid not in current_ids]
                     if to_delete: supabase.table("contacts").delete().in_("id", to_delete).execute()
 
                 for r in contacts.to_dict('records'):
                     if str(r.get("name")).strip():
                         d = {"prospect_id": pid, "name": r["name"], "role": r.get("role",""), "email": r.get("email",""), "phone": r.get("phone","")}
-                        if r.get("id") and not pd.isna(r.get("id")): supabase.table("contacts").upsert({**d, "id": int(r["id"])}).execute()
-                        else: supabase.table("contacts").insert(d).execute()
+                        if r.get("id") and not pd.isna(r.get("id")):
+                            supabase.table("contacts").upsert({**d, "id": int(r["id"])}).execute()
+                        else:
+                            supabase.table("contacts").insert(d).execute()
             
             reset_pipeline(); st.rerun()
 
@@ -260,82 +218,91 @@ def show_prospect_card(pid, data):
 with st.sidebar:
     st.image("favicon.png", width=65)
     if st.button("Nouveau Projet"):
-        res = supabase.table("prospects").insert({"company_name": "Nouveau Prospect"}).execute()
+        res = supabase.table("prospects").insert({"company_name": "Nouveau Prospect", "status": "🔭 Prospection"}).execute()
         st.session_state['open_new_id'] = res.data[0]['id']; st.rerun()
     st.write("")
     rc = count_relances()
-    pg = st.radio("Nav", ["Tableau de Bord", "Pipeline", "Contacts", "À Relancer"], format_func=lambda x: f"{'🔔' if x=='À Relancer' and rc else '≡'} {x}", label_visibility="collapsed")
+    pg = st.radio("Navigation", ["Tableau de Bord", "Kanban", "Pipeline", "Contacts", "À Relancer"], 
+                  format_func=lambda x: f"{'🔔' if x=='À Relancer' and rc else '≡'} {x}", index=1)
     st.markdown("---"); st.caption("👤 Daria Growth")
 
-# --- 7. AUTO-OPEN & ROUTING ---
+# --- 7. РОУТИНГ КАРТОЧЕК ---
 if 'open_new_id' in st.session_state:
     st.session_state['active_prospect_id'] = st.session_state.pop('open_new_id'); reset_pipeline()
 
 if 'active_prospect_id' in st.session_state:
-    try: show_prospect_card(st.session_state['active_prospect_id'], supabase.table("prospects").select("*").eq("id", st.session_state['active_prospect_id']).execute().data[0])
+    try:
+        data_row = supabase.table("prospects").select("*").eq("id", st.session_state['active_prospect_id']).execute().data[0]
+        show_prospect_card(st.session_state['active_prospect_id'], data_row)
     except: safe_del('active_prospect_id')
 
-# --- 8. PAGES ---
-if pg == "Tableau de Bord":
-    st.title("Tableau de Bord")
+# --- 8. СТРАНИЦЫ ---
+if pg == "Kanban":
+    st.title("Board Commercial")
     df = get_data()
-    c1, c2, c3, c4 = st.columns(4)
+    stages = ["🔭 Prospection", "📋 Qualification", "📦 Echantillon", "🔬 Test R&D"]
+    st_cols = st.columns(len(stages))
+    
+    for i, stage in enumerate(stages):
+        with st_cols[i]:
+            st.markdown(f"<p style='font-weight:700; color:#047857; border-bottom: 2px solid #e2e8f0; padding-bottom:5px; margin-bottom:15px;'>{stage.upper()}</p>", unsafe_allow_html=True)
+            # Фильтр по названию стадии (после эмодзи)
+            keyword = stage.split(' ')[1]
+            stage_df = df[df['status'].str.contains(keyword, na=False)] if not df.empty else pd.DataFrame()
+            
+            for _, row in stage_df.iterrows():
+                with st.container():
+                    st.markdown(f"""
+                        <div class="kanban-card">
+                            <div class="kanban-title">{row['company_name']}</div>
+                            <div class="kanban-sub">{row['country'] or 'N/A'} • {row['product_interest'] or 'N/A'}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    k1, k2 = st.columns([3, 1])
+                    with k1:
+                        if st.button("Détails", key=f"kan_{row['id']}", use_container_width=True):
+                            st.session_state['active_prospect_id'] = row['id']; st.rerun()
+                    with k2:
+                        if i < len(stages) - 1:
+                            if st.button("→", key=f"mov_{row['id']}"):
+                                next_stage = stages[i+1]
+                                supabase.table("prospects").update({"status": next_stage}).eq("id", row['id']).execute()
+                                reset_pipeline(); st.rerun()
+
+elif pg == "Tableau de Bord":
+    st.title("Analyses CRM")
+    df = get_data()
     if not df.empty:
-        c1.metric("Projets", len(df)); c2.metric("En Test", len(df[df['status'].str.contains('Test', na=False)]))
-        c3.metric("Volume", int(df['potential_volume'].sum())); c4.metric("Clients", len(df[df['status'].str.contains('Client', na=False)]))
-        cl, cr = st.columns(2)
-        with cl: st.plotly_chart(px.pie(df, names='product_interest', color_discrete_sequence=['#047857', '#10b981']), use_container_width=True)
-        with cr: st.plotly_chart(px.bar(df['status'].value_counts(), color_discrete_sequence=['#047857']), use_container_width=True)
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Projets Total", len(df))
+        m2.metric("En Test", len(df[df['status'].str.contains('Test', na=False)]))
+        m3.metric("Volume Potential", f"{int(df['potential_volume'].sum())} T")
+        
+        c_l, c_r = st.columns(2)
+        with c_l: st.plotly_chart(px.pie(df, names='product_interest', hole=.4, title="Mix Produits", color_discrete_sequence=px.colors.sequential.Greens_r), use_container_width=True)
+        with c_r: st.plotly_chart(px.bar(df['status'].value_counts(), title="Tunnel de vente", color_discrete_sequence=['#047857']), use_container_width=True)
 
 elif pg == "Pipeline":
-    with st.container(border=True):
-        f1, f2, f3, f4 = st.columns(4)
-        with f1: st.selectbox("Produits", ["Tous Produits", "LEN", "PEP"], label_visibility="collapsed")
-        with f2: st.selectbox("Statuts", ["Tous Statuts", "Prospection", "Test"], label_visibility="collapsed")
-        with f3: st.selectbox("Salons", ["Tous Salons", "CFIA"], label_visibility="collapsed")
-        with f4: st.selectbox("Pays", ["Tous Pays", "France"], label_visibility="collapsed")
-    
-    st.write("")
-    with st.container(border=True):
-        st.markdown('<div class="header-container">', unsafe_allow_html=True)
-        h1, h2, h3, h4, h5, h6, h7 = st.columns([3, 1, 1.2, 1.2, 1.2, 1.5, 1])
-        def header(t): return f"<span class='header-text'>{t}</span>"
-        h1.markdown(header("SOCIÉTÉ"), unsafe_allow_html=True)
-        h2.markdown(header("PAYS"), unsafe_allow_html=True)
-        h3.markdown(header("PRODUIT"), unsafe_allow_html=True)
-        h4.markdown(header("STATUT"), unsafe_allow_html=True)
-        h5.markdown(header("D. CONTACT"), unsafe_allow_html=True)
-        h6.markdown(header("DERNIER SALON"), unsafe_allow_html=True)
-        h7.markdown(header("ÉCHANTILLONS"), unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        df = get_data()
-        for _, row in df.iterrows():
-            c1, c2, c3, c4, c5, c6, c7 = st.columns([3, 1, 1.2, 1.2, 1.2, 1.5, 1])
-            with c1:
-                if st.button(row['company_name'], key=f"b_{row['id']}"):
-                    st.session_state['active_prospect_id'] = row['id']; st.rerun()
-
-            with c2: st.markdown(f"<span class='cell-text'>{row['country']}</span>", unsafe_allow_html=True)
-            with c3: st.markdown(f"<span class='cell-prod'>{row['product_interest']}</span>", unsafe_allow_html=True)
-            status = row['status'] or "Prospection"
-            cls = "bg-green" if "Client" in status else "bg-yellow" if "Test" in status else "bg-gray"
-            with c4: st.markdown(f"<span class='badge {cls}'>{status.split(' ')[1] if ' ' in status else status}</span>", unsafe_allow_html=True)
-            d_fmt = "-"
-            if row['last_action_date']:
-                d_fmt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d").strftime("%d %b. %y")
-            with c5: st.markdown(f"<span class='cell-text'>{d_fmt}</span>", unsafe_allow_html=True)
-            with c6: st.markdown(f"<span class='cell-link'>{row.get('marketing_campaign') or '-'}</span>", unsafe_allow_html=True)
-            with c7: st.markdown("-" , unsafe_allow_html=True)
+    st.title("Liste de Pipeline")
+    df = get_data()
+    for _, row in df.iterrows():
+        with st.container(border=True):
+            cl1, cl2, cl3 = st.columns([2, 1, 1])
+            if cl1.button(row['company_name'], key=f"p_{row['id']}"):
+                st.session_state['active_prospect_id'] = row['id']; st.rerun()
+            cl2.write(f"🌍 {row['country']}")
+            cl3.write(f"🏷️ {row['status']}")
 
 elif pg == "Contacts":
     st.title("Annuaire Contacts")
-    c = pd.DataFrame(supabase.table("contacts").select("*").execute().data)
-    st.dataframe(c, use_container_width=True)
+    cont = pd.DataFrame(supabase.table("contacts").select("*").execute().data)
+    if not cont.empty: st.dataframe(cont, use_container_width=True)
+    else: st.info("Aucun contact trouvé.")
 
 elif pg == "À Relancer":
-    st.title("À Relancer 🔔")
+    st.title("Relances prioritaires 🔔")
     fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
-    s = pd.DataFrame(supabase.table("samples").select("*").is_("feedback", "null").lte("date_sent", fifteen_days_ago).execute().data)
-    if not s.empty: st.dataframe(s, use_container_width=True)
-    else: st.success("Aucune relance à prévoir pour le moment.")
+    s_rel = pd.DataFrame(supabase.table("samples").select("*").is_("feedback", "null").lte("date_sent", fifteen_days_ago).execute().data)
+    if not s_rel.empty: st.dataframe(s_rel, use_container_width=True)
+    else: st.success("Félicitations ! Aucun retard détecté.")
