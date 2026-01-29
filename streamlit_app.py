@@ -134,16 +134,23 @@ st.markdown("""
         .bg-green { background: #dcfce7; color: #166534; }
         .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
 
-        /* Компактный стиль для кнопок-иконок (корзина) */
-        .icon-btn button {
+        /* ИСПРАВЛЕНИЕ КНОПКИ МУСОРКИ В КАРТОЧКЕ */
+        .icon-container button {
             padding: 0 !important;
             border: none !important;
             background: transparent !important;
             box-shadow: none !important;
             color: #94a3b8 !important;
+            height: 32px !important;
+            width: 32px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
-        .icon-btn button:hover {
+        .icon-container button:hover {
             color: #ef4444 !important;
+            background-color: #fee2e2 !important;
+            border-radius: 6px !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -214,7 +221,12 @@ def show_prospect_card(pid, data):
             # Замена Dernier Salon на Dernier Contact
             last_contact_val = data.get("last_action_date", datetime.now().strftime("%Y-%m-%d"))
             if not last_contact_val: last_contact_val = datetime.now().strftime("%Y-%m-%d")
-            last_contact_date = st.date_input("DERNIER CONTACT", value=datetime.strptime(last_contact_val[:10], "%Y-%m-%d"))
+            # Безопасное преобразование даты
+            try:
+                current_date_val = datetime.strptime(last_contact_val[:10], "%Y-%m-%d")
+            except:
+                current_date_val = datetime.now()
+            last_contact_date = st.date_input("DERNIER CONTACT", value=current_date_val)
             
             st.markdown("---")
             if st.button("🪄 Générer Email"):
@@ -268,8 +280,7 @@ def show_prospect_card(pid, data):
             samples_df = get_sub_data("samples", pid)
             for _, r in samples_df.iterrows():
                 with st.container(border=True):
-                    # Исправленная сетка колонок: [Название, Статус, Удалить]
-                    # Используем веса [3.5, 1.5, 0.4] для лучшего баланса
+                    # Настройка колонок для выравнивания иконки удаления
                     ch1, ch2, ch3 = st.columns([3.5, 1.5, 0.4])
                     
                     with ch1:
@@ -283,9 +294,9 @@ def show_prospect_card(pid, data):
                             supabase.table("samples").update({"status": new_s}).eq("id", r['id']).execute()
                     
                     with ch3:
-                        # Контейнер для выравнивания кнопки удаления
-                        st.markdown('<div class="icon-btn">', unsafe_allow_html=True)
-                        if st.button("🗑️", key=f"del_s_{r['id']}", help="Supprimer", use_container_width=True):
+                        # Контейнер для фиксированной верстки иконки
+                        st.markdown('<div class="icon-container">', unsafe_allow_html=True)
+                        if st.button("🗑️", key=f"del_s_{r['id']}", help="Supprimer"):
                             supabase.table("samples").delete().eq("id", r['id']).execute()
                             st.rerun()
                         st.markdown('</div>', unsafe_allow_html=True)
@@ -305,32 +316,44 @@ def show_prospect_card(pid, data):
 
     st.markdown("---")
     if st.button("Enregistrer & Fermer", type="primary", use_container_width=True):
-        supabase.table("prospects").update({
-            "company_name": name, 
-            "status": stat, 
-            "country": pays, 
-            "potential_volume": vol, 
-            "last_action_date": last_contact_date.isoformat(),
-            "product_interest": prod, 
-            "segment": app,
-            "notes": pain_point,
-            "tech_notes": tech_notes
-        }).eq("id", pid).execute()
-        
-        # Сохранение контактов
-        if not contacts.empty:
-            current_ids = contacts['id'].dropna().astype(int).tolist() if 'id' in contacts.columns else []
-            old_contacts = get_sub_data("contacts", pid)
-            if not old_contacts.empty:
-                to_delete = [oid for oid in old_contacts['id'].tolist() if oid not in current_ids]
-                if to_delete: supabase.table("contacts").delete().in_("id", to_delete).execute()
-            for r in contacts.to_dict('records'):
-                if str(r.get("name")).strip():
-                    d = {"prospect_id": pid, "name": r["name"], "role": r.get("role",""), "email": r.get("email",""), "phone": r.get("phone","")}
-                    if r.get("id") and not pd.isna(r.get("id")): supabase.table("contacts").upsert({**d, "id": int(r["id"])}).execute()
-                    else: supabase.table("contacts").insert(d).execute()
-                    
-        reset_pipeline(); st.rerun()
+        try:
+            # Безопасное сохранение с проверкой типов
+            update_data = {
+                "company_name": name, 
+                "status": stat, 
+                "country": pays, 
+                "potential_volume": int(vol), # Целое число
+                "last_action_date": last_contact_date.isoformat(),
+                "product_interest": prod, 
+                "segment": app,
+                "notes": pain_point
+            }
+            
+            # Если в базе нет колонки tech_notes, мы это поймаем ниже
+            # Пока пытаемся сохранить все
+            update_data["tech_notes"] = tech_notes
+            
+            supabase.table("prospects").update(update_data).eq("id", pid).execute()
+            
+            # Сохранение контактов
+            if not contacts.empty:
+                current_ids = contacts['id'].dropna().astype(int).tolist() if 'id' in contacts.columns else []
+                old_contacts = get_sub_data("contacts", pid)
+                if not old_contacts.empty:
+                    to_delete = [oid for oid in old_contacts['id'].tolist() if oid not in current_ids]
+                    if to_delete: supabase.table("contacts").delete().in_("id", to_delete).execute()
+                for r in contacts.to_dict('records'):
+                    if str(r.get("name")).strip():
+                        d = {"prospect_id": pid, "name": r["name"], "role": r.get("role",""), "email": r.get("email",""), "phone": r.get("phone","")}
+                        if r.get("id") and not pd.isna(r.get("id")): supabase.table("contacts").upsert({**d, "id": int(r["id"])}).execute()
+                        else: supabase.table("contacts").insert(d).execute()
+                        
+            reset_pipeline(); st.rerun()
+            
+        except Exception as e:
+            # Дружелюбное сообщение об ошибке вместо красного экрана
+            st.error(f"Erreur Supabase : {str(e)}")
+            st.warning("Assurez-vous que les colonnes 'tech_notes' и 'segment' existent в вашей таблице Supabase.")
 
 # --- 6. SIDEBAR ---
 with st.sidebar:
@@ -392,7 +415,7 @@ if pg == "Pipeline":
             s_f = st.selectbox("Statut", s_list, label_visibility="collapsed")
             
         with f_cols[3]: 
-            sl_list = ["Source: Tous"] + sorted(list(df_raw['last_salon'].dropna().unique()))
+            sl_list = ["Source: Tous"] + sorted(list(df_raw['last_salon'].dropna().unique())) if 'last_salon' in df_raw.columns else ["Source: Tous"]
             sl_f = st.selectbox("Salon", sl_list, label_visibility="collapsed")
             
         with f_cols[4]: 
@@ -437,10 +460,13 @@ if pg == "Pipeline":
             
             last_c = "-"
             if row['last_action_date']:
-                dt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d")
-                d_contact = dt.strftime("%d %b %y")
-                color = "#ef4444" if (datetime.now() - dt).days > 30 else "#64748b"
-                r[4].markdown(f"<span style='color:{color}; font-weight:700; font-size:13px;'>{d_contact}</span>", unsafe_allow_html=True)
+                try:
+                    dt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d")
+                    d_contact = dt.strftime("%d %b %y")
+                    color = "#ef4444" if (datetime.now() - dt).days > 30 else "#64748b"
+                    r[4].markdown(f"<span style='color:{color}; font-weight:700; font-size:13px;'>{d_contact}</span>", unsafe_allow_html=True)
+                except:
+                    r[4].write("-")
             else: r[4].write("-")
             
             r[5].markdown(f"<span class='text-small-muted'>{row.get('last_salon') or '-'}</span>", unsafe_allow_html=True)
