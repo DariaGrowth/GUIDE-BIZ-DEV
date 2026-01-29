@@ -149,7 +149,11 @@ def safe_del(key):
     if key in st.session_state: del st.session_state[key]
 
 # --- 4. DATA ---
-def get_data(): return pd.DataFrame(supabase.table("prospects").select("*").order("last_action_date", desc=True).execute().data)
+@st.cache_data(ttl=60) # Эта строка говорит Streamlit: "Запомни результат на 60 секунд"
+def get_data(): 
+    # Мы перенесли return на новую строку, чтобы код был чище
+    return pd.DataFrame(supabase.table("prospects").select("*").order("last_action_date", desc=True).execute().data)
+
 def get_sub_data(t, pid):
     d = supabase.table(t).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
     df = pd.DataFrame(d)
