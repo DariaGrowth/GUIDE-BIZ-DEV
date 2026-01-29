@@ -28,7 +28,7 @@ st.markdown("""
         [data-testid="stSidebar"] .stButton > button {
             width: 100%; background-color: #047857 !important; color: white !important;
             border: none; border-radius: 6px; padding: 10px 16px; font-weight: 600;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s;
         }
 
         /* Блок фильтров Pipeline */
@@ -38,7 +38,7 @@ st.markdown("""
         }
         .filter-label-white { color: #ffffff !important; font-weight: 700; font-size: 14px; }
 
-        /* Шапка таблицы */
+        /* Шапка таблицы Pipeline */
         .pipeline-header-row {
             background-color: transparent !important; border: none !important;
             padding: 12px 15px 8px 15px; margin-bottom: 5px; display: flex; align-items: center;
@@ -48,7 +48,7 @@ st.markdown("""
             text-transform: uppercase; letter-spacing: 0.5px;
         }
 
-        /* Строки таблицы */
+        /* Строки таблицы Pipeline */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             background-color: #ffffff !important; border: none !important;
             border-bottom: 1px solid #f1f5f9 !important; border-radius: 0px !important;
@@ -65,13 +65,12 @@ st.markdown("""
         }
         div[data-testid="column"]:first-child .stButton > button:hover { text-decoration: underline !important; color: #065f46 !important; }
 
-        /* Контейнер для мусорки */
+        /* ИДЕАЛЬНОЕ ВЫРАВНИВАНИЕ МУСОРКИ */
         .trash-container { 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            height: 38px;
-            margin-top: 18px; 
+            height: 38px; /* Высота совпадает с st.text_input */
         }
         .trash-container button {
             background: transparent !important; border: none !important; box-shadow: none !important;
@@ -86,6 +85,16 @@ st.markdown("""
         .bg-green { background: #dcfce7; color: #166534; }
         .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
 
+        /* Заголовки полей в контактах */
+        .contact-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            padding-left: 2px;
+        }
+        
         .field-label {
             font-size: 11px !important;
             font-weight: 700 !important;
@@ -108,7 +117,9 @@ def init_connections():
         url = st.secrets["SUPABASE_URL"]
         key = st.secrets["SUPABASE_KEY"]
         return create_client(url, key), genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    except: return None, None
+    except Exception as e:
+        st.error(f"Erreur Supabase: {e}")
+        return None, None
 
 supabase, _ = init_connections()
 if not supabase: st.stop()
@@ -197,20 +208,28 @@ def show_prospect_card(pid, data):
             tech = st.text_area("NOTES TECHNIQUES", value=data.get("tech_notes", ""), height=70)
             
             st.markdown("---")
-            st.markdown("<p class='field-label'>CONTACTS DÉDIÉS</p>", unsafe_allow_html=True)
             
+            # --- ЛОГИКА УПРАВЛЕНИЯ КОНТАКТАМИ (БЕЗ ФРАЗЫ CONTACTS DÉDIÉS) ---
             if 'editing_contacts' not in st.session_state:
                 db_cons = get_sub_data("contacts", pid)
                 st.session_state['editing_contacts'] = db_cons.to_dict('records') if not db_cons.empty else []
+
+            # Заголовки колонок контактов
+            hc1, hc2, hc3, hc4, hc5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
+            hc1.markdown('<div class="contact-header">Nom</div>', unsafe_allow_html=True)
+            hc2.markdown('<div class="contact-header">Poste</div>', unsafe_allow_html=True)
+            hc3.markdown('<div class="contact-header">Email</div>', unsafe_allow_html=True)
+            hc4.markdown('<div class="contact-header">Téléphone</div>', unsafe_allow_html=True)
+            hc5.write("")
 
             # Список контактов
             for i, c in enumerate(st.session_state['editing_contacts']):
                 with st.container():
                     r1, r2, r3, r4, r5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
-                    st.session_state['editing_contacts'][i]['name'] = r1.text_input("Nom", value=c.get('name',''), key=f"c_name_{i}")
-                    st.session_state['editing_contacts'][i]['role'] = r2.text_input("Poste", value=c.get('role',''), key=f"c_role_{i}")
-                    st.session_state['editing_contacts'][i]['email'] = r3.text_input("Email", value=c.get('email',''), key=f"c_mail_{i}")
-                    st.session_state['editing_contacts'][i]['phone'] = r4.text_input("Téléphone", value=c.get('phone',''), key=f"c_phone_{i}")
+                    st.session_state['editing_contacts'][i]['name'] = r1.text_input("N", value=c.get('name',''), key=f"c_name_{i}", label_visibility="collapsed")
+                    st.session_state['editing_contacts'][i]['role'] = r2.text_input("P", value=c.get('role',''), key=f"c_role_{i}", label_visibility="collapsed")
+                    st.session_state['editing_contacts'][i]['email'] = r3.text_input("E", value=c.get('email',''), key=f"c_mail_{i}", label_visibility="collapsed")
+                    st.session_state['editing_contacts'][i]['phone'] = r4.text_input("T", value=c.get('phone',''), key=f"c_phone_{i}", label_visibility="collapsed")
                     with r5:
                         st.markdown('<div class="trash-container">', unsafe_allow_html=True)
                         if st.button("🗑️", key=f"del_contact_{i}", help="Supprimer"):
@@ -221,7 +240,7 @@ def show_prospect_card(pid, data):
                             st.rerun()
                         st.markdown('</div>', unsafe_allow_html=True)
 
-            if st.button("⊕ Ajouter un contact", key="add_btn_contact"):
+            if st.button("⊕ Ajouter un contact", key="add_btn_contact_new"):
                 st.session_state['editing_contacts'].append({"id": None, "name": "", "email": "", "role": "", "phone": ""})
                 st.rerun()
 
@@ -247,7 +266,7 @@ def show_prospect_card(pid, data):
                         new_s = st.selectbox("Status", s_opt, index=s_opt.index(r['status']) if r['status'] in s_opt else 0, key=f"st_{r['id']}", label_visibility="collapsed")
                         if new_s != r['status']: supabase.table("samples").update({"status": new_s}).eq("id", r['id']).execute()
                     with ch3:
-                        st.markdown('<div class="trash-container" style="margin-top:0px;">', unsafe_allow_html=True)
+                        st.markdown('<div class="trash-container">', unsafe_allow_html=True)
                         if st.button("🗑️", key=f"ds_{r['id']}"): supabase.table("samples").delete().eq("id", r['id']).execute(); st.rerun()
                         st.markdown('</div>', unsafe_allow_html=True)
                     new_f = st.text_area("Feedback...", value=r.get("feedback", ""), key=f"f_{r['id']}", height=60, placeholder="Feedback R&D client...", label_visibility="collapsed")
@@ -266,11 +285,11 @@ def show_prospect_card(pid, data):
     st.markdown("---")
     if st.button("Enregistrer & Fermer la Fiche", type="primary", use_container_width=True):
         try:
-            # Update Prospect
+            # 1. Update Prospect
             upd = {"company_name": name, "status": stat, "country": pays, "potential_volume": float(vol), "last_action_date": last_c_date.isoformat(), "product_interest": prod, "segment": app, "notes": pain, "tech_notes": tech}
             supabase.table("prospects").update(upd).eq("id", pid).execute()
             
-            # Sync Contacts
+            # 2. Sync Contacts
             if 'contacts_to_delete' in st.session_state:
                 supabase.table("contacts").delete().in_("id", st.session_state['contacts_to_delete']).execute()
             for rc in st.session_state.get('editing_contacts', []):
