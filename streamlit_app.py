@@ -134,12 +134,16 @@ st.markdown("""
         .bg-green { background: #dcfce7; color: #166534; }
         .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
 
-        /* Стиль для полей фидбека в образцах */
-        .sample-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
+        /* Компактный стиль для кнопок-иконок (корзина) */
+        .icon-btn button {
+            padding: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            color: #94a3b8 !important;
+        }
+        .icon-btn button:hover {
+            color: #ef4444 !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -245,9 +249,8 @@ def show_prospect_card(pid, data):
 
         with t2:
             st.markdown("##### AJOUTER UN ÉCHANTILLON")
-            # Строка ввода как на скриншоте
-            cs1, cs2, cs3 = st.columns([2, 1, 0.8])
-            with cs1: ref_input = st.text_input("Ref (ex: Lot A12)", key="new_ref", label_visibility="collapsed", placeholder="Ref (ex: Lot A12)")
+            cs1, cs2, cs3 = st.columns([2, 1.2, 0.8])
+            with cs1: ref_input = st.text_input("Ref", key="new_ref", label_visibility="collapsed", placeholder="Ref (ex: Lot A12)")
             with cs2: prod_input = st.selectbox("Produit", prod_list, key="new_prod_sample", label_visibility="collapsed")
             with cs3: 
                 if st.button("Ajouter", type="primary", use_container_width=True):
@@ -264,28 +267,32 @@ def show_prospect_card(pid, data):
             st.markdown("##### HISTORIQUE DES ENVOIS")
             samples_df = get_sub_data("samples", pid)
             for _, r in samples_df.iterrows():
-                # Контейнер для каждого образца
                 with st.container(border=True):
-                    ch1, ch2, ch3 = st.columns([2.5, 1, 0.2])
+                    # Исправленная сетка колонок: [Название, Статус, Удалить]
+                    # Используем веса [3.5, 1.5, 0.4] для лучшего баланса
+                    ch1, ch2, ch3 = st.columns([3.5, 1.5, 0.4])
+                    
                     with ch1:
-                        st.markdown(f"**{r['product_name']}** {r['reference']} ({r['date_sent'][:10] if r['date_sent'] else ''})")
+                        st.markdown(f"**{r['product_name']}** {r['reference']} <span style='color:#94a3b8; font-size:12px;'>({r['date_sent'][:10] if r['date_sent'] else ''})</span>", unsafe_allow_html=True)
+                    
                     with ch2:
-                        # Выбор статуса
                         s_opts = ["En test", "Validé", "Rejeté", "En attente"]
                         s_idx = s_opts.index(r['status']) if r['status'] in s_opts else 0
                         new_s = st.selectbox("Status", s_opts, index=s_idx, key=f"s_stat_{r['id']}", label_visibility="collapsed")
                         if new_s != r['status']:
                             supabase.table("samples").update({"status": new_s}).eq("id", r['id']).execute()
+                    
                     with ch3:
-                        if st.button("🗑️", key=f"del_s_{r['id']}", help="Supprimer"):
+                        # Контейнер для выравнивания кнопки удаления
+                        st.markdown('<div class="icon-btn">', unsafe_allow_html=True)
+                        if st.button("🗑️", key=f"del_s_{r['id']}", help="Supprimer", use_container_width=True):
                             supabase.table("samples").delete().eq("id", r['id']).execute()
                             st.rerun()
+                        st.markdown('</div>', unsafe_allow_html=True)
                     
-                    # Поле для фидбека
-                    new_f = st.text_area("Feedback R&D client...", value=r.get("feedback", ""), key=f"s_feed_{r['id']}", height=80, placeholder="Feedback R&D client...")
+                    # Поле фидбека
+                    new_f = st.text_area("Feedback R&D client...", value=r.get("feedback", ""), key=f"s_feed_{r['id']}", height=80, placeholder="Feedback R&D client...", label_visibility="collapsed")
                     if new_f != r.get("feedback", ""):
-                        # Мы сохраним фидбек вместе с общим сохранением или можно добавить кнопку "Update Feedback"
-                        # Но для удобства обновим базу при изменении (в Streamlit это сработает после потери фокуса)
                         supabase.table("samples").update({"feedback": new_f}).eq("id", r['id']).execute()
 
         with t3:
@@ -381,11 +388,10 @@ if pg == "Pipeline":
             p_f = st.selectbox("Produit", p_list, label_visibility="collapsed")
             
         with f_cols[2]: 
-            s_list = ["Statut: Tous", "Prospection", "Qualification", "Echantillon", "Test", "Client"]
+            s_list = ["Statut: Tous", "Prospection", "Qualification", "Echantillon", "Test R&D", "Essai industriel", "Négociation", "Client signé"]
             s_f = st.selectbox("Statut", s_list, label_visibility="collapsed")
             
         with f_cols[3]: 
-            # Исправлено: Dernier Salon заменен на DERNIER CONTACT в логике, но для фильтра по салону оставим, если нужно
             sl_list = ["Source: Tous"] + sorted(list(df_raw['last_salon'].dropna().unique()))
             sl_f = st.selectbox("Salon", sl_list, label_visibility="collapsed")
             
