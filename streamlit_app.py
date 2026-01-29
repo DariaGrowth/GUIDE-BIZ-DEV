@@ -30,7 +30,6 @@ st.markdown("""
         }
 
         /* --- BUTTONS (GLOBAL) --- */
-        /* Primary Green Buttons (Sidebar & Modals) */
         [data-testid="stSidebar"] .stButton > button, 
         button[kind="primary"] {
             width: 100%; background-color: #047857 !important; color: white !important;
@@ -42,20 +41,16 @@ st.markdown("""
             background-color: #065f46 !important; transform: translateY(-1px); 
         }
         
-        /* Red Delete Button */
         button[kind="secondary"] {
             background-color: white !important; border: 1px solid #fee2e2 !important; color: #ef4444 !important;
         }
 
-        /* --- PIPELINE TABLE STYLING (FIXED) --- */
-        
-        /* 1. Main Table Container */
+        /* --- PIPELINE TABLE STYLING --- */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             background-color: white; border: 1px solid #e2e8f0; border-radius: 8px;
             padding: 0px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
 
-        /* 2. Header */
         .header-container {
             padding: 12px 20px; background-color: #ffffff; border-bottom: 1px solid #f1f5f9;
         }
@@ -63,55 +58,25 @@ st.markdown("""
             color: #047857; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; 
         }
 
-        /* 3. INVISIBLE BUTTON HACK (FOR COMPANY NAME) */
-        /* This specifically targets the button in the first column of our data rows */
         div[data-testid="column"]:first-child .stButton > button {
-            background-color: transparent !important;
-            border: none !important;
-            color: #0f172a !important; /* Dark Text Color */
-            font-weight: 700 !important;
-            font-size: 14px !important;
-            text-align: left !important;
-            padding: 0px !important;
-            margin: 0px !important;
-            box-shadow: none !important;
-            height: auto !important;
-            min-height: 0px !important;
-            line-height: 1.5 !important;
-            display: block !important;
+            background-color: transparent !important; border: none !important;
+            color: #0f172a !important; font-weight: 700 !important; font-size: 14px !important;
+            text-align: left !important; padding: 0px !important; margin: 0px !important;
+            box-shadow: none !important; height: auto !important; min-height: 0px !important;
+            line-height: 1.5 !important; display: block !important;
         }
         div[data-testid="column"]:first-child .stButton > button:hover {
-            color: #047857 !important; /* Green on hover */
-            background-color: transparent !important;
-            text-decoration: none !important;
-        }
-        div[data-testid="column"]:first-child .stButton > button:active,
-        div[data-testid="column"]:first-child .stButton > button:focus {
-             box-shadow: none !important;
-             background-color: transparent !important;
-             border: none !important;
-             color: #047857 !important;
+            color: #047857 !important;
         }
 
-        /* 4. Cell Styling */
         .cell-text { color: #64748b; font-size: 13px; font-weight: 400; line-height: 1.5; }
         .cell-prod { color: #047857; font-weight: 700; font-size: 13px; }
         .cell-link { color: #3b82f6; font-size: 13px; font-weight: 500; }
         
-        /* 5. Row Hover Effect */
-        /* Styling the vertical block that holds the row columns */
-        div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
-             border-radius: 0px;
-             padding: 8px 20px; /* Vertical padding for the row */
-             border-bottom: 1px solid #f8fafc; /* Very subtle separator */
-             transition: background-color 0.1s ease;
-        }
-        /* Hover color */
         div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"]:hover {
-             background-color: #f0fdf4 !important; /* Light green tint */
+             background-color: #f0fdf4 !important;
         }
 
-        /* Badges */
         .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
         .bg-gray { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
@@ -126,7 +91,6 @@ st.markdown("""
             color: #64748b; font-weight: 500; font-size: 15px; transition: all 0.2s;
         }
         div[role="radiogroup"] label[data-checked="true"] { background-color: rgba(16, 185, 129, 0.1) !important; color: #047857 !important; font-weight: 600; }
-        div[role="radiogroup"] label[data-checked="true"] p { filter: none !important; color: #047857 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -144,14 +108,17 @@ if not supabase: st.stop()
 
 # --- 3. HELPERS ---
 if 'pipeline_key' not in st.session_state: st.session_state['pipeline_key'] = 0
-def reset_pipeline(): st.session_state['pipeline_key'] += 1; safe_del('active_prospect_id')
+def reset_pipeline(): 
+    st.session_state['pipeline_key'] += 1
+    st.cache_data.clear()
+    safe_del('active_prospect_id')
+
 def safe_del(key): 
     if key in st.session_state: del st.session_state[key]
 
 # --- 4. DATA ---
-@st.cache_data(ttl=60) # Эта строка говорит Streamlit: "Запомни результат на 60 секунд"
+@st.cache_data(ttl=60)
 def get_data(): 
-    # Мы перенесли return на новую строку, чтобы код был чище
     return pd.DataFrame(supabase.table("prospects").select("*").order("last_action_date", desc=True).execute().data)
 
 def get_sub_data(t, pid):
@@ -161,27 +128,19 @@ def get_sub_data(t, pid):
         if t == "contacts": return pd.DataFrame(columns=["id", "name", "role", "email", "phone"])
         if t == "samples": return pd.DataFrame(columns=["id", "date_sent", "product_name", "reference", "status", "feedback"])
         if t == "activities": return pd.DataFrame(columns=["id", "date", "type", "content"])
-    if t == "contacts":
-        for c in ["name", "role", "email", "phone"]: 
-            if c not in df.columns: df[c] = ""
-            df[c] = df[c].astype(str).replace({"nan": "", "None": "", "none": ""})
     return df
-def get_all_contacts():
-    c = pd.DataFrame(supabase.table("contacts").select("*").execute().data)
-    if c.empty: return pd.DataFrame(columns=["name", "role", "company_name", "email", "phone"])
-    return c
+
 def count_relances():
-    s = pd.DataFrame(supabase.table("samples").select("*").execute().data)
-    if s.empty: return 0
-    now = datetime.now(); cnt = 0
-    for _, r in s.iterrows():
-        if r.get("date_sent"):
-            d = datetime.strptime(r["date_sent"][:10], "%Y-%m-%d"); diff = (now - d).days
-            if diff > 15 and (not str(r.get("feedback") or "").strip() or str(r.get("feedback")).lower() == "none"): cnt += 1
-    return cnt
+    fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
+    try:
+        res = supabase.table("samples").select("id", count="exact").is_("feedback", "null").lte("date_sent", fifteen_days_ago).execute()
+        return res.count if res.count else 0
+    except: return 0
+
 def add_log(pid, t, c):
     supabase.table("activities").insert({"prospect_id": pid, "type": t, "content": c, "date": datetime.now().isoformat()}).execute()
     supabase.table("prospects").update({"last_action_date": datetime.now().strftime("%Y-%m-%d")}).eq("id", pid).execute()
+
 def ai_mail(ctx):
     return genai.GenerativeModel("gemini-1.5-flash").generate_content(f"Act as email assistant. French. Context: {ctx}.").text
 
@@ -211,22 +170,40 @@ def show_prospect_card(pid, data):
                     try: d_val = datetime.strptime(str(data["last_action_date"])[:10], "%Y-%m-%d").date()
                     except: pass
                 date_act = st.date_input("Date", value=d_val, format="DD/MM/YYYY")
+            
             st.markdown("---")
-            if st.button("📧 Email AI"): st.code(ai_mail(f"Client: {data['company_name']}"))
+            st.markdown("<p style='font-size:11px; font-weight:700; color:#64748b;'>AI ASSISTANT</p>", unsafe_allow_html=True)
+            tone = st.selectbox("Ton", ["Professionnel", "Amical", "Relance urgente"], label_visibility="collapsed")
+            if st.button("🪄 Générer l'Email", use_container_width=True):
+                with st.spinner("Rédaction..."):
+                    context = f"Client: {data['company_name']}, Produit: {data.get('product_interest')}, Ton: {tone}"
+                    st.session_state['ai_draft'] = ai_mail(context)
+            
+            if 'ai_draft' in st.session_state:
+                st.text_area("Brouillon AI", value=st.session_state['ai_draft'], height=150)
 
     with c_right:
         t1, t2, t3 = st.tabs(["Contexte", "Suivi Échantillons", "Journal"])
         with t1:
             c1, c2 = st.columns(2)
-            with c1: prod = st.selectbox("Ingrédient", ["LEN", "PEP", "NEW"], index=["LEN", "PEP", "NEW"].index(data.get("product_interest", "LEN")))
-            with c2: app = st.selectbox("Application", ["Boulangerie", "Sauces", "Confiserie"], index=0)
+            # --- FIX FOR VALUE ERROR ---
+            prod_list = ["LEN", "PEP", "NEW"]
+            p_val = data.get("product_interest")
+            p_idx = prod_list.index(p_val) if p_val in prod_list else 0
+            
+            app_list = ["Boulangerie", "Sauces", "Confiserie"]
+            a_val = data.get("segment")
+            a_idx = app_list.index(a_val) if a_val in app_list else 0
+
+            with c1: prod = st.selectbox("Ingrédient", prod_list, index=p_idx)
+            with c2: app = st.selectbox("Application", app_list, index=a_idx)
+            # ---------------------------
             pain = st.text_area("Besoin", value=data.get("tech_pain_points", ""), height=80)
             notes = st.text_area("Notes", value=data.get("tech_notes", ""), height=80)
             st.markdown("---"); st.markdown("<p style='font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;'>CONTACTS CLÉS</p>", unsafe_allow_html=True)
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
         with t2:
-            st.info("ℹ️ Valider fiche technique.")
             with st.container(border=True):
                 c1, c2, _, c3 = st.columns([1.5, 2, 0.1, 1.2]) 
                 with c1: ref = st.text_input("Ref", key="nr")
@@ -248,7 +225,7 @@ def show_prospect_card(pid, data):
                     if fb != (r['feedback'] or ""): supabase.table("samples").update({"feedback": fb}).eq("id", r['id']).execute(); st.toast("Saved")
 
         with t3:
-            n = st.text_area("Note...", key="nn"); 
+            n = st.text_area("Note...", key="nn")
             if st.button("Ajouter", type="primary"): add_log(pid, "Note", n); st.rerun()
             for _, r in get_sub_data("activities", pid).iterrows(): st.caption(f"{r['date'][:10]}"); st.write(r['content'])
 
@@ -263,12 +240,20 @@ def show_prospect_card(pid, data):
                 "company_name": name, "status": stat, "country": pays, "potential_volume": vol, "last_salon": salon,
                 "marketing_campaign": camp, "last_action_date": date_act.isoformat(), "product_interest": prod, "segment": app, "tech_pain_points": pain, "tech_notes": notes
             }).eq("id", pid).execute()
+            
             if not contacts.empty:
+                current_ids = contacts['id'].dropna().astype(int).tolist() if 'id' in contacts.columns else []
+                old_contacts = get_sub_data("contacts", pid)
+                if not old_contacts.empty:
+                    to_delete = [oid for oid in old_contacts['id'].tolist() if oid not in current_ids]
+                    if to_delete: supabase.table("contacts").delete().in_("id", to_delete).execute()
+
                 for r in contacts.to_dict('records'):
-                    if r.get("name"):
+                    if str(r.get("name")).strip():
                         d = {"prospect_id": pid, "name": r["name"], "role": r.get("role",""), "email": r.get("email",""), "phone": r.get("phone","")}
-                        if r.get("id"): supabase.table("contacts").upsert({**d, "id": r["id"]}).execute()
+                        if r.get("id") and not pd.isna(r.get("id")): supabase.table("contacts").upsert({**d, "id": int(r["id"])}).execute()
                         else: supabase.table("contacts").insert(d).execute()
+            
             reset_pipeline(); st.rerun()
 
 # --- 6. SIDEBAR ---
@@ -303,7 +288,6 @@ if pg == "Tableau de Bord":
         with cr: st.plotly_chart(px.bar(df['status'].value_counts(), color_discrete_sequence=['#047857']), use_container_width=True)
 
 elif pg == "Pipeline":
-    # --- FILTER BOX ---
     with st.container(border=True):
         f1, f2, f3, f4 = st.columns(4)
         with f1: st.selectbox("Produits", ["Tous Produits", "LEN", "PEP"], label_visibility="collapsed")
@@ -312,12 +296,8 @@ elif pg == "Pipeline":
         with f4: st.selectbox("Pays", ["Tous Pays", "France"], label_visibility="collapsed")
     
     st.write("")
-    
-    # --- TABLE CONTAINER ---
     with st.container(border=True):
-        # HEADER (Align weights with data)
         st.markdown('<div class="header-container">', unsafe_allow_html=True)
-        # Weights: [3, 1, 1.2, 1.2, 1.2, 1.5, 1] - TOTAL 10.1 (Approx)
         h1, h2, h3, h4, h5, h6, h7 = st.columns([3, 1, 1.2, 1.2, 1.2, 1.5, 1])
         def header(t): return f"<span class='header-text'>{t}</span>"
         h1.markdown(header("SOCIÉTÉ"), unsafe_allow_html=True)
@@ -329,47 +309,33 @@ elif pg == "Pipeline":
         h7.markdown(header("ÉCHANTILLONS"), unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # DATA
         df = get_data()
-        samples_all = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
-        
-        # Iterating Rows
-        for index, row in df.iterrows():
-            # Use same weights as header
+        for _, row in df.iterrows():
             c1, c2, c3, c4, c5, c6, c7 = st.columns([3, 1, 1.2, 1.2, 1.2, 1.5, 1])
-            
-            # C1: CLICKABLE TEXT (BUTTON STYLED AS TEXT)
             with c1:
-                # Button has no border, no bg, bold text.
                 if st.button(row['company_name'], key=f"b_{row['id']}"):
                     st.session_state['active_prospect_id'] = row['id']; st.rerun()
 
-            # OTHER COLUMNS (PLAIN TEXT)
             with c2: st.markdown(f"<span class='cell-text'>{row['country']}</span>", unsafe_allow_html=True)
             with c3: st.markdown(f"<span class='cell-prod'>{row['product_interest']}</span>", unsafe_allow_html=True)
-            
             status = row['status'] or "Prospection"
             cls = "bg-green" if "Client" in status else "bg-yellow" if "Test" in status else "bg-gray"
             with c4: st.markdown(f"<span class='badge {cls}'>{status.split(' ')[1] if ' ' in status else status}</span>", unsafe_allow_html=True)
-            
             d_fmt = "-"
             if row['last_action_date']:
                 d_fmt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d").strftime("%d %b. %y")
             with c5: st.markdown(f"<span class='cell-text'>{d_fmt}</span>", unsafe_allow_html=True)
-            
             with c6: st.markdown(f"<span class='cell-link'>{row.get('marketing_campaign') or '-'}</span>", unsafe_allow_html=True)
-            
-            has_s = False
-            if not samples_all.empty:
-                if not samples_all[samples_all['prospect_id'] == row['id']].empty: has_s = True
-            with c7: st.markdown(f"<span class='badge bg-sample'>⚗ En test</span>" if has_s else "-", unsafe_allow_html=True)
+            with c7: st.markdown("-" , unsafe_allow_html=True)
 
 elif pg == "Contacts":
     st.title("Annuaire Contacts")
-    st.dataframe(get_all_contacts(), use_container_width=True)
+    c = pd.DataFrame(supabase.table("contacts").select("*").execute().data)
+    st.dataframe(c, use_container_width=True)
 
 elif pg == "À Relancer":
     st.title("À Relancer 🔔")
-    s = pd.DataFrame(supabase.table("samples").select("*").execute().data)
-    if not s.empty: st.dataframe(s[s['feedback'].isna()], use_container_width=True)
-    else: st.success("OK")
+    fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
+    s = pd.DataFrame(supabase.table("samples").select("*").is_("feedback", "null").lte("date_sent", fifteen_days_ago).execute().data)
+    if not s.empty: st.dataframe(s, use_container_width=True)
+    else: st.success("Aucune relance à prévoir pour le moment.")
