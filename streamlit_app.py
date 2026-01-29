@@ -11,12 +11,12 @@ import time
 # --- 1. CONFIGURATION & STYLES ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
-# Professional CSS Injection to force layout and colors
+# Профессиональный CSS: Глубокие селекторы для управления цветом и высотой
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        /* 1. APP BACKGROUND */
+        /* 1. ОБЩИЙ ФОН ПРИЛОЖЕНИЯ */
         .stApp { 
             background-color: #f1f5f9 !important; 
             font-family: 'Inter', sans-serif; 
@@ -24,30 +24,34 @@ st.markdown("""
         
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         
-        /* 2. INGOOD DARK GREEN FILTERS PANEL */
-        /* Targets the first border wrapper container on the page */
+        /* Убираем стандартные отступы между блоками, чтобы строки были узкими */
+        [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
+
+        /* 2. ТЕМНО-ЗЕЛЕНЫЙ БЛОК ФИЛЬТРОВ (INGOOD DARK GREEN) */
+        /* Таргетируем первый контейнер на странице */
         div[data-testid="stVerticalBlock"] > div:nth-child(1) > div[data-testid="stVerticalBlockBorderWrapper"] {
             background-color: #047857 !important;
             border: none !important;
             border-radius: 12px !important;
-            padding: 15px 20px !important;
-            margin-bottom: 20px !important;
+            padding: 15px 25px !important;
+            margin-bottom: 10px !important;
         }
         
-        .filter-header-white { 
+        /* Белый текст внутри зеленого блока */
+        .filter-label-white { 
             color: #ffffff !important; 
-            font-weight: 700 !important; 
-            font-size: 14px !important; 
-            margin-top: 8px !important;
+            font-weight: 700; 
+            font-size: 14px; 
+            margin-top: 10px;
         }
 
-        /* 3. TABLE HEADER STYLE (LIGHT GREEN LINE) */
-        .custom-header-bar {
+        /* 3. ШАПКА ТАБЛИЦЫ (СВЕТЛО-ЗЕЛЕНАЯ ЛИНИЯ) */
+        .custom-header-container {
             background-color: rgba(4, 120, 87, 0.1) !important;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 10px 15px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
         }
@@ -56,43 +60,42 @@ st.markdown("""
             font-size: 12px !important; 
             font-weight: 800 !important; 
             text-transform: uppercase; 
-            letter-spacing: 0.5px;
         }
 
-        /* 4. PROSPECT ROWS (WHITE CARDS) - FIXED HEIGHT */
+        /* 4. БЕЛЫЕ СТРОКИ КЛИЕНТОВ (УЗКИЕ) */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             background-color: #ffffff !important;
             border: 1px solid #e2e8f0 !important;
             border-radius: 8px !important;
-            padding: 2px 15px !important; /* Reduced padding to make it compact */
-            margin-bottom: 8px !important;
+            padding: 4px 15px !important; /* Минимум отступов для узости */
+            margin-bottom: 5px !important;
             box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
         }
         
-        /* Ensure filter block keeps its padding */
-        div[data-testid="stVerticalBlock"] > div:nth-child(1) > div[data-testid="stVerticalBlockBorderWrapper"] {
-            padding: 15px 20px !important;
-        }
+        /* Сброс высоты для элементов внутри строк */
+        [data-testid="column"] { min-height: 0px !important; }
 
-        /* 5. COMPANY NAME: PLAIN GREEN BOLD TEXT LINK */
+        /* 5. НАЗВАНИЕ КОМПАНИИ: ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ (БЕЗ ВИДА КНОПКИ) */
         div[data-testid="column"]:first-child button {
-            background: none !important;
+            background: transparent !important;
             border: none !important;
             padding: 0 !important;
             margin: 0 !important;
-            color: #047857 !important;
+            color: #047857 !important; /* Ingood Green */
             font-weight: 800 !important;
             font-size: 15px !important;
             text-align: left !important;
             box-shadow: none !important;
-            cursor: pointer !important;
+            min-height: 0px !important;
+            height: auto !important;
+            line-height: 1.2 !important;
         }
         div[data-testid="column"]:first-child button:hover {
             color: #065f46 !important;
             text-decoration: underline !important;
         }
 
-        /* 6. SIDEBAR STYLING (MONOCHROME) */
+        /* 6. САЙДБАР (МОНОХРОМ) */
         div[role="radiogroup"] label {
             display: flex; align-items: center; padding: 10px 16px;
             color: #475569; font-size: 14px; border-radius: 8px;
@@ -102,14 +105,14 @@ st.markdown("""
             color: #047857 !important; font-weight: 600; 
         }
 
-        /* BADGES */
-        .badge-base { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; }
+        /* БЕЙДЖИ */
+        .badge-ui { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
         .bg-gray { background: #f1f5f9; color: #64748b; }
         .bg-green { background: #dcfce7; color: #166534; }
         .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
         
-        .cell-text-gray { color: #64748b; font-size: 13px; font-weight: 500; }
+        .cell-text-muted { color: #64748b; font-size: 14px; font-weight: 500; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -151,6 +154,13 @@ def get_sub_data(t, pid):
         if t == "activities": return pd.DataFrame(columns=["id", "date", "type", "content"])
     return df
 
+def count_relances():
+    fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
+    try:
+        res = supabase.table("samples").select("id", count="exact").is_("feedback", "null").lte("date_sent", fifteen_days_ago).execute()
+        return res.count if res.count else 0
+    except: return 0
+
 # --- 5. FICHE PROSPECT (MODAL) ---
 @st.dialog(" ", width="large")
 def show_prospect_card(pid, data):
@@ -173,20 +183,21 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             if st.button("🪄 Générer l'Email"):
                 model = genai.GenerativeModel("gemini-1.5-flash")
-                st.session_state['ai_draft'] = model.generate_content(f"Write a short professional B2B email for {data['company_name']} in French.").text
+                res = model.generate_content(f"Email template for {data['company_name']}").text
+                st.session_state['ai_draft'] = res
             if 'ai_draft' in st.session_state:
-                st.text_area("AI Draft", value=st.session_state['ai_draft'], height=150)
+                st.text_area("Brouillon AI", value=st.session_state['ai_draft'], height=150)
 
     with c_right:
-        t1, t2, t3 = st.tabs(["Contexte", "Échantillons", "Journal"])
+        t1, t2, t3 = st.tabs(["Contexte", "Эchantillons", "Journal"])
         with t1:
-            prod_list = ["LEN", "PEP", "NEW"]
+            prod_list, app_list = ["LEN", "PEP", "NEW"], ["Boulangerie", "Sauces", "Confiserie"]
             p_val = data.get("product_interest")
             p_idx = prod_list.index(p_val) if p_val in prod_list else 0
 
             c1, c2 = st.columns(2)
             with c1: prod = st.selectbox("Ingrédient", prod_list, index=p_idx)
-            with c2: app = st.selectbox("Application", ["Boulangerie", "Sauces", "Confiserie"], index=0)
+            with c2: app = st.selectbox("Application", app_list, index=0)
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
         with t2:
@@ -236,32 +247,32 @@ if 'open_new_id' in st.session_state:
     st.session_state['active_prospect_id'] = st.session_state.pop('open_new_id'); reset_pipeline()
 if 'active_prospect_id' in st.session_state:
     try: 
-        row_data = supabase.table("prospects").select("*").eq("id", st.session_state['active_prospect_id']).execute().data[0]
-        show_prospect_card(st.session_state['active_prospect_id'], row_data)
+        row_val = supabase.table("prospects").select("*").eq("id", st.session_state['active_prospect_id']).execute().data[0]
+        show_prospect_card(st.session_state['active_prospect_id'], row_val)
     except: safe_del('active_prospect_id')
 
 # --- 8. PAGES ---
 if pg == "Pipeline":
     df_raw = get_data()
     
-    # --- FILTERS PANEL (DARK GREEN) ---
+    # --- ТЕМНО-ЗЕЛЕНЫЙ БЛОК ФИЛЬТРОВ ---
     with st.container(border=True):
         f_cols = st.columns([0.8, 2, 2, 2, 2])
-        with f_cols[0]: st.markdown('<div class="filter-header-white">▽ Filtres:</div>', unsafe_allow_html=True)
-        with f_cols[1]: p_f = st.selectbox("Produit", ["Produit: Tous"] + list(df_raw['product_interest'].dropna().unique()), label_visibility="collapsed")
-        with f_cols[2]: s_f = st.selectbox("Statut", ["Statut: Tous", "Prospection", "Qualification", "Echantillon", "Test", "Client"], label_visibility="collapsed")
-        with f_cols[3]: sl_f = st.selectbox("Salon", ["Salon: Tous"] + list(df_raw['last_salon'].dropna().unique()), label_visibility="collapsed")
-        with f_cols[4]: py_f = st.selectbox("Pays", ["Pays: Tous"] + list(df_raw['country'].dropna().unique()), label_visibility="collapsed")
+        with f_cols[0]: st.markdown('<div class="filter-label-white">▽ Filtres:</div>', unsafe_allow_html=True)
+        with f_cols[1]: p_f = st.selectbox("Produit", ["Tous"] + list(df_raw['product_interest'].dropna().unique()), label_visibility="collapsed")
+        with f_cols[2]: s_f = st.selectbox("Statut", ["Tous", "Prospection", "Qualification", "Echantillon", "Test", "Client"], label_visibility="collapsed")
+        with f_cols[3]: sl_f = st.selectbox("Salon", ["Tous"] + list(df_raw['last_salon'].dropna().unique()), label_visibility="collapsed")
+        with f_cols[4]: py_f = st.selectbox("Pays", ["Tous"] + list(df_raw['country'].dropna().unique()), label_visibility="collapsed")
 
     df = df_raw.copy()
-    if p_f != "Produit: Tous": df = df[df['product_interest'] == p_f]
-    if s_f != "Statut: Tous": df = df[df['status'].str.contains(s_f, na=False)]
+    if p_f != "Tous": df = df[df['product_interest'] == p_f]
+    if s_f != "Tous": df = df[df['status'].str.contains(s_f, na=False)]
     
     st.write("")
     
-    # --- TABLE HEADER ---
+    # --- ШАПКА ТАБЛИЦЫ ---
     weights = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
-    st.markdown('<div class="custom-header-bar">', unsafe_allow_html=True)
+    st.markdown('<div class="custom-header-container">', unsafe_allow_html=True)
     h = st.columns(weights)
     h[0].markdown('<span class="header-label">SOCIÉTÉ</span>', unsafe_allow_html=True)
     h[1].markdown('<span class="header-label">PAYS</span>', unsafe_allow_html=True)
@@ -272,22 +283,22 @@ if pg == "Pipeline":
     h[6].markdown('<span class="header-label">SAMPLES</span>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    samples_list = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
+    samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
     
     for _, row in df.iterrows():
-        # DATA ROW (WHITE CARD)
+        # СТРОЧКА В БЕЛОЙ КАРТОЧКЕ
         with st.container(border=True):
             r = st.columns(weights)
-            # Company Name: Bold Dark Green Text
+            # Название: Зеленый жирный текст
             if r[0].button(row['company_name'], key=f"p_{row['id']}"):
                 st.session_state['active_prospect_id'] = row['id']; st.rerun()
             
-            r[1].markdown(f"<span class='cell-text-gray'>{row['country'] or '-'}</span>", unsafe_allow_html=True)
+            r[1].markdown(f"<span class='cell-text-muted'>{row['country'] or '-'}</span>", unsafe_allow_html=True)
             r[2].markdown(f"<span style='color:#047857; font-weight:700; font-size:13px;'>{row['product_interest'] or '-'}</span>", unsafe_allow_html=True)
             
-            status = row['status'] or "Prospection"
-            cls = "bg-green" if "Client" in status else "bg-yellow" if "Test" in status else "bg-gray"
-            r[3].markdown(f"<span class='badge-base {cls}'>{status}</span>", unsafe_allow_html=True)
+            stat = row['status'] or "Prospection"
+            badge_cls = "bg-green" if "Client" in stat else "bg-yellow" if "Test" in stat else "bg-gray"
+            r[3].markdown(f"<span class='badge-ui {badge_cls}'>{stat}</span>", unsafe_allow_html=True)
             
             last_c = "-"
             if row['last_action_date']:
@@ -297,12 +308,12 @@ if pg == "Pipeline":
                 r[4].markdown(f"<span style='color:{color}; font-weight:700; font-size:14px;'>{last_c}</span>", unsafe_allow_html=True)
             else: r[4].write("-")
             
-            r[5].markdown(f"<span class='cell-text-gray'>{row.get('last_salon') or '-'}</span>", unsafe_allow_html=True)
+            r[5].markdown(f"<span class='cell-text-muted'>{row.get('last_salon') or '-'}</span>", unsafe_allow_html=True)
             
-            has_s = not samples_list.empty and row['id'] in samples_list['prospect_id'].values
-            if has_s: r[6].markdown("<span class='badge-base bg-blue'>🧪 En test</span>", unsafe_allow_html=True)
+            has_s = not samples_data.empty and row['id'] in samples_data['prospect_id'].values
+            if has_s: r[6].markdown("<span class='badge-ui bg-blue'>🧪 En test</span>", unsafe_allow_html=True)
             else: r[6].write("-")
 
 else:
     st.title(pg)
-    st.info("Coming soon.")
+    st.info("Content coming soon.")
