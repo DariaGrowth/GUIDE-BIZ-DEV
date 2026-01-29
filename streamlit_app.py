@@ -50,48 +50,49 @@ st.markdown("""
         .kanban-sub { color: #64748b; font-size: 11px; margin-bottom: 10px; line-height: 1.4; }
 
         /* --- ОБНОВЛЕННЫЙ СТИЛЬ ПАЙПЛАЙНА --- */
-        /* Шапка таблицы */
-        .pipeline-header-row {
-            background-color: rgba(4, 120, 87, 0.1) !important;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px 20px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-        }
         
-        .header-text { 
-            color: #000000 !important; 
-            font-size: 11px !important; 
-            font-weight: 800 !important; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px;
+        /* Стиль для заголовка таблицы (зеленая полоса) */
+        [data-testid="stVerticalBlock"] > div:has(.header-text-box) {
+            background-color: rgba(4, 120, 87, 0.1) !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 8px !important;
+            padding: 15px 10px !important;
+            margin-bottom: 15px !important;
         }
 
-        /* Строки с клиентами */
+        .header-text { 
+            color: #000000 !important; 
+            font-size: 13px !important; /* Увеличен шрифт */
+            font-weight: 800 !important; 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px;
+            display: inline-block;
+        }
+
+        /* Все строки таблицы - белый фон */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             background-color: white !important;
             border: 1px solid #e2e8f0 !important;
             border-radius: 8px !important;
             margin-bottom: 8px !important;
-            padding: 2px 0px !important;
+            padding: 5px 0px !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
         }
 
         /* Клик по названию компании */
         div[data-testid="column"] .stButton > button {
             background-color: transparent !important; border: none !important;
-            color: #0f172a !important; font-weight: 700 !important; font-size: 14px !important;
+            color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important;
             text-align: left !important; padding: 0px !important; box-shadow: none !important;
             height: auto !important; min-height: 0px !important; line-height: 1.5 !important;
         }
         div[data-testid="column"] .stButton > button:hover { color: #047857 !important; }
 
-        .cell-text { color: #64748b; font-size: 13px; font-weight: 400; }
+        .cell-text { color: #64748b; font-size: 13px; font-weight: 500; }
         .cell-prod { color: #047857; font-weight: 700; font-size: 13px; }
-        .cell-salon { color: #6366f1; font-weight: 500; font-size: 13px; }
+        .cell-salon { color: #6366f1; font-weight: 600; font-size: 13px; }
 
-        .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
         .bg-gray { background: #f1f5f9; color: #64748b; }
         .bg-green { background: #dcfce7; color: #166534; }
@@ -340,21 +341,22 @@ elif pg == "Pipeline":
 
     st.write("")
     
-    # --- ИДЕАЛЬНО ВЫРАВНЕННЫЕ КОЛОНКИ ---
+    # --- ВЫРАВНИВАНИЕ КОЛОНОК (ВЕСА) ---
+    # Мы увеличили веса для заголовка и строк
     cols_weight = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
     
-    # Шапка таблицы (белая карточка с зеленым фоном внутри)
+    # --- ШАПКА ТАБЛИЦЫ (Светло-зеленая линия) ---
+    # Используем пустой контейнер для отрисовки фона через CSS
     with st.container():
-        st.markdown('<div class="pipeline-header-row">', unsafe_allow_html=True)
+        # Текст теперь гарантированно внутри линии
         h = st.columns(cols_weight)
-        h[0].markdown('<span class="header-text">SOCIÉTÉ</span>', unsafe_allow_html=True)
-        h[1].markdown('<span class="header-text">PAYS</span>', unsafe_allow_html=True)
-        h[2].markdown('<span class="header-text">PRODUIT</span>', unsafe_allow_html=True)
-        h[3].markdown('<span class="header-text">STATUT</span>', unsafe_allow_html=True)
-        h[4].markdown('<span class="header-text">DERNIER CONTACT</span>', unsafe_allow_html=True)
-        h[5].markdown('<span class="header-text">DERNIER SALON</span>', unsafe_allow_html=True)
-        h[6].markdown('<span class="header-text">ÉCHANTILLONS</span>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        h[0].markdown('<div class="header-text-box"><span class="header-text">SOCIÉTÉ</span></div>', unsafe_allow_html=True)
+        h[1].markdown('<div class="header-text-box"><span class="header-text">PAYS</span></div>', unsafe_allow_html=True)
+        h[2].markdown('<div class="header-text-box"><span class="header-text">PRODUIT</span></div>', unsafe_allow_html=True)
+        h[3].markdown('<div class="header-text-box"><span class="header-text">STATUT</span></div>', unsafe_allow_html=True)
+        h[4].markdown('<div class="header-text-box"><span class="header-text">CONTACT</span></div>', unsafe_allow_html=True)
+        h[5].markdown('<div class="header-text-box"><span class="header-text">SALON</span></div>', unsafe_allow_html=True)
+        h[6].markdown('<div class="header-text-box"><span class="header-text">SAMPLES</span></div>', unsafe_allow_html=True)
 
     # Данные
     samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
