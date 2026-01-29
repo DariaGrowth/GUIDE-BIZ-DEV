@@ -70,12 +70,13 @@ st.markdown("""
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            height: 38px; /* Высота совпадает с st.text_input */
+            height: 38px; /* Высота совпадает с полем ввода без заголовка */
         }
         .trash-container button {
             background: transparent !important; border: none !important; box-shadow: none !important;
             color: #94a3b8 !important; padding: 0 !important; font-size: 18px !important;
             width: 32px !important; height: 32px !important;
+            margin-top: 0px !important;
         }
         .trash-container button:hover { color: #ef4444 !important; background: #fee2e2 !important; border-radius: 4px !important; }
 
@@ -86,13 +87,13 @@ st.markdown("""
         .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
 
         /* Заголовки полей в контактах */
-        .contact-header {
+        .contact-label {
             font-size: 11px;
             font-weight: 800;
             color: #94a3b8;
             text-transform: uppercase;
             margin-bottom: 5px;
-            padding-left: 2px;
+            display: block;
         }
         
         .field-label {
@@ -140,6 +141,7 @@ def safe_del(key):
 
 def clean_prod_name(name):
     if not name or name == "-": return "-"
+    # Убираем все, что в скобках
     return name.split(' (')[0].split('(')[0].strip()
 
 @st.cache_data(ttl=60)
@@ -214,33 +216,32 @@ def show_prospect_card(pid, data):
                 db_cons = get_sub_data("contacts", pid)
                 st.session_state['editing_contacts'] = db_cons.to_dict('records') if not db_cons.empty else []
 
-            # Заголовки колонок контактов
-            hc1, hc2, hc3, hc4, hc5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
-            hc1.markdown('<div class="contact-header">Nom</div>', unsafe_allow_html=True)
-            hc2.markdown('<div class="contact-header">Poste</div>', unsafe_allow_html=True)
-            hc3.markdown('<div class="contact-header">Email</div>', unsafe_allow_html=True)
-            hc4.markdown('<div class="contact-header">Téléphone</div>', unsafe_allow_html=True)
-            hc5.write("")
+            # 1. Заголовки (вынесены в отдельную строку над полями)
+            h_col1, h_col2, h_col3, h_col4, h_col5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
+            h_col1.markdown('<span class="contact-label">Nom</span>', unsafe_allow_html=True)
+            h_col2.markdown('<span class="contact-label">Poste</span>', unsafe_allow_html=True)
+            h_col3.markdown('<span class="contact-label">Email</span>', unsafe_allow_html=True)
+            h_col4.markdown('<span class="contact-label">Téléphone</span>', unsafe_allow_html=True)
 
-            # Список контактов
+            # 2. Список контактов
             for i, c in enumerate(st.session_state['editing_contacts']):
-                with st.container():
-                    r1, r2, r3, r4, r5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
-                    st.session_state['editing_contacts'][i]['name'] = r1.text_input("N", value=c.get('name',''), key=f"c_name_{i}", label_visibility="collapsed")
-                    st.session_state['editing_contacts'][i]['role'] = r2.text_input("P", value=c.get('role',''), key=f"c_role_{i}", label_visibility="collapsed")
-                    st.session_state['editing_contacts'][i]['email'] = r3.text_input("E", value=c.get('email',''), key=f"c_mail_{i}", label_visibility="collapsed")
-                    st.session_state['editing_contacts'][i]['phone'] = r4.text_input("T", value=c.get('phone',''), key=f"c_phone_{i}", label_visibility="collapsed")
-                    with r5:
-                        st.markdown('<div class="trash-container">', unsafe_allow_html=True)
-                        if st.button("🗑️", key=f"del_contact_{i}", help="Supprimer"):
-                            if c.get('id'):
-                                if 'contacts_to_delete' not in st.session_state: st.session_state['contacts_to_delete'] = []
-                                st.session_state['contacts_to_delete'].append(c['id'])
-                            st.session_state['editing_contacts'].pop(i)
-                            st.rerun()
-                        st.markdown('</div>', unsafe_allow_html=True)
+                r1, r2, r3, r4, r5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
+                st.session_state['editing_contacts'][i]['name'] = r1.text_input("Nom", value=c.get('name',''), key=f"c_name_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['role'] = r2.text_input("Poste", value=c.get('role',''), key=f"c_role_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['email'] = r3.text_input("Email", value=c.get('email',''), key=f"c_mail_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['phone'] = r4.text_input("Tel", value=c.get('phone',''), key=f"c_phone_{i}", label_visibility="collapsed")
+                with r5:
+                    st.markdown('<div class="trash-container">', unsafe_allow_html=True)
+                    if st.button("🗑️", key=f"del_contact_{i}", help="Supprimer"):
+                        if c.get('id'):
+                            if 'contacts_to_delete' not in st.session_state: st.session_state['contacts_to_delete'] = []
+                            st.session_state['contacts_to_delete'].append(c['id'])
+                        st.session_state['editing_contacts'].pop(i)
+                        st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
 
-            if st.button("⊕ Ajouter un contact", key="add_btn_contact_new"):
+            # 3. Кнопка добавления нового контакта снизу
+            if st.button("⊕ Ajouter un contact", key="add_btn_contact_action"):
                 st.session_state['editing_contacts'].append({"id": None, "name": "", "email": "", "role": "", "phone": ""})
                 st.rerun()
 
@@ -266,7 +267,7 @@ def show_prospect_card(pid, data):
                         new_s = st.selectbox("Status", s_opt, index=s_opt.index(r['status']) if r['status'] in s_opt else 0, key=f"st_{r['id']}", label_visibility="collapsed")
                         if new_s != r['status']: supabase.table("samples").update({"status": new_s}).eq("id", r['id']).execute()
                     with ch3:
-                        st.markdown('<div class="trash-container">', unsafe_allow_html=True)
+                        st.markdown('<div class="trash-container" style="height:32px;">', unsafe_allow_html=True)
                         if st.button("🗑️", key=f"ds_{r['id']}"): supabase.table("samples").delete().eq("id", r['id']).execute(); st.rerun()
                         st.markdown('</div>', unsafe_allow_html=True)
                     new_f = st.text_area("Feedback...", value=r.get("feedback", ""), key=f"f_{r['id']}", height=60, placeholder="Feedback R&D client...", label_visibility="collapsed")
@@ -285,11 +286,11 @@ def show_prospect_card(pid, data):
     st.markdown("---")
     if st.button("Enregistrer & Fermer la Fiche", type="primary", use_container_width=True):
         try:
-            # 1. Update Prospect
+            # Update Prospect
             upd = {"company_name": name, "status": stat, "country": pays, "potential_volume": float(vol), "last_action_date": last_c_date.isoformat(), "product_interest": prod, "segment": app, "notes": pain, "tech_notes": tech}
             supabase.table("prospects").update(upd).eq("id", pid).execute()
             
-            # 2. Sync Contacts
+            # Sync Contacts
             if 'contacts_to_delete' in st.session_state:
                 supabase.table("contacts").delete().in_("id", st.session_state['contacts_to_delete']).execute()
             for rc in st.session_state.get('editing_contacts', []):
@@ -353,6 +354,7 @@ if sel == "Pipeline":
     if py_f != "Pays: Tous": df = df[df['country'] == py_f]
     
     st.write("")
+    # Шапка
     w = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
     st.markdown('<div class="pipeline-header-row">', unsafe_allow_html=True)
     h_c = st.columns(w)
@@ -367,6 +369,7 @@ if sel == "Pipeline":
             if r[0].button(row['company_name'], key=f"b_{row['id']}"):
                 st.session_state['active_prospect_id'] = row['id']; st.rerun()
             r[1].markdown(f"<span style='color:#64748b; font-size:13px;'>{row['country'] or '-'}</span>", unsafe_allow_html=True)
+            # Очищенное название
             r[2].markdown(f"<span style='color:#047857; font-weight:700; font-size:13px;'>{clean_prod_name(row['product_interest'])}</span>", unsafe_allow_html=True)
             st_v = row['status'] or "Prospection"
             b_c = "bg-green" if "Client" in st_v else "bg-yellow" if "Test" in st_v else "bg-gray"
