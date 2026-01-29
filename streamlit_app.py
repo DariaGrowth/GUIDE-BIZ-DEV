@@ -11,7 +11,7 @@ import time
 # --- 1. CONFIGURATION & STYLES ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
-# Профессиональный CSS для создания чистого и компактного интерфейса
+# Профессиональный CSS для исправления верстки и компактности
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -65,8 +65,14 @@ st.markdown("""
         }
         div[data-testid="column"]:first-child .stButton > button:hover { text-decoration: underline !important; color: #065f46 !important; }
 
-        /* Контейнер для мусорки (идеальное выравнивание) */
-        .trash-container { display: flex; align-items: center; justify-content: flex-end; height: 32px; }
+        /* Контейнер для мусорки (центрирование) */
+        .trash-container { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 38px; /* Совпадает с высотой st.text_input */
+            margin-top: 0px;
+        }
         .trash-container button {
             background: transparent !important; border: none !important; box-shadow: none !important;
             color: #94a3b8 !important; padding: 0 !important; font-size: 18px !important;
@@ -79,10 +85,14 @@ st.markdown("""
         .bg-green { background: #dcfce7; color: #166534; }
         .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
 
-        /* Специальный стиль для контактных строк в карточке */
-        .contact-row-wrapper {
-            padding: 6px 0;
-            border-bottom: 1px solid #f8fafc;
+        /* Поля контактов в карточке */
+        .contact-header {
+            font-size: 10px;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            padding-left: 2px;
         }
         
         .field-label {
@@ -198,39 +208,39 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             st.markdown("<p class='field-label'>CONTACTS DÉDIÉS</p>", unsafe_allow_html=True)
             
+            # --- ЛОГИКА УПРАВЛЕНИЯ КОНТАКТАМИ ---
             if 'editing_contacts' not in st.session_state:
                 db_contacts = get_sub_data("contacts", pid)
                 st.session_state['editing_contacts'] = db_contacts.to_dict('records') if not db_contacts.empty else []
 
-            # Добавление нового контакта
-            c_add1, c_add2, c_add3 = st.columns([1.5, 1.5, 0.5])
-            with c_add1: new_c_name = st.text_input("Nom", placeholder="Nom...", label_visibility="collapsed", key="add_name")
-            with c_add2: new_c_email = st.text_input("Email", placeholder="Email...", label_visibility="collapsed", key="add_mail")
-            with c_add3: 
-                if st.button("Ajouter", key="add_btn", use_container_width=True):
-                    if new_c_name:
-                        st.session_state['editing_contacts'].append({"id": None, "name": new_c_name, "email": new_c_email, "role": "", "phone": ""})
-                        st.rerun()
+            # Заголовки колонок
+            h1, h2, h3, h4, h5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
+            h1.markdown('<div class="contact-header">Nom</div>', unsafe_allow_html=True)
+            h2.markdown('<div class="contact-header">Poste</div>', unsafe_allow_html=True)
+            h3.markdown('<div class="contact-header">Email</div>', unsafe_allow_html=True)
+            h4.markdown('<div class="contact-header">Téléphone</div>', unsafe_allow_html=True)
+            h5.write("")
 
-            # Список контактов как строки формы
+            # Список контактов
             for i, c in enumerate(st.session_state['editing_contacts']):
-                with st.container():
-                    st.markdown('<div class="contact-row-wrapper">', unsafe_allow_html=True)
-                    r1, r2, r3, r4, r5 = st.columns([1, 1, 1, 1, 0.2])
-                    st.session_state['editing_contacts'][i]['name'] = r1.text_input("N", value=c.get('name',''), key=f"c_name_{i}", label_visibility="collapsed")
-                    st.session_state['editing_contacts'][i]['role'] = r2.text_input("R", value=c.get('role',''), key=f"c_role_{i}", label_visibility="collapsed")
-                    st.session_state['editing_contacts'][i]['email'] = r3.text_input("E", value=c.get('email',''), key=f"c_mail_{i}", label_visibility="collapsed")
-                    st.session_state['editing_contacts'][i]['phone'] = r4.text_input("P", value=c.get('phone',''), key=f"c_phone_{i}", label_visibility="collapsed")
-                    with r5:
-                        st.markdown('<div class="trash-container">', unsafe_allow_html=True)
-                        if st.button("🗑️", key=f"del_contact_{i}"):
-                            if c.get('id'):
-                                if 'contacts_to_delete' not in st.session_state: st.session_state['contacts_to_delete'] = []
-                                st.session_state['contacts_to_delete'].append(c['id'])
-                            st.session_state['editing_contacts'].pop(i)
-                            st.rerun()
-                        st.markdown('</div>', unsafe_allow_html=True)
+                r1, r2, r3, r4, r5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
+                st.session_state['editing_contacts'][i]['name'] = r1.text_input("N", value=c.get('name',''), key=f"c_name_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['role'] = r2.text_input("R", value=c.get('role',''), key=f"c_role_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['email'] = r3.text_input("E", value=c.get('email',''), key=f"c_mail_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['phone'] = r4.text_input("P", value=c.get('phone',''), key=f"c_phone_{i}", label_visibility="collapsed")
+                with r5:
+                    st.markdown('<div class="trash-container">', unsafe_allow_html=True)
+                    if st.button("🗑️", key=f"del_contact_{i}"):
+                        if c.get('id'):
+                            if 'contacts_to_delete' not in st.session_state: st.session_state['contacts_to_delete'] = []
+                            st.session_state['contacts_to_delete'].append(c['id'])
+                        st.session_state['editing_contacts'].pop(i)
+                        st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
+
+            if st.button("⊕ Ajouter un contact", key="add_btn_new"):
+                st.session_state['editing_contacts'].append({"id": None, "name": "", "email": "", "role": "", "phone": ""})
+                st.rerun()
 
         with t2:
             st.markdown("<p class='field-label'>AJOUTER UN ÉCHANTILLON</p>", unsafe_allow_html=True)
@@ -273,7 +283,7 @@ def show_prospect_card(pid, data):
     st.markdown("---")
     if st.button("Enregistrer & Fermer la Fiche", type="primary", use_container_width=True):
         try:
-            # 1. Update Prospect (с проверкой существования колонок в базе)
+            # 1. Update Prospect
             upd = {"company_name": name, "status": stat, "country": pays, "potential_volume": float(vol), "last_action_date": last_c_date.isoformat(), "product_interest": prod, "segment": app, "notes": pain, "tech_notes": tech}
             supabase.table("prospects").update(upd).eq("id", pid).execute()
             
