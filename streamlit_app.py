@@ -15,8 +15,8 @@ st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        /* БАЗОВЫЕ НАСТРОЙКИ - СЕРЫЙ ФОН СТРАНИЦЫ */
-        .stApp { background-color: #f1f5f9; font-family: 'Inter', sans-serif; color: #334155; }
+        /* БАЗОВЫЕ НАСТРОЙКИ - ФОН ВСЕГО ПРИЛОЖЕНИЯ */
+        .stApp { background-color: #f1f5f9 !important; font-family: 'Inter', sans-serif; color: #334155; }
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         div[data-testid="stVerticalBlock"] { gap: 0rem; }
         
@@ -45,20 +45,18 @@ st.markdown("""
             color: #047857 !important; font-weight: 600; 
         }
 
-        /* --- ПАЙПЛАЙН --- */
-        
-        /* ТЕМНО-ЗЕЛЕНОЕ ОКНО ФИЛЬТРОВ */
+        /* --- ПАЙПЛАЙН: ТЕМНО-ЗЕЛЕНЫЕ ФИЛЬТРЫ --- */
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.filter-marker) {
             background-color: #047857 !important; 
             border: none !important;
-            border-radius: 10px !important; 
-            padding: 15px !important; 
+            border-radius: 12px !important; 
+            padding: 20px !important; 
             margin-bottom: 25px !important;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1) !important;
         }
-        .filter-label-white { color: white !important; font-weight: 700; font-size: 14px; padding-top: 8px; }
+        .filter-label-white { color: white !important; font-weight: 700; font-size: 15px; padding-top: 8px; }
 
-        /* ШАПКА ТАБЛИЦЫ (ЗЕЛЕНАЯ ЛИНИЯ) */
+        /* --- ШАПКА ТАБЛИЦЫ (ЗЕЛЕНАЯ ЛИНИЯ) --- */
         [data-testid="stHorizontalBlock"]:has(.header-marker) {
             background-color: rgba(4, 120, 87, 0.1) !important;
             border: 1px solid #e2e8f0;
@@ -69,43 +67,41 @@ st.markdown("""
         }
         .header-text { color: #000000 !important; font-size: 13px !important; font-weight: 800; text-transform: uppercase; }
 
-        /* ЛИНИИ ПАЙПЛАЙНА (БЕЛЫЕ КАРТОЧКИ) */
-        div[data-testid="stVerticalBlockBorderWrapper"]:not(:has(.filter-marker)) {
-            background-color: white !important; 
+        /* --- СТРОЧКИ ПАЙПЛАЙНА (БЕЛЫЕ КАРТОЧКИ) --- */
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.row-marker) {
+            background-color: #ffffff !important; 
             border: 1px solid #e2e8f0 !important;
-            border-radius: 8px !important; 
-            padding: 6px 0px !important; 
+            border-radius: 10px !important; 
+            padding: 10px 0px !important; 
             margin-bottom: 10px !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important;
         }
-        div[data-testid="stVerticalBlockBorderWrapper"]:not(:has(.filter-marker)):hover {
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.row-marker):hover {
             border-color: #10b981 !important;
             transform: translateY(-1px);
             transition: all 0.2s ease;
         }
 
-        /* КЛИКАБЕЛЬНОЕ НАЗВАНИЕ (ТЕМНО-ЗЕЛЕНЫЙ ТЕКСТ) */
-        div[data-testid="column"]:first-child .stButton > button {
-            background-color: transparent !important; 
+        /* --- КЛИКАБЕЛЬНОЕ НАЗВАНИЕ (ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ) --- */
+        div[data-testid="column"]:first-child button {
+            background: none !important;
             border: none !important;
-            color: #047857 !important; /* Цвет компании */
-            font-weight: 700 !important; 
-            font-size: 15px !important;
-            text-align: left !important; 
-            padding: 0px !important; 
-            margin: 0px !important;
+            padding: 0 !important;
+            color: #047857 !important; /* Ingood Green */
+            font-weight: 800 !important; 
+            font-size: 16px !important;
+            text-align: left !important;
             box-shadow: none !important;
-            text-decoration: none !important;
+            transition: color 0.2s;
         }
-        div[data-testid="column"]:first-child .stButton > button:hover {
+        div[data-testid="column"]:first-child button:hover {
             color: #065f46 !important;
             text-decoration: underline !important;
         }
 
         .cell-text { color: #64748b; font-size: 14px; font-weight: 500; }
-        .cell-prod { color: #047857; font-weight: 700; font-size: 13px; }
-        .cell-salon { color: #6366f1; font-weight: 600; font-size: 13px; }
-
+        .cell-prod { color: #047857; font-weight: 700; font-size: 13px; text-transform: uppercase; }
+        
         .badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
         .bg-gray { background: #f1f5f9; color: #64748b; }
@@ -302,14 +298,18 @@ if pg == "Pipeline":
     samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
     
     for _, row in df.iterrows():
+        # Каждая строка в белом контейнере с маркером row-marker
         with st.container(border=True):
+            st.markdown('<div class="row-marker"></div>', unsafe_allow_html=True)
             r = st.columns(weights)
-            # Название компании как КЛИКАБЕЛЬНЫЙ ТЕМНО-ЗЕЛЕНЫЙ ТЕКСТ
+            
+            # Название компании: ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ (через стилизацию кнопки)
             if r[0].button(row['company_name'], key=f"p_{row['id']}"):
                 st.session_state['active_prospect_id'] = row['id']; st.rerun()
             
             r[1].markdown(f"<span class='cell-text'>{row['country'] or '-'}</span>", unsafe_allow_html=True)
             r[2].markdown(f"<span class='cell-prod'>{row['product_interest'] or '-'}</span>", unsafe_allow_html=True)
+            
             stat = row['status'] or "Prospection"
             badge_cls = "bg-green" if "Client" in stat else "bg-yellow" if "Test" in stat else "bg-gray"
             r[3].markdown(f"<span class='badge {badge_cls}'>{stat}</span>", unsafe_allow_html=True)
@@ -322,7 +322,8 @@ if pg == "Pipeline":
                 r[4].markdown(f"<span style='color:{color}; font-weight:700; font-size:14px;'>{d_contact}</span>", unsafe_allow_html=True)
             else: r[4].write("-")
             
-            r[5].markdown(f"<span class='cell-salon'>{row.get('last_salon') or '-'}</span>", unsafe_allow_html=True)
+            r[5].markdown(f"<span class='cell-text'>{row.get('last_salon') or '-'}</span>", unsafe_allow_html=True)
+            
             has_s = not samples_data.empty and row['id'] in samples_data['prospect_id'].values
             if has_s: r[6].markdown("<span class='badge bg-blue'>⬒ En test</span>", unsafe_allow_html=True)
             else: r[6].write("-")
