@@ -49,12 +49,30 @@ st.markdown("""
         .kanban-title { font-weight: 700; color: #1e293b; font-size: 14px; margin-bottom: 5px; }
         .kanban-sub { color: #64748b; font-size: 11px; margin-bottom: 10px; line-height: 1.4; }
 
-        /* ХАКИ ДЛЯ ПАЙПЛАЙНА */
-        div[data-testid="column"]:first-child .stButton > button {
+        /* --- СТИЛЬ ПАЙПЛАЙНА (КАРТОЧКИ СТРОК) --- */
+        .pipeline-header {
+            padding: 10px 20px; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase;
+            border-bottom: 1px solid #e2e8f0; margin-bottom: 10px;
+        }
+        
+        /* Клик по названию компании в пайплайне */
+        div[data-testid="column"] .stButton > button {
             background-color: transparent !important; border: none !important;
             color: #0f172a !important; font-weight: 700 !important; font-size: 14px !important;
             text-align: left !important; padding: 0px !important; box-shadow: none !important;
+            height: auto !important; min-height: 0px !important; line-height: 1.5 !important;
         }
+        div[data-testid="column"] .stButton > button:hover { color: #047857 !important; text-decoration: none !important; }
+
+        .cell-text { color: #64748b; font-size: 13px; font-weight: 400; }
+        .cell-prod { color: #047857; font-weight: 700; font-size: 13px; }
+        .cell-salon { color: #6366f1; font-weight: 500; font-size: 13px; }
+
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .bg-yellow { background: #fef9c3; color: #854d0e; }
+        .bg-gray { background: #f1f5f9; color: #64748b; }
+        .bg-green { background: #dcfce7; color: #166534; }
+        .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -97,7 +115,6 @@ def get_sub_data(t, pid):
     return df
 
 def count_relances():
-    # Быстрый фильтр на стороне базы: нет фидбека и отправлено более 15 дней назад
     fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
     try:
         res = supabase.table("samples").select("id", count="exact").is_("feedback", "null").lte("date_sent", fifteen_days_ago).execute()
@@ -122,7 +139,6 @@ def show_prospect_card(pid, data):
     with c_left:
         with st.container(border=True):
             name = st.text_input("Société", value=data['company_name'], key=f"n_{pid}")
-            # Маппинг статусов
             opts = ["🔭 Prospection", "📋 Qualification", "📦 Echantillon", "🔬 Test R&D", "🏭 Essai industriel", "⚖️ Négociation", "✅ Client signé"]
             curr = data.get("status", "Prospection")
             stat = st.selectbox("Statut", opts, index=next((i for i, s in enumerate(opts) if curr in s), 0))
@@ -130,6 +146,7 @@ def show_prospect_card(pid, data):
             c1, c2 = st.columns(2)
             with c1: pays = st.text_input("Pays", value=data.get("country", ""))
             with c2: vol = st.number_input("Potentiel (T)", value=float(data.get("potential_volume") or 0))
+            salon_input = st.text_input("Dernier Salon / Source", value=data.get("last_salon", ""))
             
             st.markdown("---")
             st.markdown("<p style='font-size:11px; font-weight:700; color:#64748b;'>AI ASSISTANT</p>", unsafe_allow_html=True)
@@ -146,7 +163,6 @@ def show_prospect_card(pid, data):
     with c_right:
         t1, t2, t3 = st.tabs(["Contexte", "Échantillons", "Journal"])
         with t1:
-            # Защита от ValueError: проверка наличия значения в списке
             prod_list = ["LEN", "PEP", "NEW"]
             p_val = data.get("product_interest")
             p_idx = prod_list.index(p_val) if p_val in prod_list else 0
@@ -191,11 +207,10 @@ def show_prospect_card(pid, data):
     with cs:
         if st.button("Enregistrer & Fermer", type="primary", use_container_width=True):
             supabase.table("prospects").update({
-                "company_name": name, "status": stat, "country": pays, "potential_volume": vol,
+                "company_name": name, "status": stat, "country": pays, "potential_volume": vol, "last_salon": salon_input,
                 "product_interest": prod, "segment": app, "last_action_date": datetime.now().isoformat()
             }).eq("id", pid).execute()
             
-            # Логика обновления/удаления контактов
             if not contacts.empty:
                 current_ids = [int(x) for x in contacts['id'].dropna() if str(x).isdigit()] if 'id' in contacts.columns else []
                 old_contacts = get_sub_data("contacts", pid)
@@ -223,7 +238,7 @@ with st.sidebar:
     st.write("")
     rc = count_relances()
     pg = st.radio("Navigation", ["Tableau de Bord", "Kanban", "Pipeline", "Contacts", "À Relancer"], 
-                  format_func=lambda x: f"{'🔔' if x=='À Relancer' and rc else '≡'} {x}", index=1)
+                  format_func=lambda x: f"{'🔔' if x=='À Relancer' and rc else '≡'} {x}", index=2)
     st.markdown("---"); st.caption("👤 Daria Growth")
 
 # --- 7. РОУТИНГ КАРТОЧЕК ---
@@ -246,7 +261,6 @@ if pg == "Kanban":
     for i, stage in enumerate(stages):
         with st_cols[i]:
             st.markdown(f"<p style='font-weight:700; color:#047857; border-bottom: 2px solid #e2e8f0; padding-bottom:5px; margin-bottom:15px;'>{stage.upper()}</p>", unsafe_allow_html=True)
-            # Фильтр по названию стадии (после эмодзи)
             keyword = stage.split(' ')[1]
             stage_df = df[df['status'].str.contains(keyword, na=False)] if not df.empty else pd.DataFrame()
             
@@ -281,18 +295,98 @@ elif pg == "Tableau de Bord":
         
         c_l, c_r = st.columns(2)
         with c_l: st.plotly_chart(px.pie(df, names='product_interest', hole=.4, title="Mix Produits", color_discrete_sequence=px.colors.sequential.Greens_r), use_container_width=True)
-        with c_r: st.plotly_chart(px.bar(df['status'].value_counts(), title="Tunnel de vente", color_discrete_sequence=['#047857']), use_container_width=True)
+        with cr: st.plotly_chart(px.bar(df['status'].value_counts(), title="Tunnel de vente", color_discrete_sequence=['#047857']), use_container_width=True)
 
 elif pg == "Pipeline":
-    st.title("Liste de Pipeline")
-    df = get_data()
+    st.markdown("## Pipeline Food & Ingrédients")
+    st.caption("Suivi des projets R&D et commerciaux.")
+    
+    df_raw = get_data()
+    
+    # --- БЛОК ФИЛЬТРОВ (Header) ---
+    with st.container(border=True):
+        f1, f2, f3 = st.columns(3)
+        with f1: 
+            p_filter = st.selectbox("Produit", ["Tous Produits"] + list(df_raw['product_interest'].dropna().unique()), index=0)
+        with f2: 
+            s_filter = st.selectbox("Statut", ["Tous Statuts", "Prospection", "Qualification", "Echantillon", "Test", "Client"], index=0)
+        with f3: 
+            c_filter = st.selectbox("Pays", ["Tous Pays"] + list(df_raw['country'].dropna().unique()), index=0)
+
+    # Применение фильтров
+    df = df_raw.copy()
+    if p_filter != "Tous Produits": df = df[df['product_interest'] == p_filter]
+    if s_filter != "Tous Statuts": df = df[df['status'].str.contains(s_filter, na=False)]
+    if c_filter != "Tous Pays": df = df[df['country'] == c_filter]
+
+    st.write("")
+    
+    # --- ЗАГОЛОВОК ТАБЛИЦЫ ---
+    # Колонки: Компания (3), Страна (1), Продукт (1), Статус (1.5), Д. Контакт (1.5), Салон (2), Образцы (1.5)
+    cols_weight = [3, 1, 1, 1.5, 1.5, 2, 1.5]
+    
+    st.markdown('<div class="pipeline-header">', unsafe_allow_html=True)
+    h = st.columns(cols_weight)
+    h[0].write("SOCIÉTÉ")
+    h[1].write("PAYS")
+    h[2].write("PRODUIT")
+    h[3].write("STATUT")
+    h[4].write("DERNIER CONTACT")
+    h[5].write("DERNIER SALON")
+    h[6].write("ÉCHANTILLONS")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # --- СТРОКИ ДАННЫХ ---
+    samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
+    
     for _, row in df.iterrows():
         with st.container(border=True):
-            cl1, cl2, cl3 = st.columns([2, 1, 1])
-            if cl1.button(row['company_name'], key=f"p_{row['id']}"):
-                st.session_state['active_prospect_id'] = row['id']; st.rerun()
-            cl2.write(f"🌍 {row['country']}")
-            cl3.write(f"🏷️ {row['status']}")
+            r = st.columns(cols_weight)
+            
+            # 1. Компания (кнопка)
+            if r[0].button(row['company_name'], key=f"pipe_{row['id']}"):
+                st.session_state['active_prospect_id'] = row['id']
+                st.rerun()
+            
+            # 2. Страна
+            r[1].markdown(f"<span class='cell-text'>{row['country'] or '-'}</span>", unsafe_allow_html=True)
+            
+            # 3. Продукт
+            r[2].markdown(f"<span class='cell-prod'>{row['product_interest'] or '-'}</span>", unsafe_allow_html=True)
+            
+            # 4. Статус (Бейдж)
+            stat = row['status'] or "Prospection"
+            badge_cls = "bg-green" if "Client" in stat else "bg-yellow" if "Test" in stat else "bg-gray"
+            # Очистка эмодзи для текста бейджа
+            clean_stat = stat.split(' ')[1] if ' ' in stat else stat
+            r[3].markdown(f"<span class='badge {badge_cls}'>{clean_stat}</span>", unsafe_allow_html=True)
+            
+            # 5. Последний контакт
+            d_contact = "-"
+            if row['last_action_date']:
+                dt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d")
+                d_contact = dt.strftime("%d %b. %y")
+                # Если контакт был давно (>30 дней), можно подсветить (красным), но сделаем просто текст
+                if (datetime.now() - dt).days > 30:
+                     r[4].markdown(f"<span style='color:#ef4444; font-weight:600;'>{d_contact}</span>", unsafe_allow_html=True)
+                else:
+                     r[4].markdown(f"<span class='cell-text'>{d_contact}</span>", unsafe_allow_html=True)
+            else:
+                r[4].write("-")
+
+            # 6. Салон / Источник
+            r[5].markdown(f"<span class='cell-salon'>{row.get('last_salon') or '-'}</span>", unsafe_allow_html=True)
+            
+            # 7. Эchantillons (Бейдж если есть)
+            has_samples = False
+            if not samples_data.empty:
+                if row['id'] in samples_data['prospect_id'].values:
+                    has_samples = True
+            
+            if has_samples:
+                r[6].markdown("<span class='badge bg-blue'>⚗️ En test</span>", unsafe_allow_html=True)
+            else:
+                r[6].write("-")
 
 elif pg == "Contacts":
     st.title("Annuaire Contacts")
