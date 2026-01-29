@@ -54,31 +54,38 @@ st.markdown("""
             color: #047857 !important; font-weight: 600; 
         }
         
-        /* Индикатор уведомлений (красный кружок) */
+        /* Индикатор уведомлений (как на скриншоте) */
         .notif-badge {
             background-color: #fee2e2; color: #ef4444; font-size: 11px; font-weight: 700;
             padding: 1px 7px; border-radius: 10px; margin-left: auto;
         }
 
         /* --- ПАЙПЛАЙН --- */
-        .filter-panel-box {
-            background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; 
-            padding: 12px; margin-bottom: 15px;
-        }
-        .filter-label-text {
-            display: flex; align-items: center; gap: 10px; color: #64748b; font-weight: 600; font-size: 14px;
+        /* Убираем лишние отступы у фильтров */
+        [data-testid="stVerticalBlock"] > div:has(.filter-panel-marker) {
+            margin-bottom: -15px !important;
         }
 
-        /* Идеальная шапка таблицы (зеленая линия) */
-        /* Хак: стилизуем контейнер, в котором лежит класс header-marker */
-        div:has(> .header-marker) {
+        .filter-panel-box {
+            background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; 
+            padding: 12px; margin-bottom: 10px;
+        }
+
+        /* СТИЛЬ ШАПКИ (Зеленая линия) */
+        /* Мы находим контейнер, содержащий наш маркер, и красим его целиком */
+        div[data-testid="column"]:has(.header-marker) {
+            background-color: rgba(4, 120, 87, 0.08) !important;
+            padding: 12px 5px !important;
+        }
+        
+        /* Более надежный способ для всей строки заголовка */
+        [data-testid="stHorizontalBlock"]:has(.header-marker) {
             background-color: rgba(4, 120, 87, 0.1) !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 8px !important;
-            padding: 12px 10px !important;
-            margin-bottom: 12px !important;
-            display: flex !important;
-            align-items: center !important;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 10px !important;
+            margin-bottom: 15px !important;
+            margin-top: 10px !important;
         }
 
         .header-text { 
@@ -110,7 +117,6 @@ st.markdown("""
         div[data-testid="column"] .stButton > button:hover { color: #047857 !important; }
 
         .cell-text { color: #64748b; font-size: 14px; font-weight: 500; }
-        .cell-company { color: #0f172a; font-weight: 700; font-size: 15px; }
         .cell-prod { color: #047857; font-weight: 700; font-size: 13px; }
         .cell-salon { color: #6366f1; font-weight: 600; font-size: 13px; }
 
@@ -206,7 +212,6 @@ def show_prospect_card(pid, data):
         with t1:
             prod_list, app_list = ["LEN", "PEP", "NEW"], ["Boulangerie", "Sauces", "Confiserie"]
             p_val, a_val = data.get("product_interest"), data.get("segment")
-            # Исправляем ValueError (защита от None)
             p_idx = prod_list.index(p_val) if p_val in prod_list else 0
             a_idx = app_list.index(a_val) if a_val in app_list else 0
 
@@ -216,7 +221,7 @@ def show_prospect_card(pid, data):
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
         with t2:
-            st.caption("Suivi des envoив")
+            st.caption("Suivi des envois")
             for _, r in get_sub_data("samples", pid).iterrows():
                 with st.container(border=True):
                     st.markdown(f"**{r['product_name']}** ({r['date_sent'][:10]})")
@@ -250,16 +255,12 @@ with st.sidebar:
         "Tableau de Bord": "❒ Tableau de Bord",
         "Pipeline": "☰ Pipeline",
         "Kanban": "▦ Kanban",
-        "Échantillons": "⬒ Échantillons",
+        "Échantillons": "⬒ Эchantillons",
         "À Relancer": "❍ À Relancer"
     }
     
     # Хак для индикатора уведомлений
-    pg_label = list(nav_opts.keys())
-    pg_icons = list(nav_opts.values())
-    
-    # Создаем выбор меню
-    selection = st.radio("Nav", pg_label, format_func=lambda x: nav_opts[x], label_visibility="collapsed", index=1)
+    selection = st.radio("Nav", list(nav_opts.keys()), format_func=lambda x: nav_opts[x], label_visibility="collapsed", index=1)
     
     if rc > 0:
          st.markdown(f"""<style>
@@ -289,14 +290,14 @@ if pg == "Pipeline":
     df_raw = get_data()
     
     # --- БЛОК ФИЛЬТРОВ (ЧИСТЫЙ ВИД) ---
-    st.markdown('<div class="filter-panel-box">', unsafe_allow_html=True)
-    f_cols = st.columns([1, 2, 2, 2, 2])
-    with f_cols[0]: st.markdown('<div class="filter-label-text">▽ Filtres:</div>', unsafe_allow_html=True)
-    with f_cols[1]: p_f = st.selectbox("Produit", ["Produit: Tous"] + list(df_raw['product_interest'].dropna().unique()), label_visibility="collapsed")
-    with f_cols[2]: s_f = st.selectbox("Statut", ["Statut: Tous", "Prospection", "Qualification", "Echantillon", "Test", "Client"], label_visibility="collapsed")
-    with f_cols[3]: sl_f = st.selectbox("Salon", ["Salon: Tous"] + list(df_raw['last_salon'].dropna().unique()), label_visibility="collapsed")
-    with f_cols[4]: py_f = st.selectbox("Pays", ["Pays: Tous"] + list(df_raw['country'].dropna().unique()), label_visibility="collapsed")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="filter-panel-marker"></div>', unsafe_allow_html=True)
+    with st.container(border=True):
+        f_cols = st.columns([0.8, 2, 2, 2, 2])
+        with f_cols[0]: st.markdown('<div style="padding-top:8px; color:#64748b; font-weight:600;">▽ Filtres:</div>', unsafe_allow_html=True)
+        with f_cols[1]: p_f = st.selectbox("Produit", ["Produit: Tous"] + list(df_raw['product_interest'].dropna().unique()), label_visibility="collapsed")
+        with f_cols[2]: s_f = st.selectbox("Statut", ["Statut: Tous", "Prospection", "Qualification", "Echantillon", "Test", "Client"], label_visibility="collapsed")
+        with f_cols[3]: sl_f = st.selectbox("Salon", ["Salon: Tous"] + list(df_raw['last_salon'].dropna().unique()), label_visibility="collapsed")
+        with f_cols[4]: py_f = st.selectbox("Pays", ["Pays: Tous"] + list(df_raw['country'].dropna().unique()), label_visibility="collapsed")
 
     df = df_raw.copy()
     if p_f != "Produit: Tous": df = df[df['product_interest'] == p_f]
@@ -308,17 +309,16 @@ if pg == "Pipeline":
     # Мы используем веса колонок такие же, как в строках данных
     weights = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
     
-    # Используем контейнер с маркером для CSS
-    with st.container():
-        st.markdown('<div class="header-marker"></div>', unsafe_allow_html=True)
-        h = st.columns(weights)
-        h[0].markdown('<span class="header-text">SOCIÉTÉ</span>', unsafe_allow_html=True)
-        h[1].markdown('<span class="header-text">PAYS</span>', unsafe_allow_html=True)
-        h[2].markdown('<span class="header-text">PRODUIT</span>', unsafe_allow_html=True)
-        h[3].markdown('<span class="header-text">STATUT</span>', unsafe_allow_html=True)
-        h[4].markdown('<span class="header-text">CONTACT</span>', unsafe_allow_html=True)
-        h[5].markdown('<span class="header-text">SALON</span>', unsafe_allow_html=True)
-        h[6].markdown('<span class="header-text">SAMPLES</span>', unsafe_allow_html=True)
+    # Спец-маркер для CSS
+    st.markdown('<div class="header-marker"></div>', unsafe_allow_html=True)
+    h = st.columns(weights)
+    h[0].markdown('<span class="header-text">SOCIÉTÉ</span>', unsafe_allow_html=True)
+    h[1].markdown('<span class="header-text">PAYS</span>', unsafe_allow_html=True)
+    h[2].markdown('<span class="header-text">PRODUIT</span>', unsafe_allow_html=True)
+    h[3].markdown('<span class="header-text">STATUT</span>', unsafe_allow_html=True)
+    h[4].markdown('<span class="header-text">CONTACT</span>', unsafe_allow_html=True)
+    h[5].markdown('<span class="header-text">SALON</span>', unsafe_allow_html=True)
+    h[6].markdown('<span class="header-text">SAMPLES</span>', unsafe_allow_html=True)
 
     # ДАННЫЕ
     samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
