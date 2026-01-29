@@ -11,110 +11,93 @@ import time
 # --- 1. КОНФИГУРАЦИЯ И СТИЛИ ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
-# Принудительная инъекция CSS для исправления фонов и стилей текста
+# Новый метод стилизации: более агрессивные селекторы для стабильности
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        /* 1. ОБЩИЙ ФОН ПРИЛОЖЕНИЯ (СЕРЫЙ) */
+        /* ОБЩИЙ ФОН СТРАНИЦЫ */
         .stApp { 
             background-color: #f1f5f9 !important; 
             font-family: 'Inter', sans-serif; 
-            color: #334155; 
         }
         
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
-        div[data-testid="stVerticalBlock"] { gap: 0rem; }
         
-        /* 2. ТЕМНО-ЗЕЛЕНЫЙ БЛОК ФИЛЬТРОВ */
-        /* Находим контейнер фильтров через маркер */
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.filter-marker) {
-            background-color: #047857 !important;
-            border: none !important;
-            border-radius: 12px !important;
-            padding: 20px !important;
-            margin-bottom: 25px !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-        }
-        
-        /* Белый текст для заголовка фильтров */
-        .filter-label-white { 
-            color: #ffffff !important; 
-            font-weight: 700 !important; 
-            font-size: 15px !important; 
-            margin-top: 8px !important;
-        }
-
-        /* 3. БЕЛЫЕ СТРОКИ ПАЙПЛАЙНА (КАРТОЧКИ) */
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.row-marker) {
-            background-color: #ffffff !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 10px !important;
-            padding: 12px 0px !important;
-            margin-bottom: 10px !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
-        }
-        
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.row-marker):hover {
-            border-color: #10b981 !important;
-            transform: translateY(-1px);
-            transition: all 0.2s ease;
-        }
-
-        /* 4. ШАПКА ТАБЛИЦЫ (ЗЕЛЕНАЯ ЛИНИЯ) */
-        [data-testid="stHorizontalBlock"]:has(.header-marker) {
-            background-color: rgba(4, 120, 87, 0.1) !important;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px 15px !important;
-            margin-bottom: 12px !important;
-            margin-top: 10px !important;
-        }
-        .header-text { 
-            color: #000000 !important; 
-            font-size: 13px !important; 
-            font-weight: 800 !important; 
-            text-transform: uppercase; 
-        }
-
-        /* 5. НАЗВАНИЕ КОМПАНИИ (ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ) */
-        div[data-testid="column"]:first-child button {
-            background: none !important;
-            border: none !important;
-            padding: 0 !important;
-            color: #047857 !important; /* Фирменный зеленый */
-            font-weight: 800 !important;
-            font-size: 16px !important;
-            text-align: left !important;
-            box-shadow: none !important;
-            text-decoration: none !important;
-        }
-        
-        div[data-testid="column"]:first-child button:hover {
-            color: #065f46 !important;
-            text-decoration: underline !important;
-        }
-
-        /* 6. САЙДБАР И КНОПКИ */
+        /* КНОПКА СОЗДАНИЯ В САЙДБАРЕ */
         [data-testid="stSidebar"] .stButton > button {
             width: 100%; background-color: #047857 !important; color: white !important;
             border: none; border-radius: 6px; padding: 10px 16px; font-weight: 600;
         }
-        
-        div[role="radiogroup"] label {
-            display: flex; align-items: center; width: 100%; padding: 10px 16px;
-            margin-bottom: 4px; border-radius: 8px; color: #475569; font-size: 15px;
+
+        /* ТЕМНО-ЗЕЛЕНЫЙ БЛОК ФИЛЬТРОВ */
+        /* Находим первый контейнер с рамкой на странице Pipeline */
+        div[data-testid="stVerticalBlock"] > div:nth-child(1) > div[data-testid="stVerticalBlockBorderWrapper"] {
+            background-color: #047857 !important;
+            border: none !important;
+            border-radius: 12px !important;
         }
         
+        .filter-label-white { 
+            color: #ffffff !important; 
+            font-weight: 700 !important; 
+            font-size: 14px !important; 
+            padding-top: 8px;
+        }
+
+        /* БЕЛЫЕ КАРТОЧКИ КЛИЕНТОВ */
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            background-color: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 10px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+            margin-bottom: 10px !important;
+        }
+
+        /* НАЗВАНИЕ КОМПАНИИ: ТЕМНО-ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ (БЕЗ ВИДА КНОПКИ) */
+        div[data-testid="column"]:first-child .stButton > button {
+            background: none !important;
+            border: none !important;
+            padding: 0 !important;
+            color: #047857 !important;
+            font-weight: 800 !important;
+            font-size: 16px !important;
+            text-align: left !important;
+            box-shadow: none !important;
+            text-transform: none !important;
+        }
+        div[data-testid="column"]:first-child .stButton > button:hover {
+            color: #065f46 !important;
+            text-decoration: underline !important;
+        }
+
+        /* ШАПКА ТАБЛИЦЫ */
+        .header-row-style {
+            background-color: rgba(4, 120, 87, 0.08);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+        }
+        .header-text { 
+            color: #1e293b !important; 
+            font-size: 12px !important; 
+            font-weight: 800 !important; 
+            text-transform: uppercase; 
+        }
+
+        /* МОНОХРОМНЫЙ САЙДБАР */
+        div[role="radiogroup"] label {
+            display: flex; align-items: center; padding: 10px 16px;
+            color: #475569; font-size: 15px; border-radius: 8px;
+        }
         div[role="radiogroup"] label[data-checked="true"] { 
             background-color: rgba(16, 185, 129, 0.08) !important; 
             color: #047857 !important; font-weight: 600; 
         }
 
-        /* УТИЛИТЫ */
-        .cell-text { color: #64748b; font-size: 14px; font-weight: 500; }
-        .cell-prod { color: #047857; font-weight: 700; font-size: 13px; text-transform: uppercase; }
-        .badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; }
+        /* БЕЙДЖИ И ТЕКСТ */
+        .cell-text { color: #64748b; font-size: 14px; }
+        .badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
         .bg-gray { background: #f1f5f9; color: #64748b; }
         .bg-green { background: #dcfce7; color: #166534; }
@@ -146,7 +129,7 @@ def reset_pipeline():
 def safe_del(key): 
     if key in st.session_state: del st.session_state[key]
 
-# --- 4. DATA ---
+# --- 4. ДАННЫЕ ---
 @st.cache_data(ttl=60)
 def get_data(): 
     return pd.DataFrame(supabase.table("prospects").select("*").order("last_action_date", desc=True).execute().data)
@@ -159,13 +142,6 @@ def get_sub_data(t, pid):
         if t == "samples": return pd.DataFrame(columns=["id", "date_sent", "product_name", "reference", "status", "feedback"])
         if t == "activities": return pd.DataFrame(columns=["id", "date", "type", "content"])
     return df
-
-def count_relances():
-    fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
-    try:
-        res = supabase.table("samples").select("id", count="exact").is_("feedback", "null").lte("date_sent", fifteen_days_ago).execute()
-        return res.count if res.count else 0
-    except: return 0
 
 # --- 5. FICHE PROSPECT (MODAL) ---
 @st.dialog(" ", width="large")
@@ -189,7 +165,7 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             if st.button("🪄 Générer l'Email"):
                 model = genai.GenerativeModel("gemini-1.5-flash")
-                res = model.generate_content(f"Email for {data['company_name']} in French").text
+                res = model.generate_content(f"Email for {data['company_name']}").text
                 st.session_state['ai_draft'] = res
             if 'ai_draft' in st.session_state:
                 st.text_area("Brouillon AI", value=st.session_state['ai_draft'], height=150)
@@ -197,13 +173,13 @@ def show_prospect_card(pid, data):
     with c_right:
         t1, t2, t3 = st.tabs(["Contexte", "Échantillons", "Journal"])
         with t1:
-            prod_list, app_list = ["LEN", "PEP", "NEW"], ["Boulangerie", "Sauces", "Confiserie"]
+            prod_list = ["LEN", "PEP", "NEW"]
             p_val = data.get("product_interest")
             p_idx = prod_list.index(p_val) if p_val in prod_list else 0
 
             c1, c2 = st.columns(2)
             with c1: prod = st.selectbox("Ingrédient", prod_list, index=p_idx)
-            with c2: app = st.selectbox("Application", app_list, index=0)
+            with c2: app = st.selectbox("Application", ["Boulangerie", "Sauces", "Confiserie"], index=0)
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
         with t2:
@@ -231,7 +207,6 @@ with st.sidebar:
         st.session_state['open_new_id'] = res.data[0]['id']; st.rerun()
     st.write("")
     
-    rc = count_relances()
     nav_opts = {
         "Tableau de Bord": "❒ Dashboard",
         "Pipeline": "☰ Pipeline",
@@ -241,15 +216,6 @@ with st.sidebar:
     }
     
     selection = st.radio("Nav", list(nav_opts.keys()), format_func=lambda x: nav_opts[x], label_visibility="collapsed", index=1)
-    
-    if rc > 0:
-         st.markdown(f"""<style>
-            div[role="radiogroup"] label:nth-child(5)::after {{
-                content: '{rc}'; background: #fee2e2; color: #ef4444; 
-                display: inline-block; font-size: 10px; font-weight: 700; 
-                padding: 1px 7px; border-radius: 10px; margin-left: auto;
-            }}
-         </style>""", unsafe_allow_html=True)
     
     st.markdown("---")
     st.caption("👤 Daria Growth")
@@ -268,8 +234,9 @@ if 'active_prospect_id' in st.session_state:
 if pg == "Pipeline":
     df_raw = get_data()
     
-    # --- БЛОК ФИЛЬТРОВ (ТЕМНО-ЗЕЛЕНЫЙ) ---
+    # --- БЛОК ФИЛЬТРОВ ---
     with st.container(border=True):
+        # Маркер для фильтров
         st.markdown('<div class="filter-marker"></div>', unsafe_allow_html=True)
         f_cols = st.columns([0.8, 2, 2, 2, 2])
         with f_cols[0]: st.markdown('<div class="filter-label-white">▽ Filtres:</div>', unsafe_allow_html=True)
@@ -286,27 +253,26 @@ if pg == "Pipeline":
     
     # --- ШАПКА ТАБЛИЦЫ ---
     weights = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
-    with st.container():
-        st.markdown('<div class="header-marker"></div>', unsafe_allow_html=True)
-        h = st.columns(weights)
-        h[0].markdown('<span class="header-text">SOCIÉTÉ</span>', unsafe_allow_html=True)
-        h[1].markdown('<span class="header-text">PAYS</span>', unsafe_allow_html=True)
-        h[2].markdown('<span class="header-text">PRODUIT</span>', unsafe_allow_html=True)
-        h[3].markdown('<span class="header-text">STATUT</span>', unsafe_allow_html=True)
-        h[4].markdown('<span class="header-text">CONTACT</span>', unsafe_allow_html=True)
-        h[5].markdown('<span class="header-text">SALON</span>', unsafe_allow_html=True)
-        h[6].markdown('<span class="header-text">SAMPLES</span>', unsafe_allow_html=True)
+    st.markdown('<div class="header-row-style">', unsafe_allow_html=True)
+    h = st.columns(weights)
+    h[0].markdown('<span class="header-text">SOCIÉTÉ</span>', unsafe_allow_html=True)
+    h[1].markdown('<span class="header-text">PAYS</span>', unsafe_allow_html=True)
+    h[2].markdown('<span class="header-text">PRODUIT</span>', unsafe_allow_html=True)
+    h[3].markdown('<span class="header-text">STATUT</span>', unsafe_allow_html=True)
+    h[4].markdown('<span class="header-text">CONTACT</span>', unsafe_allow_html=True)
+    h[5].markdown('<span class="header-text">SALON</span>', unsafe_allow_html=True)
+    h[6].markdown('<span class="header-text">SAMPLES</span>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # ДАННЫЕ
     samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
     
     for _, row in df.iterrows():
-        # КАЖДАЯ СТРОЧКА В БЕЛОМ КОНТЕЙНЕРЕ
+        # СТРОЧКА В КОНТЕЙНЕРЕ С МАРКЕРОМ ROW-MARKER
         with st.container(border=True):
             st.markdown('<div class="row-marker"></div>', unsafe_allow_html=True)
             r = st.columns(weights)
             
-            # Название компании: ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ
+            # Название: ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ
             if r[0].button(row['company_name'], key=f"p_{row['id']}"):
                 st.session_state['active_prospect_id'] = row['id']; st.rerun()
             
@@ -333,4 +299,4 @@ if pg == "Pipeline":
 
 else:
     st.title(pg)
-    st.info("Page content coming soon.")
+    st.info("Content coming soon.")
