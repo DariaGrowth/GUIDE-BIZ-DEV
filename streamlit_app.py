@@ -11,52 +11,57 @@ import time
 # --- 1. КОНФИГУРАЦИЯ И СТИЛИ ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
+# Принудительная инъекция CSS для исправления фонов и стилей текста
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        /* БАЗОВЫЕ НАСТРОЙКИ - ФОН ВСЕГО ПРИЛОЖЕНИЯ */
-        .stApp { background-color: #f1f5f9 !important; font-family: 'Inter', sans-serif; color: #334155; }
+        /* 1. ОБЩИЙ ФОН ПРИЛОЖЕНИЯ (СЕРЫЙ) */
+        .stApp { 
+            background-color: #f1f5f9 !important; 
+            font-family: 'Inter', sans-serif; 
+            color: #334155; 
+        }
+        
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
         div[data-testid="stVerticalBlock"] { gap: 0rem; }
         
-        /* ТЕКСТ И ПОЛЯ */
-        .stMarkdown label p, .stTextInput label p, .stNumberInput label p, .stSelectbox label p, .stTextArea label p {
-            color: #64748b !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-
-        /* ГЛАВНАЯ КНОПКА СОЗДАНИЯ */
-        [data-testid="stSidebar"] .stButton > button {
-            width: 100%; background-color: #047857 !important; color: white !important;
-            border: none; border-radius: 6px; padding: 10px 16px; font-weight: 600; font-size: 15px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s ease;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-
-        /* САЙДБАР (МОНОХРОМ) */
-        div[role="radiogroup"] > label > div:first-child { display: none !important; }
-        div[role="radiogroup"] label {
-            display: flex; align-items: center; width: 100%; padding: 10px 16px;
-            margin-bottom: 4px; border-radius: 8px; border: none; cursor: pointer;
-            color: #475569; font-weight: 500; font-size: 15px; transition: all 0.2s;
-        }
-        div[role="radiogroup"] label[data-checked="true"] { 
-            background-color: rgba(16, 185, 129, 0.08) !important; 
-            color: #047857 !important; font-weight: 600; 
-        }
-
-        /* --- ПАЙПЛАЙН: ТЕМНО-ЗЕЛЕНЫЕ ФИЛЬТРЫ --- */
+        /* 2. ТЕМНО-ЗЕЛЕНЫЙ БЛОК ФИЛЬТРОВ */
+        /* Находим контейнер фильтров через маркер */
         div[data-testid="stVerticalBlockBorderWrapper"]:has(.filter-marker) {
-            background-color: #047857 !important; 
+            background-color: #047857 !important;
             border: none !important;
-            border-radius: 12px !important; 
-            padding: 20px !important; 
+            border-radius: 12px !important;
+            padding: 20px !important;
             margin-bottom: 25px !important;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
         }
-        .filter-label-white { color: white !important; font-weight: 700; font-size: 15px; padding-top: 8px; }
+        
+        /* Белый текст для заголовка фильтров */
+        .filter-label-white { 
+            color: #ffffff !important; 
+            font-weight: 700 !important; 
+            font-size: 15px !important; 
+            margin-top: 8px !important;
+        }
 
-        /* --- ШАПКА ТАБЛИЦЫ (ЗЕЛЕНАЯ ЛИНИЯ) --- */
+        /* 3. БЕЛЫЕ СТРОКИ ПАЙПЛАЙНА (КАРТОЧКИ) */
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.row-marker) {
+            background-color: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 10px !important;
+            padding: 12px 0px !important;
+            margin-bottom: 10px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+        }
+        
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.row-marker):hover {
+            border-color: #10b981 !important;
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+
+        /* 4. ШАПКА ТАБЛИЦЫ (ЗЕЛЕНАЯ ЛИНИЯ) */
         [data-testid="stHorizontalBlock"]:has(.header-marker) {
             background-color: rgba(4, 120, 87, 0.1) !important;
             border: 1px solid #e2e8f0;
@@ -65,43 +70,50 @@ st.markdown("""
             margin-bottom: 12px !important;
             margin-top: 10px !important;
         }
-        .header-text { color: #000000 !important; font-size: 13px !important; font-weight: 800; text-transform: uppercase; }
-
-        /* --- СТРОЧКИ ПАЙПЛАЙНА (БЕЛЫЕ КАРТОЧКИ) --- */
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.row-marker) {
-            background-color: #ffffff !important; 
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 10px !important; 
-            padding: 10px 0px !important; 
-            margin-bottom: 10px !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03) !important;
-        }
-        div[data-testid="stVerticalBlockBorderWrapper"]:has(.row-marker):hover {
-            border-color: #10b981 !important;
-            transform: translateY(-1px);
-            transition: all 0.2s ease;
+        .header-text { 
+            color: #000000 !important; 
+            font-size: 13px !important; 
+            font-weight: 800 !important; 
+            text-transform: uppercase; 
         }
 
-        /* --- КЛИКАБЕЛЬНОЕ НАЗВАНИЕ (ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ) --- */
+        /* 5. НАЗВАНИЕ КОМПАНИИ (ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ) */
         div[data-testid="column"]:first-child button {
             background: none !important;
             border: none !important;
             padding: 0 !important;
-            color: #047857 !important; /* Ingood Green */
-            font-weight: 800 !important; 
+            color: #047857 !important; /* Фирменный зеленый */
+            font-weight: 800 !important;
             font-size: 16px !important;
             text-align: left !important;
             box-shadow: none !important;
-            transition: color 0.2s;
+            text-decoration: none !important;
         }
+        
         div[data-testid="column"]:first-child button:hover {
             color: #065f46 !important;
             text-decoration: underline !important;
         }
 
+        /* 6. САЙДБАР И КНОПКИ */
+        [data-testid="stSidebar"] .stButton > button {
+            width: 100%; background-color: #047857 !important; color: white !important;
+            border: none; border-radius: 6px; padding: 10px 16px; font-weight: 600;
+        }
+        
+        div[role="radiogroup"] label {
+            display: flex; align-items: center; width: 100%; padding: 10px 16px;
+            margin-bottom: 4px; border-radius: 8px; color: #475569; font-size: 15px;
+        }
+        
+        div[role="radiogroup"] label[data-checked="true"] { 
+            background-color: rgba(16, 185, 129, 0.08) !important; 
+            color: #047857 !important; font-weight: 600; 
+        }
+
+        /* УТИЛИТЫ */
         .cell-text { color: #64748b; font-size: 14px; font-weight: 500; }
         .cell-prod { color: #047857; font-weight: 700; font-size: 13px; text-transform: uppercase; }
-        
         .badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
         .bg-gray { background: #f1f5f9; color: #64748b; }
@@ -155,10 +167,6 @@ def count_relances():
         return res.count if res.count else 0
     except: return 0
 
-def add_log(pid, t, c):
-    supabase.table("activities").insert({"prospect_id": pid, "type": t, "content": c, "date": datetime.now().isoformat()}).execute()
-    supabase.table("prospects").update({"last_action_date": datetime.now().strftime("%Y-%m-%d")}).eq("id", pid).execute()
-
 # --- 5. FICHE PROSPECT (MODAL) ---
 @st.dialog(" ", width="large")
 def show_prospect_card(pid, data):
@@ -190,13 +198,12 @@ def show_prospect_card(pid, data):
         t1, t2, t3 = st.tabs(["Contexte", "Échantillons", "Journal"])
         with t1:
             prod_list, app_list = ["LEN", "PEP", "NEW"], ["Boulangerie", "Sauces", "Confiserie"]
-            p_val, a_val = data.get("product_interest"), data.get("segment")
+            p_val = data.get("product_interest")
             p_idx = prod_list.index(p_val) if p_val in prod_list else 0
-            a_idx = app_list.index(a_val) if a_val in app_list else 0
 
             c1, c2 = st.columns(2)
             with c1: prod = st.selectbox("Ingrédient", prod_list, index=p_idx)
-            with c2: app = st.selectbox("Application", app_list, index=a_idx)
+            with c2: app = st.selectbox("Application", app_list, index=0)
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
         with t2:
@@ -205,16 +212,14 @@ def show_prospect_card(pid, data):
 
         with t3:
             n = st.text_area("Note...", key="nn")
-            if st.button("Ajouter"): add_log(pid, "Note", n); st.rerun()
+            if st.button("Ajouter"):
+                supabase.table("activities").insert({"prospect_id": pid, "type": "Note", "content": n, "date": datetime.now().isoformat()}).execute()
+                st.rerun()
             for _, r in get_sub_data("activities", pid).iterrows(): st.caption(f"{r['date'][:10]}"); st.write(r['content'])
 
     st.markdown("---")
     if st.button("Enregistrer & Fermer", type="primary", use_container_width=True):
-        supabase.table("prospects").update({
-            "company_name": name, "status": stat, "country": pays, 
-            "potential_volume": vol, "last_salon": salon_input, 
-            "product_interest": prod, "segment": app
-        }).eq("id", pid).execute()
+        supabase.table("prospects").update({"company_name": name, "status": stat, "country": pays, "potential_volume": vol, "last_salon": salon_input, "product_interest": prod}).eq("id", pid).execute()
         reset_pipeline(); st.rerun()
 
 # --- 6. SIDEBAR ---
@@ -276,8 +281,6 @@ if pg == "Pipeline":
     df = df_raw.copy()
     if p_f != "Tous": df = df[df['product_interest'] == p_f]
     if s_f != "Tous": df = df[df['status'].str.contains(s_f, na=False)]
-    if sl_f != "Tous": df = df[df['last_salon'] == sl_f]
-    if py_f != "Tous": df = df[df['country'] == py_f]
     
     st.write("")
     
@@ -298,12 +301,12 @@ if pg == "Pipeline":
     samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
     
     for _, row in df.iterrows():
-        # Каждая строка в белом контейнере с маркером row-marker
+        # КАЖДАЯ СТРОЧКА В БЕЛОМ КОНТЕЙНЕРЕ
         with st.container(border=True):
             st.markdown('<div class="row-marker"></div>', unsafe_allow_html=True)
             r = st.columns(weights)
             
-            # Название компании: ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ (через стилизацию кнопки)
+            # Название компании: ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ
             if r[0].button(row['company_name'], key=f"p_{row['id']}"):
                 st.session_state['active_prospect_id'] = row['id']; st.rerun()
             
@@ -327,14 +330,6 @@ if pg == "Pipeline":
             has_s = not samples_data.empty and row['id'] in samples_data['prospect_id'].values
             if has_s: r[6].markdown("<span class='badge bg-blue'>⬒ En test</span>", unsafe_allow_html=True)
             else: r[6].write("-")
-
-elif pg == "Tableau de Bord":
-    st.title("Dashboard")
-    df = get_data()
-    if not df.empty:
-        m1, m2 = st.columns(2)
-        m1.metric("Total", len(df))
-        m2.plotly_chart(px.pie(df, names='status', hole=.4), use_container_width=True)
 
 else:
     st.title(pg)
