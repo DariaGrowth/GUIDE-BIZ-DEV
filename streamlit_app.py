@@ -53,27 +53,26 @@ st.markdown("""
             background-color: rgba(16, 185, 129, 0.08) !important; 
             color: #047857 !important; font-weight: 600; 
         }
-        
+
         /* --- ПАЙПЛАЙН --- */
-        /* ТЕМНО-ЗЕЛЕНОЕ ОКНО ФИЛЬТРОВ (INGOOD STYLE) */
-        .filter-panel-box {
+        
+        /* ТЕМНО-ЗЕЛЕНОЕ ОКНО ФИЛЬТРОВ (ИСПРАВЛЕНО) */
+        /* Находим родительский контейнер, в котором лежит маркер фильтров */
+        [data-testid="stVerticalBlockBorderWrapper"]:has(.filter-marker) {
             background-color: #047857 !important; 
             border: none !important;
             border-radius: 10px !important; 
             padding: 15px !important; 
-            margin-bottom: 25px !important;
+            margin-bottom: 20px !important;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
+        
         .filter-label-white {
-            color: white !important; font-weight: 700; font-size: 15px; padding-top: 8px;
-        }
-        /* Делаем выпадающие списки внутри фильтров более лаконичными */
-        .filter-panel-box div[data-baseweb="select"] {
-            border: none !important;
+            color: white !important; font-weight: 700; font-size: 14px; padding-top: 8px;
         }
 
         /* ШАПКА ТАБЛИЦЫ (ЗЕЛЕНАЯ ЛИНИЯ) */
-        /* Этот селектор гарантирует, что фон будет под текстом */
+        /* Находим горизонтальный блок, в котором лежит маркер заголовка */
         [data-testid="stHorizontalBlock"]:has(.header-marker) {
             background-color: rgba(4, 120, 87, 0.1) !important;
             border: 1px solid #e2e8f0;
@@ -97,7 +96,7 @@ st.markdown("""
             border-radius: 8px !important; padding: 5px 0px !important; margin-bottom: 8px !important;
             box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
         }
-        div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #10b981 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important; }
+        div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #10b981 !important; }
 
         /* Клик по компании */
         div[data-testid="column"] .stButton > button {
@@ -170,7 +169,7 @@ def add_log(pid, t, c):
 
 def ai_mail(ctx):
     model = genai.GenerativeModel("gemini-1.5-flash")
-    return model.generate_content(f"B2B assistant. Context: {ctx}.").text
+    return model.generate_content(f"Act as professional B2B assistant. Context: {ctx}.").text
 
 # --- 5. КАРТОЧКА КЛИЕНТА ---
 @st.dialog(" ", width="large")
@@ -212,7 +211,8 @@ def show_prospect_card(pid, data):
 
         with t2:
             for _, r in get_sub_data("samples", pid).iterrows():
-                with st.container(border=True): st.markdown(f"**{r['product_name']}** ({r['date_sent'][:10]})")
+                with st.container(border=True):
+                    st.markdown(f"**{r['product_name']}** ({r['date_sent'][:10]})")
 
         with t3:
             n = st.text_area("Note...", key="nn")
@@ -272,15 +272,16 @@ if 'active_prospect_id' in st.session_state:
 if pg == "Pipeline":
     df_raw = get_data()
     
-    # --- БЛОК ФИЛЬТРОВ (ТЕМНО-ЗЕЛЕНЫЙ INGOOD) ---
-    st.markdown('<div class="filter-panel-box">', unsafe_allow_html=True)
-    f_cols = st.columns([0.8, 2, 2, 2, 2])
-    with f_cols[0]: st.markdown('<div class="filter-label-white">▽ Filtres:</div>', unsafe_allow_html=True)
-    with f_cols[1]: p_f = st.selectbox("Produit", ["Produit: Tous"] + list(df_raw['product_interest'].dropna().unique()), label_visibility="collapsed")
-    with f_cols[2]: s_f = st.selectbox("Statut", ["Statut: Tous", "Prospection", "Qualification", "Echantillon", "Test", "Client"], label_visibility="collapsed")
-    with f_cols[3]: sl_f = st.selectbox("Salon", ["Salon: Tous"] + list(df_raw['last_salon'].dropna().unique()), label_visibility="collapsed")
-    with f_cols[4]: py_f = st.selectbox("Pays", ["Pays: Tous"] + list(df_raw['country'].dropna().unique()), label_visibility="collapsed")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # --- БЛОК ФИЛЬТРОВ (ИСПРАВЛЕННЫЙ ТЕМНО-ЗЕЛЕНЫЙ) ---
+    with st.container(border=True):
+        # Добавляем маркер, чтобы CSS нашел этот контейнер
+        st.markdown('<div class="filter-marker"></div>', unsafe_allow_html=True)
+        f_cols = st.columns([0.8, 2, 2, 2, 2])
+        with f_cols[0]: st.markdown('<div class="filter-label-white">▽ Filtres:</div>', unsafe_allow_html=True)
+        with f_cols[1]: p_f = st.selectbox("Produit", ["Produit: Tous"] + list(df_raw['product_interest'].dropna().unique()), label_visibility="collapsed")
+        with f_cols[2]: s_f = st.selectbox("Statut", ["Statut: Tous", "Prospection", "Qualification", "Echantillon", "Test", "Client"], label_visibility="collapsed")
+        with f_cols[3]: sl_f = st.selectbox("Salon", ["Salon: Tous"] + list(df_raw['last_salon'].dropna().unique()), label_visibility="collapsed")
+        with f_cols[4]: py_f = st.selectbox("Pays", ["Pays: Tous"] + list(df_raw['country'].dropna().unique()), label_visibility="collapsed")
 
     df = df_raw.copy()
     if p_f != "Produit: Tous": df = df[df['product_interest'] == p_f]
@@ -290,10 +291,11 @@ if pg == "Pipeline":
     
     st.write("")
     
-    # --- ШАПКА ТАБЛИЦЫ (ЗЕЛЕНАЯ ЛИНИЯ) ---
+    # --- ШАПКА ТАБЛИЦЫ (ИСПРАВЛЕННАЯ ЗЕЛЕНАЯ ЛИНИЯ) ---
     weights = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
     
     with st.container():
+        # Добавляем маркер для всей горизонтальной строки
         st.markdown('<div class="header-marker"></div>', unsafe_allow_html=True)
         h = st.columns(weights)
         h[0].markdown('<span class="header-text">SOCIÉTÉ</span>', unsafe_allow_html=True)
@@ -338,7 +340,7 @@ elif pg == "Tableau de Bord":
 
 elif pg == "Kanban":
     st.title("Board")
-    st.info("Vue Kanban en разработке.")
+    st.info("Vue Kanban в разработке.")
 
 elif pg == "Эchantillons":
     st.title("Gestion des Эchantillons")
