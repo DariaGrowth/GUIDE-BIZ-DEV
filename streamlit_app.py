@@ -11,34 +11,32 @@ import time
 # --- 1. CONFIGURATION & STYLES ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
-# Профессиональный CSS: Глубокие селекторы для управления цветом и высотой
+# Профессиональный CSS с использованием селекторов :has() и маркеров для 100% точности
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        /* 1. ОБЩИЙ ФОН ПРИЛОЖЕНИЯ */
+        /* 1. ГЛОБАЛЬНЫЙ ФОН СТРАНИЦЫ (СВЕТЛО-СЕРЫЙ) */
         .stApp { 
             background-color: #f1f5f9 !important; 
             font-family: 'Inter', sans-serif; 
         }
         
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
-        
-        /* Убираем стандартные отступы между блоками, чтобы строки были узкими */
-        [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
 
-        /* 2. ТЕМНО-ЗЕЛЕНЫЙ БЛОК ФИЛЬТРОВ (INGOOD DARK GREEN) */
-        /* Таргетируем первый контейнер на странице */
-        div[data-testid="stVerticalBlock"] > div:nth-child(1) > div[data-testid="stVerticalBlockBorderWrapper"] {
+        /* 2. ТЕМНО-ЗЕЛЕНЫЙ БЛОК ФИЛЬТРОВ (МЕТОД МАРКЕРА) */
+        /* Ищем контейнер с рамкой, внутри которого лежит наш маркер 'filter-marker' */
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.filter-marker) {
             background-color: #047857 !important;
             border: none !important;
             border-radius: 12px !important;
-            padding: 15px 25px !important;
-            margin-bottom: 10px !important;
+            padding: 20px 25px !important;
+            margin-bottom: 20px !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
         }
         
-        /* Белый текст внутри зеленого блока */
-        .filter-label-white { 
+        /* Белый текст заголовка "Filtres:" */
+        .filter-header-white { 
             color: #ffffff !important; 
             font-weight: 700; 
             font-size: 14px; 
@@ -46,14 +44,13 @@ st.markdown("""
         }
 
         /* 3. ШАПКА ТАБЛИЦЫ (СВЕТЛО-ЗЕЛЕНАЯ ЛИНИЯ) */
-        .custom-header-container {
+        div[data-testid="stHorizontalBlock"]:has(.header-marker) {
             background-color: rgba(4, 120, 87, 0.1) !important;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 10px 15px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
+            padding: 10px 15px !important;
+            margin-bottom: 12px !important;
+            margin-top: 10px !important;
         }
         .header-label { 
             color: #000000 !important; 
@@ -62,40 +59,45 @@ st.markdown("""
             text-transform: uppercase; 
         }
 
-        /* 4. БЕЛЫЕ СТРОКИ КЛИЕНТОВ (УЗКИЕ) */
-        div[data-testid="stVerticalBlockBorderWrapper"] {
+        /* 4. БЕЛЫЕ УЗКИЕ СТРОКИ КЛИЕНТОВ (МЕТОД МАРКЕРА) */
+        /* Ищем контейнер с рамкой, внутри которого лежит наш маркер 'row-marker' */
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.row-marker) {
             background-color: #ffffff !important;
             border: 1px solid #e2e8f0 !important;
             border-radius: 8px !important;
-            padding: 4px 15px !important; /* Минимум отступов для узости */
-            margin-bottom: 5px !important;
+            padding: 2px 15px !important; /* Убираем лишнюю высоту */
+            margin-bottom: 8px !important;
             box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
         }
         
-        /* Сброс высоты для элементов внутри строк */
-        [data-testid="column"] { min-height: 0px !important; }
+        /* Ховер-эффект для строк */
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.row-marker):hover {
+            border-color: #10b981 !important;
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
 
-        /* 5. НАЗВАНИЕ КОМПАНИИ: ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ (БЕЗ ВИДА КНОПКИ) */
+        /* 5. НАЗВАНИЕ КОМПАНИИ: ТЕМНО-ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ */
+        /* Удаляем все визуальные атрибуты кнопки, оставляя только текст */
         div[data-testid="column"]:first-child button {
             background: transparent !important;
             border: none !important;
             padding: 0 !important;
             margin: 0 !important;
-            color: #047857 !important; /* Ingood Green */
+            color: #047857 !important;
             font-weight: 800 !important;
             font-size: 15px !important;
             text-align: left !important;
             box-shadow: none !important;
             min-height: 0px !important;
             height: auto !important;
-            line-height: 1.2 !important;
         }
         div[data-testid="column"]:first-child button:hover {
             color: #065f46 !important;
             text-decoration: underline !important;
         }
 
-        /* 6. САЙДБАР (МОНОХРОМ) */
+        /* 6. МОНОХРОМНЫЙ САЙДБАР */
         div[role="radiogroup"] label {
             display: flex; align-items: center; padding: 10px 16px;
             color: #475569; font-size: 14px; border-radius: 8px;
@@ -105,14 +107,13 @@ st.markdown("""
             color: #047857 !important; font-weight: 600; 
         }
 
-        /* БЕЙДЖИ */
+        /* БЕЙДЖИ И ШРИФТЫ */
         .badge-ui { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
         .bg-gray { background: #f1f5f9; color: #64748b; }
         .bg-green { background: #dcfce7; color: #166534; }
         .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
-        
-        .cell-text-muted { color: #64748b; font-size: 14px; font-weight: 500; }
+        .cell-muted { color: #64748b; font-size: 14px; font-weight: 500; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -183,13 +184,12 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             if st.button("🪄 Générer l'Email"):
                 model = genai.GenerativeModel("gemini-1.5-flash")
-                res = model.generate_content(f"Email template for {data['company_name']}").text
-                st.session_state['ai_draft'] = res
+                st.session_state['ai_draft'] = model.generate_content(f"Write a short professional B2B email for {data['company_name']} in French.").text
             if 'ai_draft' in st.session_state:
                 st.text_area("Brouillon AI", value=st.session_state['ai_draft'], height=150)
 
     with c_right:
-        t1, t2, t3 = st.tabs(["Contexte", "Эchantillons", "Journal"])
+        t1, t2, t3 = st.tabs(["Contexte", "Échantillons", "Journal"])
         with t1:
             prod_list, app_list = ["LEN", "PEP", "NEW"], ["Boulangerie", "Sauces", "Confiserie"]
             p_val = data.get("product_interest")
@@ -247,18 +247,20 @@ if 'open_new_id' in st.session_state:
     st.session_state['active_prospect_id'] = st.session_state.pop('open_new_id'); reset_pipeline()
 if 'active_prospect_id' in st.session_state:
     try: 
-        row_val = supabase.table("prospects").select("*").eq("id", st.session_state['active_prospect_id']).execute().data[0]
-        show_prospect_card(st.session_state['active_prospect_id'], row_val)
+        row_data = supabase.table("prospects").select("*").eq("id", st.session_state['active_prospect_id']).execute().data[0]
+        show_prospect_card(st.session_state['active_prospect_id'], row_data)
     except: safe_del('active_prospect_id')
 
 # --- 8. PAGES ---
 if pg == "Pipeline":
     df_raw = get_data()
     
-    # --- ТЕМНО-ЗЕЛЕНЫЙ БЛОК ФИЛЬТРОВ ---
+    # --- БЛОК ФИЛЬТРОВ С МАРКЕРОМ ---
     with st.container(border=True):
+        # Маркер для CSS селектора :has()
+        st.markdown('<div class="filter-marker"></div>', unsafe_allow_html=True)
         f_cols = st.columns([0.8, 2, 2, 2, 2])
-        with f_cols[0]: st.markdown('<div class="filter-label-white">▽ Filtres:</div>', unsafe_allow_html=True)
+        with f_cols[0]: st.markdown('<div class="filter-header-white">▽ Filtres:</div>', unsafe_allow_html=True)
         with f_cols[1]: p_f = st.selectbox("Produit", ["Tous"] + list(df_raw['product_interest'].dropna().unique()), label_visibility="collapsed")
         with f_cols[2]: s_f = st.selectbox("Statut", ["Tous", "Prospection", "Qualification", "Echantillon", "Test", "Client"], label_visibility="collapsed")
         with f_cols[3]: sl_f = st.selectbox("Salon", ["Tous"] + list(df_raw['last_salon'].dropna().unique()), label_visibility="collapsed")
@@ -270,30 +272,32 @@ if pg == "Pipeline":
     
     st.write("")
     
-    # --- ШАПКА ТАБЛИЦЫ ---
+    # --- ШАПКА ТАБЛИЦЫ С МАРКЕРОМ ---
     weights = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
-    st.markdown('<div class="custom-header-container">', unsafe_allow_html=True)
-    h = st.columns(weights)
-    h[0].markdown('<span class="header-label">SOCIÉTÉ</span>', unsafe_allow_html=True)
-    h[1].markdown('<span class="header-label">PAYS</span>', unsafe_allow_html=True)
-    h[2].markdown('<span class="header-label">PRODUIT</span>', unsafe_allow_html=True)
-    h[3].markdown('<span class="header-label">STATUT</span>', unsafe_allow_html=True)
-    h[4].markdown('<span class="header-label">CONTACT</span>', unsafe_allow_html=True)
-    h[5].markdown('<span class="header-label">SALON</span>', unsafe_allow_html=True)
-    h[6].markdown('<span class="header-label">SAMPLES</span>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="header-marker"></div>', unsafe_allow_html=True)
+        h = st.columns(weights)
+        h[0].markdown('<span class="header-label">SOCIÉTÉ</span>', unsafe_allow_html=True)
+        h[1].markdown('<span class="header-label">PAYS</span>', unsafe_allow_html=True)
+        h[2].markdown('<span class="header-label">PRODUIT</span>', unsafe_allow_html=True)
+        h[3].markdown('<span class="header-label">STATUT</span>', unsafe_allow_html=True)
+        h[4].markdown('<span class="header-label">CONTACT</span>', unsafe_allow_html=True)
+        h[5].markdown('<span class="header-label">SALON</span>', unsafe_allow_html=True)
+        h[6].markdown('<span class="header-label">SAMPLES</span>', unsafe_allow_html=True)
 
     samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
     
     for _, row in df.iterrows():
-        # СТРОЧКА В БЕЛОЙ КАРТОЧКЕ
+        # СТРОЧКА ПАЙПЛАЙНА С МАРКЕРОМ (УЗКАЯ КАРТОЧКА)
         with st.container(border=True):
+            st.markdown('<div class="row-marker"></div>', unsafe_allow_html=True)
             r = st.columns(weights)
-            # Название: Зеленый жирный текст
+            
+            # Название: Темно-зеленый жирный текст
             if r[0].button(row['company_name'], key=f"p_{row['id']}"):
                 st.session_state['active_prospect_id'] = row['id']; st.rerun()
             
-            r[1].markdown(f"<span class='cell-text-muted'>{row['country'] or '-'}</span>", unsafe_allow_html=True)
+            r[1].markdown(f"<span class='cell-muted'>{row['country'] or '-'}</span>", unsafe_allow_html=True)
             r[2].markdown(f"<span style='color:#047857; font-weight:700; font-size:13px;'>{row['product_interest'] or '-'}</span>", unsafe_allow_html=True)
             
             stat = row['status'] or "Prospection"
@@ -303,12 +307,12 @@ if pg == "Pipeline":
             last_c = "-"
             if row['last_action_date']:
                 dt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d")
-                last_c = dt.strftime("%d %b. %y")
+                d_contact = dt.strftime("%d %b. %y")
                 color = "#ef4444" if (datetime.now() - dt).days > 30 else "#64748b"
-                r[4].markdown(f"<span style='color:{color}; font-weight:700; font-size:14px;'>{last_c}</span>", unsafe_allow_html=True)
+                r[4].markdown(f"<span style='color:{color}; font-weight:700; font-size:14px;'>{d_contact}</span>", unsafe_allow_html=True)
             else: r[4].write("-")
             
-            r[5].markdown(f"<span class='cell-text-muted'>{row.get('last_salon') or '-'}</span>", unsafe_allow_html=True)
+            r[5].markdown(f"<span class='cell-muted'>{row.get('last_salon') or '-'}</span>", unsafe_allow_html=True)
             
             has_s = not samples_data.empty and row['id'] in samples_data['prospect_id'].values
             if has_s: r[6].markdown("<span class='badge-ui bg-blue'>🧪 En test</span>", unsafe_allow_html=True)
