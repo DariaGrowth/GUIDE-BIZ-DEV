@@ -13,7 +13,7 @@ st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="
 
 st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         /* БАЗОВЫЕ НАСТРОЙКИ */
         .stApp { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #334155; }
@@ -39,44 +39,38 @@ st.markdown("""
             background-color: white !important; border: 1px solid #fee2e2 !important; color: #ef4444 !important;
         }
 
-        /* КАНБАН-КАРТОЧКИ */
-        .kanban-card {
-            background: white; border: 1px solid #e2e8f0; border-radius: 8px;
-            padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            transition: all 0.2s ease;
+        /* --- СТИЛЬ ФИЛЬТРОВ (КАК НА СКРИНШОТЕ) --- */
+        .filter-label {
+            display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 600; font-size: 15px; margin-top: 8px;
         }
-        .kanban-card:hover { border-color: #10b981; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .kanban-title { font-weight: 700; color: #1e293b; font-size: 14px; margin-bottom: 5px; }
-        .kanban-sub { color: #64748b; font-size: 11px; margin-bottom: 10px; line-height: 1.4; }
 
-        /* --- ОБНОВЛЕННЫЙ СТИЛЬ ПАЙПЛАЙНА --- */
+        /* --- СТИЛЬ ПАЙПЛАЙНА --- */
         
-        /* Стиль для заголовка таблицы (зеленая полоса) */
-        [data-testid="stVerticalBlock"] > div:has(.header-text-box) {
-            background-color: rgba(4, 120, 87, 0.1) !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 8px !important;
-            padding: 15px 10px !important;
-            margin-bottom: 15px !important;
+        /* Светло-зеленая шапка таблицы */
+        .pipeline-header-container {
+            background-color: rgba(4, 120, 87, 0.08) !important;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 10px;
+            margin-bottom: 15px;
+            margin-top: 10px;
         }
 
         .header-text { 
             color: #000000 !important; 
-            font-size: 13px !important; /* Увеличен шрифт */
+            font-size: 14px !important; /* Увеличен шрифт для баланса */
             font-weight: 800 !important; 
             text-transform: uppercase; 
-            letter-spacing: 0.8px;
-            display: inline-block;
+            letter-spacing: 0.5px;
         }
 
-        /* Все строки таблицы - белый фон */
+        /* Строки таблицы - всегда белый фон */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             background-color: white !important;
             border: 1px solid #e2e8f0 !important;
             border-radius: 8px !important;
             margin-bottom: 8px !important;
             padding: 5px 0px !important;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
         }
 
         /* Клик по названию компании */
@@ -153,7 +147,7 @@ def ai_mail(ctx):
     model = genai.GenerativeModel("gemini-1.5-flash")
     return model.generate_content(f"Act as B2B email assistant. French language. Context: {ctx}. Short and professional.").text
 
-# --- 5. FICHE PROSPECT (МОДАЛЬНОЕ ОКНО) ---
+# --- 5. КАРТОЧКА КЛИЕНТА (МОДАЛЬНОЕ ОКНО) ---
 @st.dialog(" ", width="large")
 def show_prospect_card(pid, data):
     pid = int(pid)
@@ -179,10 +173,8 @@ def show_prospect_card(pid, data):
                 with st.spinner("Rédaction..."):
                     context = f"Client: {data['company_name']}, Produit: {data.get('product_interest')}, Ton: {tone}"
                     st.session_state['ai_draft'] = ai_mail(context)
-            
             if 'ai_draft' in st.session_state:
                 st.text_area("Brouillon AI", value=st.session_state['ai_draft'], height=150)
-                st.caption("Copy-paste with Ctrl+C")
 
     with c_right:
         t1, t2, t3 = st.tabs(["Contexte", "Échantillons", "Journal"])
@@ -191,16 +183,10 @@ def show_prospect_card(pid, data):
             p_val = data.get("product_interest")
             p_idx = prod_list.index(p_val) if p_val in prod_list else 0
             
-            app_list = ["Boulangerie", "Sauces", "Confiserie"]
-            a_val = data.get("segment")
-            a_idx = app_list.index(a_val) if a_val in app_list else 0
-
             c1, c2 = st.columns(2)
             with c1: prod = st.selectbox("Ingrédient", prod_list, index=p_idx)
-            with c2: app = st.selectbox("Application", app_list, index=a_idx)
+            with c2: app = st.selectbox("Application", ["Boulangerie", "Sauces", "Confiserie"], index=0)
             
-            st.markdown("---")
-            st.markdown("<p style='font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;'>CONTACTS CLÉS</p>", unsafe_allow_html=True)
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
         with t2:
@@ -215,7 +201,7 @@ def show_prospect_card(pid, data):
             st.write(""); st.markdown("##### Historique")
             for _, r in get_sub_data("samples", pid).iterrows():
                 with st.container(border=True):
-                    st.markdown(f"**{r['product_name']}** | {r['reference']} <span style='color:gray; font-size:12px'>({r['date_sent'][:10]})</span>", unsafe_allow_html=True)
+                    st.markdown(f"**{r['product_name']}** | {r['reference']} ({r['date_sent'][:10]})")
                     st.caption(f"Status: {r['status']}")
 
         with t3:
@@ -232,24 +218,21 @@ def show_prospect_card(pid, data):
         if st.button("Enregistrer & Fermer", type="primary", use_container_width=True):
             supabase.table("prospects").update({
                 "company_name": name, "status": stat, "country": pays, "potential_volume": vol, "last_salon": salon_input,
-                "product_interest": prod, "segment": app, "last_action_date": datetime.now().isoformat()
+                "product_interest": prod, "last_action_date": datetime.now().isoformat()
             }).eq("id", pid).execute()
             
+            # Сохранение контактов
             if not contacts.empty:
                 current_ids = [int(x) for x in contacts['id'].dropna() if str(x).isdigit()] if 'id' in contacts.columns else []
                 old_contacts = get_sub_data("contacts", pid)
                 if not old_contacts.empty:
-                    old_ids = old_contacts['id'].tolist()
-                    to_delete = [oid for oid in old_ids if oid not in current_ids]
+                    to_delete = [oid for oid in old_contacts['id'].tolist() if oid not in current_ids]
                     if to_delete: supabase.table("contacts").delete().in_("id", to_delete).execute()
-
                 for r in contacts.to_dict('records'):
                     if str(r.get("name")).strip():
                         d = {"prospect_id": pid, "name": r["name"], "role": r.get("role",""), "email": r.get("email",""), "phone": r.get("phone","")}
-                        if r.get("id") and not pd.isna(r.get("id")):
-                            supabase.table("contacts").upsert({**d, "id": int(r["id"])}).execute()
-                        else:
-                            supabase.table("contacts").insert(d).execute()
+                        if r.get("id") and not pd.isna(r.get("id")): supabase.table("contacts").upsert({**d, "id": int(r["id"])}).execute()
+                        else: supabase.table("contacts").insert(d).execute()
             
             reset_pipeline(); st.rerun()
 
@@ -268,7 +251,6 @@ with st.sidebar:
 # --- 7. РОУТИНГ КАРТОЧЕК ---
 if 'open_new_id' in st.session_state:
     st.session_state['active_prospect_id'] = st.session_state.pop('open_new_id'); reset_pipeline()
-
 if 'active_prospect_id' in st.session_state:
     try:
         data_row = supabase.table("prospects").select("*").eq("id", st.session_state['active_prospect_id']).execute().data[0]
@@ -281,22 +263,14 @@ if pg == "Kanban":
     df = get_data()
     stages = ["🔭 Prospection", "📋 Qualification", "📦 Echantillon", "🔬 Test R&D"]
     st_cols = st.columns(len(stages))
-    
     for i, stage in enumerate(stages):
         with st_cols[i]:
             st.markdown(f"<p style='font-weight:700; color:#047857; border-bottom: 2px solid #e2e8f0; padding-bottom:5px; margin-bottom:15px;'>{stage.upper()}</p>", unsafe_allow_html=True)
             keyword = stage.split(' ')[1]
             stage_df = df[df['status'].str.contains(keyword, na=False)] if not df.empty else pd.DataFrame()
-            
             for _, row in stage_df.iterrows():
                 with st.container():
-                    st.markdown(f"""
-                        <div class="kanban-card">
-                            <div class="kanban-title">{row['company_name']}</div>
-                            <div class="kanban-sub">{row['country'] or 'N/A'} • {row['product_interest'] or 'N/A'}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
+                    st.markdown(f'<div class="kanban-card"><div class="kanban-title">{row["company_name"]}</div><div class="kanban-sub">{row["country"] or "N/A"} • {row["product_interest"] or "N/A"}</div></div>', unsafe_allow_html=True)
                     k1, k2 = st.columns([3, 1])
                     with k1:
                         if st.button("Détails", key=f"kan_{row['id']}", use_container_width=True):
@@ -304,103 +278,75 @@ if pg == "Kanban":
                     with k2:
                         if i < len(stages) - 1:
                             if st.button("→", key=f"mov_{row['id']}"):
-                                next_stage = stages[i+1]
-                                supabase.table("prospects").update({"status": next_stage}).eq("id", row['id']).execute()
-                                reset_pipeline(); st.rerun()
+                                supabase.table("prospects").update({"status": stages[i+1]}).eq("id", row['id']).execute(); reset_pipeline(); st.rerun()
 
 elif pg == "Tableau de Bord":
     st.title("Analyses CRM")
     df = get_data()
     if not df.empty:
         m1, m2, m3 = st.columns(3)
-        m1.metric("Projets Total", len(df))
-        m2.metric("En Test", len(df[df['status'].str.contains('Test', na=False)]))
-        m3.metric("Volume Potential", f"{int(df['potential_volume'].sum())} T")
-        
+        m1.metric("Projets Total", len(df)); m2.metric("En Test", len(df[df['status'].str.contains('Test', na=False)])); m3.metric("Volume Potential", f"{int(df['potential_volume'].sum())} T")
         c_l, c_r = st.columns(2)
         with c_l: st.plotly_chart(px.pie(df, names='product_interest', hole=.4, title="Mix Produits", color_discrete_sequence=px.colors.sequential.Greens_r), use_container_width=True)
-        with cr: st.plotly_chart(px.bar(df['status'].value_counts(), title="Tunnel de vente", color_discrete_sequence=['#047857']), use_container_width=True)
+        with c_r: st.plotly_chart(px.bar(df['status'].value_counts(), title="Tunnel de vente", color_discrete_sequence=['#047857']), use_container_width=True)
 
 elif pg == "Pipeline":
     st.markdown("## Pipeline Food & Ingrédients")
-    st.caption("Suivi des проектов R&D и коммерческих сделок.")
-    
     df_raw = get_data()
     
-    # --- БЛОК ФИЛЬТРОВ ---
+    # --- БЛОК ФИЛЬТРОВ (КАК НА СКРИНШОТЕ) ---
     with st.container(border=True):
-        f1, f2, f3 = st.columns(3)
-        with f1: p_filter = st.selectbox("Produit", ["Tous Produits"] + list(df_raw['product_interest'].dropna().unique()), index=0)
-        with f2: s_filter = st.selectbox("Statut", ["Tous Statuts", "Prospection", "Qualification", "Echantillon", "Test", "Client"], index=0)
-        with f3: c_filter = st.selectbox("Pays", ["Tous Pays"] + list(df_raw['country'].dropna().unique()), index=0)
+        f_cols = st.columns([0.8, 2, 2, 2, 2])
+        with f_cols[0]: st.markdown('<div class="filter-label">🔍 Filtres:</div>', unsafe_allow_html=True)
+        with f_cols[1]: p_filter = st.selectbox("Produit", ["Produit: Tous"] + list(df_raw['product_interest'].dropna().unique()), label_visibility="collapsed")
+        with f_cols[2]: s_filter = st.selectbox("Statut", ["Statut: Tous", "Prospection", "Qualification", "Echantillon", "Test", "Client"], label_visibility="collapsed")
+        with f_cols[3]: salon_filter = st.selectbox("Salon", ["Salon: Tous"] + list(df_raw['last_salon'].dropna().unique()), label_visibility="collapsed")
+        with f_cols[4]: c_filter = st.selectbox("Pays", ["Pays: Tous"] + list(df_raw['country'].dropna().unique()), label_visibility="collapsed")
 
     df = df_raw.copy()
-    if p_filter != "Tous Produits": df = df[df['product_interest'] == p_filter]
-    if s_filter != "Tous Statuts": df = df[df['status'].str.contains(s_filter, na=False)]
-    if c_filter != "Tous Pays": df = df[df['country'] == c_filter]
+    if p_filter != "Produit: Tous": df = df[df['product_interest'] == p_filter]
+    if s_filter != "Statut: Tous": df = df[df['status'].str.contains(s_filter, na=False)]
+    if salon_filter != "Salon: Tous": df = df[df['last_salon'] == salon_filter]
+    if c_filter != "Pays: Tous": df = df[df['country'] == c_filter]
 
     st.write("")
     
-    # --- ВЫРАВНИВАНИЕ КОЛОНОК (ВЕСА) ---
-    # Мы увеличили веса для заголовка и строк
+    # --- ШАПКА ТАБЛИЦЫ (Светло-зеленая линия) ---
     cols_weight = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
     
-    # --- ШАПКА ТАБЛИЦЫ (Светло-зеленая линия) ---
-    # Используем пустой контейнер для отрисовки фона через CSS
-    with st.container():
-        # Текст теперь гарантированно внутри линии
-        h = st.columns(cols_weight)
-        h[0].markdown('<div class="header-text-box"><span class="header-text">SOCIÉTÉ</span></div>', unsafe_allow_html=True)
-        h[1].markdown('<div class="header-text-box"><span class="header-text">PAYS</span></div>', unsafe_allow_html=True)
-        h[2].markdown('<div class="header-text-box"><span class="header-text">PRODUIT</span></div>', unsafe_allow_html=True)
-        h[3].markdown('<div class="header-text-box"><span class="header-text">STATUT</span></div>', unsafe_allow_html=True)
-        h[4].markdown('<div class="header-text-box"><span class="header-text">CONTACT</span></div>', unsafe_allow_html=True)
-        h[5].markdown('<div class="header-text-box"><span class="header-text">SALON</span></div>', unsafe_allow_html=True)
-        h[6].markdown('<div class="header-text-box"><span class="header-text">SAMPLES</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="pipeline-header-container">', unsafe_allow_html=True)
+    h = st.columns(cols_weight)
+    h[0].markdown('<span class="header-text">SOCIÉTÉ</span>', unsafe_allow_html=True)
+    h[1].markdown('<span class="header-text">PAYS</span>', unsafe_allow_html=True)
+    h[2].markdown('<span class="header-text">PRODUIT</span>', unsafe_allow_html=True)
+    h[3].markdown('<span class="header-text">STATUT</span>', unsafe_allow_html=True)
+    h[4].markdown('<span class="header-text">CONTACT</span>', unsafe_allow_html=True)
+    h[5].markdown('<span class="header-text">SALON</span>', unsafe_allow_html=True)
+    h[6].markdown('<span class="header-text">SAMPLES</span>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Данные
+    # ДАННЫЕ
     samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
     
     for _, row in df.iterrows():
         with st.container(border=True):
             r = st.columns(cols_weight)
-            
-            # 1. Компания
             if r[0].button(row['company_name'], key=f"pipe_{row['id']}"):
-                st.session_state['active_prospect_id'] = row['id']
-                st.rerun()
-            
-            # 2. Страна
+                st.session_state['active_prospect_id'] = row['id']; st.rerun()
             r[1].markdown(f"<span class='cell-text'>{row['country'] or '-'}</span>", unsafe_allow_html=True)
-            
-            # 3. Продукт
             r[2].markdown(f"<span class='cell-prod'>{row['product_interest'] or '-'}</span>", unsafe_allow_html=True)
-            
-            # 4. Статус
             stat = row['status'] or "Prospection"
             badge_cls = "bg-green" if "Client" in stat else "bg-yellow" if "Test" in stat else "bg-gray"
-            clean_stat = stat.split(' ')[1] if ' ' in stat else stat
-            r[3].markdown(f"<span class='badge {badge_cls}'>{clean_stat}</span>", unsafe_allow_html=True)
-            
-            # 5. Последний контакт
+            r[3].markdown(f"<span class='badge {badge_cls}'>{stat.split(' ')[1] if ' ' in stat else stat}</span>", unsafe_allow_html=True)
             d_contact = "-"
             if row['last_action_date']:
                 dt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d")
                 d_contact = dt.strftime("%d %b. %y")
-                if (datetime.now() - dt).days > 30:
-                     r[4].markdown(f"<span style='color:#ef4444; font-weight:700;'>{d_contact}</span>", unsafe_allow_html=True)
-                else:
-                     r[4].markdown(f"<span class='cell-text'>{d_contact}</span>", unsafe_allow_html=True)
+                if (datetime.now() - dt).days > 30: r[4].markdown(f"<span style='color:#ef4444; font-weight:700;'>{d_contact}</span>", unsafe_allow_html=True)
+                else: r[4].markdown(f"<span class='cell-text'>{d_contact}</span>", unsafe_allow_html=True)
             else: r[4].write("-")
-
-            # 6. Салон
             r[5].markdown(f"<span class='cell-salon'>{row.get('last_salon') or '-'}</span>", unsafe_allow_html=True)
-            
-            # 7. Эchantillons
-            has_s = False
-            if not samples_data.empty and row['id'] in samples_data['prospect_id'].values:
-                has_s = True
-            
+            has_s = not samples_data.empty and row['id'] in samples_data['prospect_id'].values
             if has_s: r[6].markdown("<span class='badge bg-blue'>⚗️ En test</span>", unsafe_allow_html=True)
             else: r[6].write("-")
 
