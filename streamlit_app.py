@@ -133,6 +133,14 @@ st.markdown("""
         .bg-gray { background: #f1f5f9; color: #64748b; }
         .bg-green { background: #dcfce7; color: #166534; }
         .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
+
+        /* Стиль для полей фидбека в образцах */
+        .sample-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -213,8 +221,9 @@ def show_prospect_card(pid, data):
                 st.text_area("Brouillon AI", value=st.session_state['ai_draft'], height=150)
 
     with c_right:
-        # Восстановление вкладок как на скриншоте
+        # Вкладки как на скриншоте
         t1, t2, t3 = st.tabs(["Contexte & Technique", "Suivi Échantillons", "Journal d'Activité"])
+        
         with t1:
             prod_list = ["LENGOOD® (Substitut Œuf)", "PEPTIPEA® (Protéine)", "NEWGOOD® (Nouveauté)"]
             p_val = data.get("product_interest", "LENGOOD® (Substitut Œuf)")
@@ -228,16 +237,56 @@ def show_prospect_card(pid, data):
             with c1: prod = st.selectbox("INGRÉDIENT INGOOD", prod_list, index=p_idx)
             with c2: app = st.selectbox("APPLICATION FINALE", app_list, index=a_idx)
             
-            pain_point = st.text_area("PROBLÉMATIQUE / BESOIN (PAIN POINT)", value=data.get("notes", ""))
-            tech_notes = st.text_area("NOTES TECHNIQUES", value=data.get("tech_notes", ""))
+            pain_point = st.text_area("PROBLÉMATIQUE / BESOIN (PAIN POINT)", value=data.get("notes", ""), height=100)
+            tech_notes = st.text_area("NOTES TECHNIQUES", value=data.get("tech_notes", ""), height=100)
             
             st.markdown("##### CONTACTS")
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
         with t2:
+            st.markdown("##### AJOUTER UN ÉCHANTILLON")
+            # Строка ввода как на скриншоте
+            cs1, cs2, cs3 = st.columns([2, 1, 0.8])
+            with cs1: ref_input = st.text_input("Ref (ex: Lot A12)", key="new_ref", label_visibility="collapsed", placeholder="Ref (ex: Lot A12)")
+            with cs2: prod_input = st.selectbox("Produit", prod_list, key="new_prod_sample", label_visibility="collapsed")
+            with cs3: 
+                if st.button("Ajouter", type="primary", use_container_width=True):
+                    supabase.table("samples").insert({
+                        "prospect_id": pid, 
+                        "reference": ref_input, 
+                        "product_name": prod_input, 
+                        "status": "En test", 
+                        "date_sent": datetime.now().isoformat()
+                    }).execute()
+                    st.rerun()
+
+            st.markdown("---")
             st.markdown("##### HISTORIQUE DES ENVOIS")
-            for _, r in get_sub_data("samples", pid).iterrows():
-                with st.container(border=True): st.markdown(f"**{r['product_name']}** ({r['date_sent'][:10]})")
+            samples_df = get_sub_data("samples", pid)
+            for _, r in samples_df.iterrows():
+                # Контейнер для каждого образца
+                with st.container(border=True):
+                    ch1, ch2, ch3 = st.columns([2.5, 1, 0.2])
+                    with ch1:
+                        st.markdown(f"**{r['product_name']}** {r['reference']} ({r['date_sent'][:10] if r['date_sent'] else ''})")
+                    with ch2:
+                        # Выбор статуса
+                        s_opts = ["En test", "Validé", "Rejeté", "En attente"]
+                        s_idx = s_opts.index(r['status']) if r['status'] in s_opts else 0
+                        new_s = st.selectbox("Status", s_opts, index=s_idx, key=f"s_stat_{r['id']}", label_visibility="collapsed")
+                        if new_s != r['status']:
+                            supabase.table("samples").update({"status": new_s}).eq("id", r['id']).execute()
+                    with ch3:
+                        if st.button("🗑️", key=f"del_s_{r['id']}", help="Supprimer"):
+                            supabase.table("samples").delete().eq("id", r['id']).execute()
+                            st.rerun()
+                    
+                    # Поле для фидбека
+                    new_f = st.text_area("Feedback R&D client...", value=r.get("feedback", ""), key=f"s_feed_{r['id']}", height=80, placeholder="Feedback R&D client...")
+                    if new_f != r.get("feedback", ""):
+                        # Мы сохраним фидбек вместе с общим сохранением или можно добавить кнопку "Update Feedback"
+                        # Но для удобства обновим базу при изменении (в Streamlit это сработает после потери фокуса)
+                        supabase.table("samples").update({"feedback": new_f}).eq("id", r['id']).execute()
 
         with t3:
             st.markdown("##### JOURNAL DES ACTIONS")
@@ -260,6 +309,20 @@ def show_prospect_card(pid, data):
             "notes": pain_point,
             "tech_notes": tech_notes
         }).eq("id", pid).execute()
+        
+        # Сохранение контактов
+        if not contacts.empty:
+            current_ids = contacts['id'].dropna().astype(int).tolist() if 'id' in contacts.columns else []
+            old_contacts = get_sub_data("contacts", pid)
+            if not old_contacts.empty:
+                to_delete = [oid for oid in old_contacts['id'].tolist() if oid not in current_ids]
+                if to_delete: supabase.table("contacts").delete().in_("id", to_delete).execute()
+            for r in contacts.to_dict('records'):
+                if str(r.get("name")).strip():
+                    d = {"prospect_id": pid, "name": r["name"], "role": r.get("role",""), "email": r.get("email",""), "phone": r.get("phone","")}
+                    if r.get("id") and not pd.isna(r.get("id")): supabase.table("contacts").upsert({**d, "id": int(r["id"])}).execute()
+                    else: supabase.table("contacts").insert(d).execute()
+                    
         reset_pipeline(); st.rerun()
 
 # --- 6. SIDEBAR ---
@@ -322,7 +385,8 @@ if pg == "Pipeline":
             s_f = st.selectbox("Statut", s_list, label_visibility="collapsed")
             
         with f_cols[3]: 
-            sl_list = ["Salon: Tous"] + sorted(list(df_raw['last_salon'].dropna().unique()))
+            # Исправлено: Dernier Salon заменен на DERNIER CONTACT в логике, но для фильтра по салону оставим, если нужно
+            sl_list = ["Source: Tous"] + sorted(list(df_raw['last_salon'].dropna().unique()))
             sl_f = st.selectbox("Salon", sl_list, label_visibility="collapsed")
             
         with f_cols[4]: 
@@ -332,7 +396,6 @@ if pg == "Pipeline":
     df = df_raw.copy()
     if p_f != "Produit: Tous": df = df[df['product_interest'] == p_f]
     if s_f != "Statut: Tous": df = df[df['status'].str.contains(s_f, na=False)]
-    if sl_f != "Salon: Tous": df = df[df['last_salon'] == sl_f]
     if py_f != "Pays: Tous": df = df[df['country'] == py_f]
     
     st.write("")
@@ -355,7 +418,7 @@ if pg == "Pipeline":
     for _, row in df.iterrows():
         with st.container(border=True):
             r = st.columns(weights)
-            # Название компании: Стиль гиперссылки, без рамок кнопки
+            # Название компании: Стиль гиперссылки
             if r[0].button(row['company_name'], key=f"p_{row['id']}"):
                 st.session_state['active_prospect_id'] = row['id']; st.rerun()
             
