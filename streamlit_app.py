@@ -67,7 +67,7 @@ st.markdown("""
         }
         .header-text-style { 
             color: #047857 !important; /* Цвет как лого Ingood */
-            font-size: 14px !important; /* Увеличено */
+            font-size: 14px !important; 
             font-weight: 800 !important; 
             text-transform: uppercase; 
             letter-spacing: 0.5px;
@@ -87,22 +87,32 @@ st.markdown("""
             background-color: #fcfdfd !important;
         }
 
-        /* 7. НАЗВАНИЕ КОМПАНИИ: ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ */
-        div[data-testid="column"]:first-child button {
+        /* 7. НАЗВАНИЕ КОМПАНИИ: КЛИКАТЕЛЬНЫЙ ТЕКСТ (СТИЛЬ ССЫЛКИ) */
+        div[data-testid="column"]:first-child .stButton > button {
             background: transparent !important;
             border: none !important;
             padding: 0 !important;
             margin: 0 !important;
             color: #047857 !important;
             font-weight: 800 !important;
-            font-size: 14px !important;
+            font-size: 15px !important;
             text-align: left !important;
             box-shadow: none !important;
             min-height: 0px !important;
             height: 32px !important;
+            line-height: 32px !important;
+            display: inline-block !important;
+            width: auto !important;
+            transition: all 0.2s ease;
         }
-        div[data-testid="column"]:first-child button:hover {
+        div[data-testid="column"]:first-child .stButton > button:hover {
             text-decoration: underline !important;
+            background: transparent !important;
+            color: #065f46 !important;
+        }
+        div[data-testid="column"]:first-child .stButton > button:active {
+            background: transparent !important;
+            color: #047857 !important;
         }
 
         /* 8. САЙДБАР И УВЕДОМЛЕНИЯ */
@@ -287,7 +297,6 @@ if pg == "Pipeline":
         f_cols = st.columns([0.8, 2, 2, 2, 2])
         with f_cols[0]: st.markdown('<div class="filter-label-white">▽ Filtres:</div>', unsafe_allow_html=True)
         
-        # Восстановление функционала фильтров с названиями внутри
         with f_cols[1]: 
             p_list = ["Produit: Tous"] + sorted(list(df_raw['product_interest'].dropna().unique()))
             p_f = st.selectbox("Produit", p_list, label_visibility="collapsed")
@@ -304,7 +313,6 @@ if pg == "Pipeline":
             py_list = ["Pays: Tous"] + sorted(list(df_raw['country'].dropna().unique()))
             py_f = st.selectbox("Pays", py_list, label_visibility="collapsed")
 
-    # Логика фильтрации
     df = df_raw.copy()
     if p_f != "Produit: Tous": df = df[df['product_interest'] == p_f]
     if s_f != "Statut: Tous": df = df[df['status'].str.contains(s_f, na=False)]
@@ -313,7 +321,7 @@ if pg == "Pipeline":
     
     st.write("")
     
-    # --- ШАПКА ТАБЛИЦЫ (БЕЗ ФОНОВОЙ ЛИНИИ, ЗЕЛЕНЫЙ ШРИФТ) ---
+    # --- ШАПКА ТАБЛИЦЫ (ЗЕЛЕНЫЙ ШРИФТ) ---
     weights = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
     st.markdown('<div class="pipeline-header-row">', unsafe_allow_html=True)
     h = st.columns(weights)
@@ -329,10 +337,9 @@ if pg == "Pipeline":
     samples_db = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
     
     for _, row in df.iterrows():
-        # СТРОЧКА ТАБЛИЦЫ (БЕЛАЯ, БЕЗ GAP)
         with st.container(border=True):
             r = st.columns(weights)
-            # Название компании: Зеленый жирный текст
+            # Название компании: Стиль гиперссылки, без рамок кнопки
             if r[0].button(row['company_name'], key=f"p_{row['id']}"):
                 st.session_state['active_prospect_id'] = row['id']; st.rerun()
             
