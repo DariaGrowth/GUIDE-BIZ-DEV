@@ -11,7 +11,7 @@ import time
 # --- 1. CONFIGURATION & STYLES ---
 st.set_page_config(page_title="Ingood Growth", page_icon="favicon.png", layout="wide")
 
-# Профессиональный CSS для создания сверхкомпактного табличного интерфейса
+# Профессиональный CSS: фиксируем цвета и компактность таблицы
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -24,13 +24,24 @@ st.markdown("""
         
         section[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
 
-        /* 2. УДАЛЕНИЕ РАССТОЯНИЙ МЕЖДУ СТРОКАМИ (ГЛОБАЛЬНЫЙ СБРОС GAP) */
+        /* 2. УДАЛЕНИЕ РАССТОЯНИЙ (GAP) МЕЖДУ СТРОКАМИ */
         [data-testid="stVerticalBlock"] { 
             gap: 0rem !important; 
         }
         
-        /* 3. ТЕМНО-ЗЕЛЕНЫЙ БЛОК ФИЛЬТРОВ (БЕЗ ОТСТУПОВ) */
-        /* Находим первый блок на странице Pipeline */
+        /* 3. ЗЕЛЕНАЯ КНОПКА "НОВЫЙ ПРОЕКТ" */
+        [data-testid="stSidebar"] .stButton > button {
+            width: 100%; 
+            background-color: #047857 !important; 
+            color: white !important;
+            border: none; 
+            border-radius: 6px; 
+            padding: 10px 16px; 
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* 4. ТЕМНО-ЗЕЛЕНЫЙ БЛОК ФИЛЬТРОВ */
         div[data-testid="stVerticalBlock"] > div:nth-child(1) > div[data-testid="stVerticalBlockBorderWrapper"] {
             background-color: #047857 !important;
             border: none !important;
@@ -41,11 +52,11 @@ st.markdown("""
         
         .filter-label-white { 
             color: #ffffff !important; 
-            font-weight: 700 !important; 
-            font-size: 14px !important; 
+            font-weight: 700; 
+            font-size: 14px; 
         }
 
-        /* 4. ШАПКА ТАБЛИЦЫ (СВЕТЛО-ЗЕЛЕНАЯ) */
+        /* 5. ШАПКА ТАБЛИЦЫ (СВЕТЛО-ЗЕЛЕНАЯ) */
         .pipeline-header-row {
             background-color: rgba(4, 120, 87, 0.08) !important;
             border: 1px solid #e2e8f0;
@@ -63,13 +74,13 @@ st.markdown("""
             letter-spacing: 0.5px;
         }
 
-        /* 5. СВЕРХКОМПАКТНЫЕ БЕЛЫЕ СТРОКИ КЛИЕНТОВ */
+        /* 6. СВЕРХКОМПАКТНЫЕ БЕЛЫЕ СТРОКИ */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             background-color: #ffffff !important;
             border: none !important;
-            border-bottom: 1px solid #f1f5f9 !important; /* Линия-разделитель вместо рамок */
+            border-bottom: 1px solid #f1f5f9 !important;
             border-radius: 0px !important;
-            padding: 2px 15px !important; /* Минимальная высота */
+            padding: 2px 15px !important;
             margin-bottom: 0px !important;
         }
         
@@ -77,7 +88,7 @@ st.markdown("""
             background-color: #fcfdfd !important;
         }
 
-        /* 6. НАЗВАНИЕ КОМПАНИИ: ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ-ССЫЛКА */
+        /* 7. НАЗВАНИЕ КОМПАНИИ: ЗЕЛЕНЫЙ ЖИРНЫЙ ТЕКСТ */
         div[data-testid="column"]:first-child button {
             background: transparent !important;
             border: none !important;
@@ -89,14 +100,13 @@ st.markdown("""
             text-align: left !important;
             box-shadow: none !important;
             min-height: 0px !important;
-            height: 32px !important; /* Фиксированная компактная высота */
+            height: 32px !important;
         }
         div[data-testid="column"]:first-child button:hover {
             text-decoration: underline !important;
-            color: #065f46 !important;
         }
 
-        /* 7. САЙДБАР (МОНОХРОМ) */
+        /* 8. САЙДБАР И УВЕДОМЛЕНИЯ */
         div[role="radiogroup"] label {
             display: flex; align-items: center; padding: 8px 16px;
             color: #475569; font-size: 14px; border-radius: 6px;
@@ -106,7 +116,12 @@ st.markdown("""
             color: #047857 !important; font-weight: 600; 
         }
 
-        /* УТИЛИТЫ */
+        /* КРАСНЫЙ КРУЖОК УВЕДОМЛЕНИЙ */
+        .notif-badge {
+            background: #fee2e2; color: #ef4444; font-size: 10px; font-weight: 700;
+            padding: 1px 7px; border-radius: 10px; margin-left: auto;
+        }
+
         .text-small-muted { color: #64748b; font-size: 13px; font-weight: 500; }
         .badge-ui { padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; display: inline-block; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
@@ -183,7 +198,7 @@ def show_prospect_card(pid, data):
             st.markdown("---")
             if st.button("🪄 Générer Email"):
                 model = genai.GenerativeModel("gemini-1.5-flash")
-                res = model.generate_content(f"Email template for {data['company_name']} in French").text
+                res = model.generate_content(f"Write a short professional B2B email for {data['company_name']} in French.").text
                 st.session_state['ai_draft'] = res
             if 'ai_draft' in st.session_state:
                 st.text_area("Brouillon AI", value=st.session_state['ai_draft'], height=150)
@@ -191,13 +206,15 @@ def show_prospect_card(pid, data):
     with c_right:
         t1, t2, t3 = st.tabs(["Contexte", "Échantillons", "Journal"])
         with t1:
-            prod_list = ["LEN", "PEP", "NEW"]
+            prod_list, app_list = ["LEN", "PEP", "NEW"], ["Boulangerie", "Sauces", "Confiserie"]
             p_val = data.get("product_interest")
             p_idx = prod_list.index(p_val) if p_val in prod_list else 0
+            a_val = data.get("segment")
+            a_idx = app_list.index(a_val) if a_val in app_list else 0
 
             c1, c2 = st.columns(2)
             with c1: prod = st.selectbox("Ingrédient", prod_list, index=p_idx)
-            with c2: app = st.selectbox("Application", ["Boulangerie", "Sauces", "Confiserie"], index=0)
+            with c2: app = st.selectbox("Application", app_list, index=a_idx)
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
         with t2:
@@ -216,7 +233,7 @@ def show_prospect_card(pid, data):
         supabase.table("prospects").update({
             "company_name": name, "status": stat, "country": pays, 
             "potential_volume": vol, "last_salon": salon_input, 
-            "product_interest": prod
+            "product_interest": prod, "segment": app
         }).eq("id", pid).execute()
         reset_pipeline(); st.rerun()
 
@@ -229,6 +246,7 @@ with st.sidebar:
         st.session_state['open_new_id'] = res.data[0]['id']; st.rerun()
     st.write("")
     
+    rc = count_relances()
     nav_opts = {
         "Tableau de Bord": "❒ Dashboard",
         "Pipeline": "☰ Pipeline",
@@ -238,6 +256,16 @@ with st.sidebar:
     }
     
     selection = st.radio("Nav", list(nav_opts.keys()), format_func=lambda x: nav_opts[x], label_visibility="collapsed", index=1)
+    
+    if rc > 0:
+         st.markdown(f"""<style>
+            div[role="radiogroup"] label:nth-child(5)::after {{
+                content: '{rc}'; background: #fee2e2; color: #ef4444; 
+                display: inline-block; font-size: 10px; font-weight: 700; 
+                padding: 1px 7px; border-radius: 10px; margin-left: auto;
+            }}
+         </style>""", unsafe_allow_html=True)
+    
     st.markdown("---")
     st.caption("👤 Daria Growth")
     pg = selection
@@ -259,12 +287,30 @@ if pg == "Pipeline":
     with st.container(border=True):
         f_cols = st.columns([0.8, 2, 2, 2, 2])
         with f_cols[0]: st.markdown('<div class="filter-label-white">▽ Filtres:</div>', unsafe_allow_html=True)
-        with f_cols[1]: p_f = st.selectbox("Produit", ["Все"], label_visibility="collapsed")
-        with f_cols[2]: s_f = st.selectbox("Statut", ["Все"], label_visibility="collapsed")
-        with f_cols[3]: sl_f = st.selectbox("Salon", ["Все"], label_visibility="collapsed")
-        with f_cols[4]: py_f = st.selectbox("Pays", ["Все"], label_visibility="collapsed")
+        
+        # Восстановление функционала фильтров с названиями внутри
+        with f_cols[1]: 
+            p_list = ["Produit: Tous"] + sorted(list(df_raw['product_interest'].dropna().unique()))
+            p_f = st.selectbox("Produit", p_list, label_visibility="collapsed")
+            
+        with f_cols[2]: 
+            s_list = ["Statut: Tous", "Prospection", "Qualification", "Echantillon", "Test", "Client"]
+            s_f = st.selectbox("Statut", s_list, label_visibility="collapsed")
+            
+        with f_cols[3]: 
+            sl_list = ["Salon: Tous"] + sorted(list(df_raw['last_salon'].dropna().unique()))
+            sl_f = st.selectbox("Salon", sl_list, label_visibility="collapsed")
+            
+        with f_cols[4]: 
+            py_list = ["Pays: Tous"] + sorted(list(df_raw['country'].dropna().unique()))
+            py_f = st.selectbox("Pays", py_list, label_visibility="collapsed")
 
+    # Логика фильтрации
     df = df_raw.copy()
+    if p_f != "Produit: Tous": df = df[df['product_interest'] == p_f]
+    if s_f != "Statut: Tous": df = df[df['status'].str.contains(s_f, na=False)]
+    if sl_f != "Salon: Tous": df = df[df['last_salon'] == sl_f]
+    if py_f != "Pays: Tous": df = df[df['country'] == py_f]
     
     st.write("")
     
@@ -281,13 +327,13 @@ if pg == "Pipeline":
     h[6].markdown('<span class="header-text-style">SAMPLES</span>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
+    samples_db = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
     
     for _, row in df.iterrows():
         # СТРОЧКА ТАБЛИЦЫ (БЕЛАЯ, БЕЗ GAP)
         with st.container(border=True):
             r = st.columns(weights)
-            # Название компании: Темно-зеленый жирный текст
+            # Название компании: Зеленый жирный текст
             if r[0].button(row['company_name'], key=f"p_{row['id']}"):
                 st.session_state['active_prospect_id'] = row['id']; st.rerun()
             
@@ -301,14 +347,14 @@ if pg == "Pipeline":
             last_c = "-"
             if row['last_action_date']:
                 dt = datetime.strptime(row['last_action_date'][:10], "%Y-%m-%d")
-                last_c = dt.strftime("%d %b %y")
+                d_contact = dt.strftime("%d %b %y")
                 color = "#ef4444" if (datetime.now() - dt).days > 30 else "#64748b"
-                r[4].markdown(f"<span style='color:{color}; font-weight:700; font-size:13px;'>{last_c}</span>", unsafe_allow_html=True)
+                r[4].markdown(f"<span style='color:{color}; font-weight:700; font-size:13px;'>{d_contact}</span>", unsafe_allow_html=True)
             else: r[4].write("-")
             
             r[5].markdown(f"<span class='text-small-muted'>{row.get('last_salon') or '-'}</span>", unsafe_allow_html=True)
             
-            has_s = not samples_data.empty and row['id'] in samples_data['prospect_id'].values
+            has_s = not samples_db.empty and row['id'] in samples_db['prospect_id'].values
             if has_s: r[6].markdown("<span class='badge-ui bg-blue'>🧪 En test</span>", unsafe_allow_html=True)
             else: r[6].write("-")
 
