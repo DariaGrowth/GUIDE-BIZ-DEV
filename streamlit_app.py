@@ -56,19 +56,18 @@ st.markdown("""
             font-size: 14px; 
         }
 
-        /* 5. ШАПКА ТАБЛИЦЫ (СВЕТЛО-ЗЕЛЕНАЯ) */
+        /* 5. ШАПКА ТАБЛИЦЫ (БЕЗ ЛИНИИ, КРУПНЫЙ ЗЕЛЕНЫЙ ТЕКСТ) */
         .pipeline-header-row {
-            background-color: rgba(4, 120, 87, 0.08) !important;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 8px 15px;
+            background-color: transparent !important;
+            border: none !important;
+            padding: 12px 15px 8px 15px;
             margin-bottom: 5px;
             display: flex;
             align-items: center;
         }
         .header-text-style { 
-            color: #1e293b !important; 
-            font-size: 11px !important; 
+            color: #047857 !important; /* Цвет как лого Ingood */
+            font-size: 14px !important; /* Увеличено */
             font-weight: 800 !important; 
             text-transform: uppercase; 
             letter-spacing: 0.5px;
@@ -314,7 +313,7 @@ if pg == "Pipeline":
     
     st.write("")
     
-    # --- ШАПКА ТАБЛИЦЫ ---
+    # --- ШАПКА ТАБЛИЦЫ (БЕЗ ФОНОВОЙ ЛИНИИ, ЗЕЛЕНЫЙ ШРИФТ) ---
     weights = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
     st.markdown('<div class="pipeline-header-row">', unsafe_allow_html=True)
     h = st.columns(weights)
