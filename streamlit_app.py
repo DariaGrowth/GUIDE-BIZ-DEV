@@ -55,45 +55,59 @@ st.markdown("""
         }
         
         /* Индикатор уведомлений (красный кружок) */
-        div[role="radiogroup"] label:nth-child(5)::after {
-            content: attr(data-notif);
+        .notif-badge {
             background-color: #fee2e2; color: #ef4444; font-size: 11px; font-weight: 700;
-            padding: 2px 8px; border-radius: 10px; margin-left: auto;
-            display: none;
+            padding: 1px 7px; border-radius: 10px; margin-left: auto;
         }
 
         /* --- ПАЙПЛАЙН --- */
         .filter-panel-box {
             background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; 
-            padding: 12px; margin-bottom: 20px;
+            padding: 12px; margin-bottom: 15px;
         }
         .filter-label-text {
             display: flex; align-items: center; gap: 10px; color: #64748b; font-weight: 600; font-size: 14px;
         }
 
-        .pipeline-header-container {
-            background-color: rgba(4, 120, 87, 0.08) !important;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px 10px;
-            margin-bottom: 15px;
-            margin-top: 10px;
+        /* Идеальная шапка таблицы (зеленая линия) */
+        /* Хак: стилизуем контейнер, в котором лежит класс header-marker */
+        div:has(> .header-marker) {
+            background-color: rgba(4, 120, 87, 0.1) !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 8px !important;
+            padding: 12px 10px !important;
+            margin-bottom: 12px !important;
+            display: flex !important;
+            align-items: center !important;
         }
 
         .header-text { 
             color: #000000 !important; 
-            font-size: 14px !important; 
+            font-size: 13px !important; 
             font-weight: 800 !important; 
             text-transform: uppercase; 
             letter-spacing: 0.5px;
         }
 
+        /* Строки таблицы - всегда белый фон */
         div[data-testid="stVerticalBlockBorderWrapper"] {
-            background-color: white !important; border: 1px solid #e2e8f0 !important;
-            border-radius: 8px !important; padding: 5px 0px !important; margin-bottom: 8px !important;
+            background-color: white !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 8px !important;
+            margin-bottom: 8px !important;
+            padding: 5px 0px !important;
             box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
         }
         div[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: #10b981 !important; }
+
+        /* Клик по названию компании */
+        div[data-testid="column"] .stButton > button {
+            background-color: transparent !important; border: none !important;
+            color: #0f172a !important; font-weight: 700 !important; font-size: 15px !important;
+            text-align: left !important; padding: 0px !important; box-shadow: none !important;
+            height: auto !important; min-height: 0px !important; line-height: 1.5 !important;
+        }
+        div[data-testid="column"] .stButton > button:hover { color: #047857 !important; }
 
         .cell-text { color: #64748b; font-size: 14px; font-weight: 500; }
         .cell-company { color: #0f172a; font-weight: 700; font-size: 15px; }
@@ -120,7 +134,7 @@ def init_connections():
 supabase, _ = init_connections()
 if not supabase: st.stop()
 
-# --- 3. HELPERS ---
+# --- 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 if 'pipeline_key' not in st.session_state: st.session_state['pipeline_key'] = 0
 
 def reset_pipeline(): 
@@ -132,7 +146,7 @@ def reset_pipeline():
 def safe_del(key): 
     if key in st.session_state: del st.session_state[key]
 
-# --- 4. ДАННЫЕ ---
+# --- 4. РАБОТА С ДАННЫМИ ---
 @st.cache_data(ttl=60)
 def get_data(): 
     return pd.DataFrame(supabase.table("prospects").select("*").order("last_action_date", desc=True).execute().data)
@@ -192,6 +206,7 @@ def show_prospect_card(pid, data):
         with t1:
             prod_list, app_list = ["LEN", "PEP", "NEW"], ["Boulangerie", "Sauces", "Confiserie"]
             p_val, a_val = data.get("product_interest"), data.get("segment")
+            # Исправляем ValueError (защита от None)
             p_idx = prod_list.index(p_val) if p_val in prod_list else 0
             a_idx = app_list.index(a_val) if a_val in app_list else 0
 
@@ -201,7 +216,7 @@ def show_prospect_card(pid, data):
             contacts = st.data_editor(get_sub_data("contacts", pid), column_config={"id": None}, num_rows="dynamic", use_container_width=True, key=f"ed_{pid}")
 
         with t2:
-            st.caption("Suivi des envois")
+            st.caption("Suivi des envoив")
             for _, r in get_sub_data("samples", pid).iterrows():
                 with st.container(border=True):
                     st.markdown(f"**{r['product_name']}** ({r['date_sent'][:10]})")
@@ -239,9 +254,13 @@ with st.sidebar:
         "À Relancer": "❍ À Relancer"
     }
     
-    pg = st.radio("Nav", list(nav_opts.keys()), format_func=lambda x: nav_opts[x], label_visibility="collapsed", index=1)
+    # Хак для индикатора уведомлений
+    pg_label = list(nav_opts.keys())
+    pg_icons = list(nav_opts.values())
     
-    # Индикатор уведомлений (CSS-хак)
+    # Создаем выбор меню
+    selection = st.radio("Nav", pg_label, format_func=lambda x: nav_opts[x], label_visibility="collapsed", index=1)
+    
     if rc > 0:
          st.markdown(f"""<style>
             div[role="radiogroup"] label:nth-child(5)::after {{
@@ -253,6 +272,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.caption("👤 Daria Growth")
+    pg = selection
 
 # --- 7. РОУТИНГ ---
 if 'open_new_id' in st.session_state:
@@ -268,7 +288,7 @@ if pg == "Pipeline":
     
     df_raw = get_data()
     
-    # --- БЛОК ФИЛЬТРОВ (ЧИСТЫЙ ВИД БЕЗ ЛИШНИХ РАМОК) ---
+    # --- БЛОК ФИЛЬТРОВ (ЧИСТЫЙ ВИД) ---
     st.markdown('<div class="filter-panel-box">', unsafe_allow_html=True)
     f_cols = st.columns([1, 2, 2, 2, 2])
     with f_cols[0]: st.markdown('<div class="filter-label-text">▽ Filtres:</div>', unsafe_allow_html=True)
@@ -283,19 +303,24 @@ if pg == "Pipeline":
     if s_f != "Statut: Tous": df = df[df['status'].str.contains(s_f, na=False)]
     
     st.write("")
-    # ШАПКА ТАБЛИЦЫ (Зеленая линия с черным текстом)
+    
+    # --- ШАПКА ТАБЛИЦЫ (ЗЕЛЕНАЯ ЛИНИЯ) ---
+    # Мы используем веса колонок такие же, как в строках данных
     weights = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
-    st.markdown('<div class="pipeline-header-container">', unsafe_allow_html=True)
-    h = st.columns(weights)
-    h[0].markdown('<span class="header-text">SOCIÉTÉ</span>', unsafe_allow_html=True)
-    h[1].markdown('<span class="header-text">PAYS</span>', unsafe_allow_html=True)
-    h[2].markdown('<span class="header-text">PRODUIT</span>', unsafe_allow_html=True)
-    h[3].markdown('<span class="header-text">STATUT</span>', unsafe_allow_html=True)
-    h[4].markdown('<span class="header-text">CONTACT</span>', unsafe_allow_html=True)
-    h[5].markdown('<span class="header-text">SALON</span>', unsafe_allow_html=True)
-    h[6].markdown('<span class="header-text">SAMPLES</span>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Используем контейнер с маркером для CSS
+    with st.container():
+        st.markdown('<div class="header-marker"></div>', unsafe_allow_html=True)
+        h = st.columns(weights)
+        h[0].markdown('<span class="header-text">SOCIÉTÉ</span>', unsafe_allow_html=True)
+        h[1].markdown('<span class="header-text">PAYS</span>', unsafe_allow_html=True)
+        h[2].markdown('<span class="header-text">PRODUIT</span>', unsafe_allow_html=True)
+        h[3].markdown('<span class="header-text">STATUT</span>', unsafe_allow_html=True)
+        h[4].markdown('<span class="header-text">CONTACT</span>', unsafe_allow_html=True)
+        h[5].markdown('<span class="header-text">SALON</span>', unsafe_allow_html=True)
+        h[6].markdown('<span class="header-text">SAMPLES</span>', unsafe_allow_html=True)
 
+    # ДАННЫЕ
     samples_data = pd.DataFrame(supabase.table("samples").select("prospect_id").execute().data)
     
     for _, row in df.iterrows():
@@ -335,7 +360,7 @@ elif pg == "Tableau de Bord":
 
 elif pg == "Kanban":
     st.title("Board")
-    st.info("Vue Kanban en разработке.")
+    st.info("Vue Kanban в разработке.")
 
 elif pg == "Échantillons":
     st.title("Gestion des Échantillons")
