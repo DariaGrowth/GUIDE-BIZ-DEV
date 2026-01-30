@@ -31,7 +31,7 @@ st.markdown("""
             border: none; border-radius: 6px; padding: 10px 16px; font-weight: 600;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s;
         }
-        [data-testid="stSidebar"] .stButton > button:hover { background-color: #065f46; transform: translateY(-1px); }
+        [data-testid="stSidebar"] .stButton > button:hover { background-color: #065f46 !important; transform: translateY(-1px); }
 
         /* Блок фильтров Pipeline */
         div[data-testid="stVerticalBlock"] > div:nth-child(1) > div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -67,19 +67,29 @@ st.markdown("""
         }
         div[data-testid="column"]:first-child .stButton > button:hover { text-decoration: underline !important; color: #065f46 !important; }
 
-        /* ИДЕАЛЬНОЕ ВЫРАВНИВАНИЕ МУСОРКИ */
+        /* ИДЕАЛЬНОЕ ВЫРАВНИВАНИЕ МУСОРКИ (Метод из Suivi Échantillons) */
         .trash-container { 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            height: 38px; /* Высота совпадает с полем ввода */
+            height: 38px; /* Совпадает с высотой текстового поля Streamlit */
         }
         .trash-container button {
-            background: transparent !important; border: none !important; box-shadow: none !important;
-            color: #94a3b8 !important; padding: 0 !important; font-size: 18px !important;
-            width: 32px !important; height: 32px !important;
+            background: transparent !important; 
+            border: none !important; 
+            box-shadow: none !important;
+            color: #94a3b8 !important; 
+            padding: 0 !important; 
+            font-size: 18px !important;
+            width: 32px !important; 
+            height: 32px !important;
+            margin-top: 0px !important; /* Убираем любые автоматические отступы */
         }
-        .trash-container button:hover { color: #ef4444 !important; background: #fee2e2 !important; border-radius: 4px !important; }
+        .trash-container button:hover { 
+            color: #ef4444 !important; 
+            background: #fee2e2 !important; 
+            border-radius: 4px !important; 
+        }
 
         .badge-ui { padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; display: inline-block; }
         .bg-yellow { background: #fef9c3; color: #854d0e; }
@@ -87,15 +97,22 @@ st.markdown("""
         .bg-green { background: #dcfce7; color: #166534; }
         .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
 
-        /* Метки полей */
+        /* Метки полей в контактах */
         .contact-label {
-            font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;
-            margin-bottom: 5px; display: block;
+            font-size: 11px;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            display: block;
         }
         
         .field-label {
-            font-size: 11px !important; font-weight: 700 !important; color: #64748b !important;
-            text-transform: uppercase; margin-bottom: 4px;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            color: #64748b !important;
+            text-transform: uppercase;
+            margin-bottom: 4px;
         }
 
         .kanban-card {
@@ -182,7 +199,7 @@ def show_prospect_card(pid, data):
             st.markdown("<p class='field-label'>AI ASSISTANT</p>", unsafe_allow_html=True)
             tone = st.selectbox("Ton", ["Professionnel", "Relance amicale", "Urgent / Technique"], key=f"ai_tone_{pid}", label_visibility="collapsed")
             if st.button("🪄 Générer l'Email", use_container_width=True):
-                with st.spinner("Rédaction..."):
+                with st.spinner("Rédaction en cours..."):
                     model = genai.GenerativeModel("gemini-1.5-flash")
                     ctx = f"Client: {data['company_name']}, Ingrédient: {data.get('product_interest')}, Ton: {tone}"
                     res = model.generate_content(f"Ecrire un email commercial court en français. Contexte: {ctx}").text
@@ -205,27 +222,30 @@ def show_prospect_card(pid, data):
             tech = st.text_area("NOTES TECHNIQUES", value=data.get("tech_notes", ""), height=70)
             
             st.markdown("---")
-            # --- УПРАВЛЕНИЕ КОНТАКТАМИ ---
+            
+            # --- УПРАВЛЕНИЕ КОНТАКТАМИ (БЕЗ ФРАЗЫ CONTACTS DÉDIÉS) ---
             if 'editing_contacts' not in st.session_state:
                 db_cons = get_sub_data("contacts", pid)
                 st.session_state['editing_contacts'] = db_cons.to_dict('records') if not db_cons.empty else []
 
-            # Заголовки (всегда видны)
-            h_col1, h_col2, h_col3, h_col4, h_col5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
+            # 1. Заголовки (всегда видны)
+            h_col1, h_col2, h_col3, h_col4, h_col5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.5])
             h_col1.markdown('<span class="contact-label">Nom</span>', unsafe_allow_html=True)
             h_col2.markdown('<span class="contact-label">Poste</span>', unsafe_allow_html=True)
             h_col3.markdown('<span class="contact-label">Email</span>', unsafe_allow_html=True)
             h_col4.markdown('<span class="contact-label">Téléphone</span>', unsafe_allow_html=True)
+            h_col5.write("")
 
+            # 2. Список контактов (используем метод trash-container из образцов)
             for i, c in enumerate(st.session_state['editing_contacts']):
-                r1, r2, r3, r4, r5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
-                st.session_state['editing_contacts'][i]['name'] = r1.text_input("N", value=c.get('name',''), key=f"c_name_{i}", label_visibility="collapsed")
-                st.session_state['editing_contacts'][i]['role'] = r2.text_input("P", value=c.get('role',''), key=f"c_role_{i}", label_visibility="collapsed")
-                st.session_state['editing_contacts'][i]['email'] = r3.text_input("E", value=c.get('email',''), key=f"c_mail_{i}", label_visibility="collapsed")
-                st.session_state['editing_contacts'][i]['phone'] = r4.text_input("T", value=c.get('phone',''), key=f"c_phone_{i}", label_visibility="collapsed")
+                r1, r2, r3, r4, r5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.5])
+                st.session_state['editing_contacts'][i]['name'] = r1.text_input("Nom", value=c.get('name',''), key=f"c_name_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['role'] = r2.text_input("Poste", value=c.get('role',''), key=f"c_role_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['email'] = r3.text_input("Email", value=c.get('email',''), key=f"c_mail_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['phone'] = r4.text_input("Tel", value=c.get('phone',''), key=f"c_phone_{i}", label_visibility="collapsed")
                 with r5:
                     st.markdown('<div class="trash-container">', unsafe_allow_html=True)
-                    if st.button("🗑️", key=f"del_contact_{i}"):
+                    if st.button("🗑️", key=f"del_contact_{i}", help="Supprimer"):
                         if c.get('id'):
                             if 'contacts_to_delete' not in st.session_state: st.session_state['contacts_to_delete'] = []
                             st.session_state['contacts_to_delete'].append(c['id'])
@@ -330,7 +350,7 @@ if 'active_prospect_id' in st.session_state:
         show_prospect_card(st.session_state['active_prospect_id'], row_data)
     except: safe_del('active_prospect_id')
 
-# --- 7. PAGES (ПОЛНЫЙ ФУНКЦИОНАЛ) ---
+# --- 7. PAGES ---
 
 if sel == "Pipeline":
     df_raw = get_data()
@@ -347,6 +367,7 @@ if sel == "Pipeline":
     if py_f != "Pays: Tous": df = df[df['country'] == py_f]
     
     st.write("")
+    # Шапка
     w = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
     st.markdown('<div class="pipeline-header-row">', unsafe_allow_html=True)
     h_c = st.columns(w)
@@ -404,7 +425,7 @@ elif sel == "Tableau de Bord":
         m1.metric("Projets Actifs", len(df))
         m2.metric("Potentiel Total", f"{int(df['potential_volume'].sum())} T")
         m3.metric("Taux Conv.", f"{int(len(df[df['status']=='Client signé'])/len(df)*100) if len(df)>0 else 0}%")
-        m4.metric("R&D en cours", len(df[df['status'].str.contains('Test', na=False)]))
+        m4.metric("Échantillons en R&D", len(df[df['status'].str.contains('Test', na=False)]))
         ca, cb = st.columns(2)
         with ca: st.plotly_chart(px.pie(df, names='product_interest', hole=.4, title="Mix Produits Strategique", color_discrete_sequence=px.colors.sequential.Greens_r), use_container_width=True)
         with cb: st.plotly_chart(px.bar(df['status'].value_counts(), title="Tunnel de Vente", color_discrete_sequence=['#047857']), use_container_width=True)
