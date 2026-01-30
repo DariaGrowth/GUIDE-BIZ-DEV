@@ -16,6 +16,7 @@ st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+        /* Базовый фон и шрифты */
         .stApp { 
             background-color: #ffffff !important; 
             font-family: 'Inter', sans-serif; 
@@ -30,6 +31,7 @@ st.markdown("""
             border: none; border-radius: 6px; padding: 10px 16px; font-weight: 600;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: all 0.2s;
         }
+        [data-testid="stSidebar"] .stButton > button:hover { background-color: #065f46; transform: translateY(-1px); }
 
         /* Блок фильтров Pipeline */
         div[data-testid="stVerticalBlock"] > div:nth-child(1) > div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -70,13 +72,12 @@ st.markdown("""
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            height: 38px; /* Высота совпадает с полем ввода без заголовка */
+            height: 38px; /* Высота совпадает с полем ввода */
         }
         .trash-container button {
             background: transparent !important; border: none !important; box-shadow: none !important;
             color: #94a3b8 !important; padding: 0 !important; font-size: 18px !important;
             width: 32px !important; height: 32px !important;
-            margin-top: 0px !important;
         }
         .trash-container button:hover { color: #ef4444 !important; background: #fee2e2 !important; border-radius: 4px !important; }
 
@@ -86,22 +87,15 @@ st.markdown("""
         .bg-green { background: #dcfce7; color: #166534; }
         .bg-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
 
-        /* Заголовки полей в контактах */
+        /* Метки полей */
         .contact-label {
-            font-size: 11px;
-            font-weight: 800;
-            color: #94a3b8;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-            display: block;
+            font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;
+            margin-bottom: 5px; display: block;
         }
         
         .field-label {
-            font-size: 11px !important;
-            font-weight: 700 !important;
-            color: #64748b !important;
-            text-transform: uppercase;
-            margin-bottom: 4px;
+            font-size: 11px !important; font-weight: 700 !important; color: #64748b !important;
+            text-transform: uppercase; margin-bottom: 4px;
         }
 
         .kanban-card {
@@ -119,13 +113,13 @@ def init_connections():
         key = st.secrets["SUPABASE_KEY"]
         return create_client(url, key), genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     except Exception as e:
-        st.error(f"Erreur Supabase: {e}")
+        st.error(f"Erreur Supabase/Google: {e}")
         return None, None
 
 supabase, _ = init_connections()
 if not supabase: st.stop()
 
-# --- 3. HELPERS ---
+# --- 3. HELPERS & DATA FETCHING ---
 if 'pipeline_key' not in st.session_state: st.session_state['pipeline_key'] = 0
 
 def reset_pipeline(): 
@@ -141,7 +135,6 @@ def safe_del(key):
 
 def clean_prod_name(name):
     if not name or name == "-": return "-"
-    # Убираем все, что в скобках
     return name.split(' (')[0].split('(')[0].strip()
 
 @st.cache_data(ttl=60)
@@ -152,8 +145,10 @@ def get_data():
     except: return pd.DataFrame()
 
 def get_sub_data(t, pid):
-    d = supabase.table(t).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
-    return pd.DataFrame(d)
+    try:
+        d = supabase.table(t).select("*").eq("prospect_id", pid).order("id", desc=True).execute().data
+        return pd.DataFrame(d)
+    except: return pd.DataFrame()
 
 def count_relances():
     fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
@@ -162,7 +157,7 @@ def count_relances():
         return res.count if res.count else 0
     except: return 0
 
-# --- 4. MODAL: FICHE PROSPECT ---
+# --- 4. MODAL: FICHE PROSPECT (ПОЛНАЯ ЛОГИКА) ---
 @st.dialog(" ", width="large")
 def show_prospect_card(pid, data):
     pid = int(pid)
@@ -187,10 +182,10 @@ def show_prospect_card(pid, data):
             st.markdown("<p class='field-label'>AI ASSISTANT</p>", unsafe_allow_html=True)
             tone = st.selectbox("Ton", ["Professionnel", "Relance amicale", "Urgent / Technique"], key=f"ai_tone_{pid}", label_visibility="collapsed")
             if st.button("🪄 Générer l'Email", use_container_width=True):
-                with st.spinner("Rédaction en cours..."):
+                with st.spinner("Rédaction..."):
                     model = genai.GenerativeModel("gemini-1.5-flash")
-                    ctx = f"Client: {data['company_name']}, Produit: {data.get('product_interest')}, Ton: {tone}"
-                    res = model.generate_content(f"Ecrire un email commercial B2B court en français pour ce contexte: {ctx}").text
+                    ctx = f"Client: {data['company_name']}, Ingrédient: {data.get('product_interest')}, Ton: {tone}"
+                    res = model.generate_content(f"Ecrire un email commercial court en français. Contexte: {ctx}").text
                     st.session_state['ai_draft'] = res
             if 'ai_draft' in st.session_state:
                 st.text_area("Brouillon AI", value=st.session_state['ai_draft'], height=180)
@@ -210,29 +205,27 @@ def show_prospect_card(pid, data):
             tech = st.text_area("NOTES TECHNIQUES", value=data.get("tech_notes", ""), height=70)
             
             st.markdown("---")
-            
-            # --- ЛОГИКА УПРАВЛЕНИЯ КОНТАКТАМИ (БЕЗ ФРАЗЫ CONTACTS DÉDIÉS) ---
+            # --- УПРАВЛЕНИЕ КОНТАКТАМИ ---
             if 'editing_contacts' not in st.session_state:
                 db_cons = get_sub_data("contacts", pid)
                 st.session_state['editing_contacts'] = db_cons.to_dict('records') if not db_cons.empty else []
 
-            # 1. Заголовки (вынесены в отдельную строку над полями)
+            # Заголовки (всегда видны)
             h_col1, h_col2, h_col3, h_col4, h_col5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
             h_col1.markdown('<span class="contact-label">Nom</span>', unsafe_allow_html=True)
             h_col2.markdown('<span class="contact-label">Poste</span>', unsafe_allow_html=True)
             h_col3.markdown('<span class="contact-label">Email</span>', unsafe_allow_html=True)
             h_col4.markdown('<span class="contact-label">Téléphone</span>', unsafe_allow_html=True)
 
-            # 2. Список контактов
             for i, c in enumerate(st.session_state['editing_contacts']):
                 r1, r2, r3, r4, r5 = st.columns([1.2, 1.2, 1.5, 1.2, 0.3])
-                st.session_state['editing_contacts'][i]['name'] = r1.text_input("Nom", value=c.get('name',''), key=f"c_name_{i}", label_visibility="collapsed")
-                st.session_state['editing_contacts'][i]['role'] = r2.text_input("Poste", value=c.get('role',''), key=f"c_role_{i}", label_visibility="collapsed")
-                st.session_state['editing_contacts'][i]['email'] = r3.text_input("Email", value=c.get('email',''), key=f"c_mail_{i}", label_visibility="collapsed")
-                st.session_state['editing_contacts'][i]['phone'] = r4.text_input("Tel", value=c.get('phone',''), key=f"c_phone_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['name'] = r1.text_input("N", value=c.get('name',''), key=f"c_name_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['role'] = r2.text_input("P", value=c.get('role',''), key=f"c_role_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['email'] = r3.text_input("E", value=c.get('email',''), key=f"c_mail_{i}", label_visibility="collapsed")
+                st.session_state['editing_contacts'][i]['phone'] = r4.text_input("T", value=c.get('phone',''), key=f"c_phone_{i}", label_visibility="collapsed")
                 with r5:
                     st.markdown('<div class="trash-container">', unsafe_allow_html=True)
-                    if st.button("🗑️", key=f"del_contact_{i}", help="Supprimer"):
+                    if st.button("🗑️", key=f"del_contact_{i}"):
                         if c.get('id'):
                             if 'contacts_to_delete' not in st.session_state: st.session_state['contacts_to_delete'] = []
                             st.session_state['contacts_to_delete'].append(c['id'])
@@ -240,7 +233,6 @@ def show_prospect_card(pid, data):
                         st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
 
-            # 3. Кнопка добавления нового контакта снизу
             if st.button("⊕ Ajouter un contact", key="add_btn_contact_action"):
                 st.session_state['editing_contacts'].append({"id": None, "name": "", "email": "", "role": "", "phone": ""})
                 st.rerun()
@@ -264,10 +256,11 @@ def show_prospect_card(pid, data):
                     with ch1: st.markdown(f"**{clean_prod_name(r['product_name'])}** {r['reference']} <span style='color:#94a3b8; font-size:11px;'>({r['date_sent'][:10]})</span>", unsafe_allow_html=True)
                     with ch2:
                         s_opt = ["En test", "Validé", "Rejeté", "En attente"]
-                        new_s = st.selectbox("Status", s_opt, index=s_opt.index(r['status']) if r['status'] in s_opt else 0, key=f"st_{r['id']}", label_visibility="collapsed")
-                        if new_s != r['status']: supabase.table("samples").update({"status": new_s}).eq("id", r['id']).execute()
+                        curr_s = r['status']
+                        new_s = st.selectbox("Status", s_opt, index=s_opt.index(curr_s) if curr_s in s_opt else 0, key=f"st_{r['id']}", label_visibility="collapsed")
+                        if new_s != curr_s: supabase.table("samples").update({"status": new_s}).eq("id", r['id']).execute()
                     with ch3:
-                        st.markdown('<div class="trash-container" style="height:32px;">', unsafe_allow_html=True)
+                        st.markdown('<div class="trash-container">', unsafe_allow_html=True)
                         if st.button("🗑️", key=f"ds_{r['id']}"): supabase.table("samples").delete().eq("id", r['id']).execute(); st.rerun()
                         st.markdown('</div>', unsafe_allow_html=True)
                     new_f = st.text_area("Feedback...", value=r.get("feedback", ""), key=f"f_{r['id']}", height=60, placeholder="Feedback R&D client...", label_visibility="collapsed")
@@ -286,13 +279,15 @@ def show_prospect_card(pid, data):
     st.markdown("---")
     if st.button("Enregistrer & Fermer la Fiche", type="primary", use_container_width=True):
         try:
-            # Update Prospect
+            # 1. Update Prospect
             upd = {"company_name": name, "status": stat, "country": pays, "potential_volume": float(vol), "last_action_date": last_c_date.isoformat(), "product_interest": prod, "segment": app, "notes": pain, "tech_notes": tech}
             supabase.table("prospects").update(upd).eq("id", pid).execute()
             
-            # Sync Contacts
+            # 2. Sync Contacts (Deletions)
             if 'contacts_to_delete' in st.session_state:
                 supabase.table("contacts").delete().in_("id", st.session_state['contacts_to_delete']).execute()
+            
+            # 3. Sync Contacts (Upserts)
             for rc in st.session_state.get('editing_contacts', []):
                 if str(rc.get("name")).strip():
                     payload = {"prospect_id": pid, "name": rc["name"], "role": rc.get("role",""), "email": rc.get("email",""), "phone": rc.get("phone","")}
@@ -302,7 +297,7 @@ def show_prospect_card(pid, data):
             reset_pipeline(); st.rerun()
         except Exception as e: st.error(f"Erreur technique : {e}")
 
-# --- 5. SIDEBAR ---
+# --- 5. SIDEBAR NAVIGATION ---
 with st.sidebar:
     st.image("favicon.png", width=55)
     st.write("")
@@ -324,9 +319,7 @@ with st.sidebar:
     
     if rc_cnt > 0:
          st.markdown(f"""<style>div[role="radiogroup"] label:nth-child(6)::after {{content: '{rc_cnt}'; background: #fee2e2; color: #ef4444; display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; margin-left: auto;}}</style>""", unsafe_allow_html=True)
-    
-    st.markdown("---")
-    st.caption("👤 Daria Growth • Ingood")
+    st.markdown("---"); st.caption("👤 Daria • Ingood")
 
 # --- 6. ROUTING ---
 if 'open_new_id' in st.session_state:
@@ -337,7 +330,7 @@ if 'active_prospect_id' in st.session_state:
         show_prospect_card(st.session_state['active_prospect_id'], row_data)
     except: safe_del('active_prospect_id')
 
-# --- 7. PAGES ---
+# --- 7. PAGES (ПОЛНЫЙ ФУНКЦИОНАЛ) ---
 
 if sel == "Pipeline":
     df_raw = get_data()
@@ -354,7 +347,6 @@ if sel == "Pipeline":
     if py_f != "Pays: Tous": df = df[df['country'] == py_f]
     
     st.write("")
-    # Шапка
     w = [3.5, 1.2, 1.2, 1.8, 1.8, 2.2, 1.8]
     st.markdown('<div class="pipeline-header-row">', unsafe_allow_html=True)
     h_c = st.columns(w)
@@ -369,7 +361,6 @@ if sel == "Pipeline":
             if r[0].button(row['company_name'], key=f"b_{row['id']}"):
                 st.session_state['active_prospect_id'] = row['id']; st.rerun()
             r[1].markdown(f"<span style='color:#64748b; font-size:13px;'>{row['country'] or '-'}</span>", unsafe_allow_html=True)
-            # Очищенное название
             r[2].markdown(f"<span style='color:#047857; font-weight:700; font-size:13px;'>{clean_prod_name(row['product_interest'])}</span>", unsafe_allow_html=True)
             st_v = row['status'] or "Prospection"
             b_c = "bg-green" if "Client" in st_v else "bg-yellow" if "Test" in st_v else "bg-gray"
@@ -412,26 +403,27 @@ elif sel == "Tableau de Bord":
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Projets Actifs", len(df))
         m2.metric("Potentiel Total", f"{int(df['potential_volume'].sum())} T")
-        m3.metric("Taux de Conv.", f"{int(len(df[df['status']=='Client signé'])/len(df)*100) if len(df)>0 else 0}%")
-        m4.metric("Échantillons en R&D", len(df[df['status'].str.contains('Test', na=False)]))
-        
+        m3.metric("Taux Conv.", f"{int(len(df[df['status']=='Client signé'])/len(df)*100) if len(df)>0 else 0}%")
+        m4.metric("R&D en cours", len(df[df['status'].str.contains('Test', na=False)]))
         ca, cb = st.columns(2)
-        with ca: st.plotly_chart(px.pie(df, names='product_interest', hole=.4, title="Mix Produits", color_discrete_sequence=px.colors.sequential.Greens_r), use_container_width=True)
+        with ca: st.plotly_chart(px.pie(df, names='product_interest', hole=.4, title="Mix Produits Strategique", color_discrete_sequence=px.colors.sequential.Greens_r), use_container_width=True)
         with cb: st.plotly_chart(px.bar(df['status'].value_counts(), title="Tunnel de Vente", color_discrete_sequence=['#047857']), use_container_width=True)
 
 elif sel == "Contacts":
     st.title("Annuaire Global 👤")
-    search_q = st.text_input("🔍 Rechercher un contact...", placeholder="Nom, Entreprise...")
-    cons = pd.DataFrame(supabase.table("contacts").select("*, prospects(company_name)").execute().data)
+    search_q = st.text_input("🔍 Rechercher...", placeholder="Nom, Entreprise...")
+    cons_res = supabase.table("contacts").select("*, prospects(company_name)").execute()
+    cons = pd.DataFrame(cons_res.data)
     if not cons.empty:
         cons['Entreprise'] = cons['prospects'].apply(lambda x: x['company_name'] if x else 'N/A')
         disp = cons[['name', 'role', 'email', 'phone', 'Entreprise']]
         if search_q: disp = disp[disp.apply(lambda r: search_q.lower() in r.astype(str).str.lower().values, axis=1)]
-        st.dataframe(disp, use_container_width=True, height=500)
+        st.dataframe(disp, use_container_width=True, height=600)
 
 elif sel == "Échantillons":
     st.title("Gestion des Échantillons 🧪")
-    samp = pd.DataFrame(supabase.table("samples").select("*, prospects(company_name)").execute().data)
+    samp_res = supabase.table("samples").select("*, prospects(company_name)").execute()
+    samp = pd.DataFrame(samp_res.data)
     if not samp.empty:
         samp['Client'] = samp['prospects'].apply(lambda x: x['company_name'] if x else 'N/A')
         st.dataframe(samp[['date_sent', 'product_name', 'reference', 'status', 'Client', 'feedback']], use_container_width=True)
@@ -439,13 +431,14 @@ elif sel == "Échantillons":
 elif sel == "Alertes":
     st.title("Relances Prioritaires 🔔")
     fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
-    al = pd.DataFrame(supabase.table("samples").select("*, prospects(company_name)").is_("feedback", "null").lte("date_sent", fifteen_days_ago).execute().data)
+    al_res = supabase.table("samples").select("*, prospects(company_name)").is_("feedback", "null").lte("date_sent", fifteen_days_ago).execute()
+    al = pd.DataFrame(al_res.data)
     if not al.empty:
         al['Client'] = al['prospects'].apply(lambda x: x['company_name'] if x else 'N/A')
         for _, alert in al.iterrows():
             with st.container(border=True):
                 a1, a2 = st.columns([4, 1])
-                a1.markdown(f"**{alert['Client']}** — {alert['product_name']} envoyé le {alert['date_sent'][:10]}")
+                a1.markdown(f"**{alert['Client']}** — {alert['product_name']} enviado el {alert['date_sent'][:10]}")
                 if a2.button("Ouvrir", key=f"al_btn_{alert['id']}"):
                     st.session_state['active_prospect_id'] = alert['prospect_id']; st.rerun()
-    else: st.success("Aucune alerte en cours.")
+    else: st.success("Aucune alerte en cours. Bon travail !")
