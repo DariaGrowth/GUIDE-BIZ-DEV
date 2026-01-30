@@ -109,39 +109,46 @@ def init_connections():
 supabase = init_connections()
 if not supabase: st.stop()
 
-# --- 3. AI CORE (ROBUST FIX FOR NOTFOUND) ---
+# --- 3. AI CORE (ROBUST FIX) ---
 def ai_generate_smart_email(company, product, tone, country):
-    """Генерация письма с защищенным вызовом модели для избежания NotFound на Streamlit Cloud"""
-    # Список возможных имен моделей для обеспечения стабильности
-    primary_model = "models/gemini-1.5-flash"
-    fallback_model = "models/gemini-pro"
+    """Генерация письма с актуальными моделями Gemini 1.5"""
+    
+    # Используем flash как основную (быстрая и дешевая)
+    # Имя модели пишем БЕЗ префикса 'models/', если используем genai.GenerativeModel напрямую
+    primary_model_name = "gemini-1.5-flash" 
     
     prompt = f"""
     Rôle : Manager commercial technique pour Ingood Growth. 
     Cible : {company} ({country}). Produit : {product}. Ton : {tone}.
     Instructions : 
-    1. Utilise Google Search для поиска актуальных новостей об этой компании.
-    2. Напиши короткое персонализированное письмо на французском (макс 150 слов).
+    1. Напиши короткое персонализированное B2B письмо на французском (макс 150 слов).
+    2. Используй профессиональный стиль.
     3. Свяжи их активность с преимуществами продукта {product}.
     """
     
     try:
-        model = genai.GenerativeModel(primary_model)
-        # Пробуем вызов с инструментами поиска
-        response = model.generate_content(prompt, tools=[{ "google_search": {} }])
+        # Пытаемся вызвать модель с инструментом Google Search
+        # В актуальной версии API инструмент называется 'google_search_retrieval'
+        model = genai.GenerativeModel(
+            model_name=primary_model_name,
+            tools=[{"google_search_retrieval": {}}] 
+        )
+        response = model.generate_content(prompt)
         return response.text
-    except Exception:
+
+    except Exception as e:
+        # Fallback 1: Если поиск не поддерживается или произошла ошибка, пробуем без инструментов
         try:
-            # Fallback 1: Тот же 1.5 flash, но без инструментов (иногда они вызывают NotFound)
-            model_f = genai.GenerativeModel(primary_model)
-            return model_f.generate_content(prompt).text
-        except Exception:
+            model_basic = genai.GenerativeModel(model_name=primary_model_name)
+            response = model_basic.generate_content(prompt)
+            return response.text
+        except Exception as e2:
+            # Fallback 2: Последняя попытка с моделью Pro (если Flash недоступна)
             try:
-                # Fallback 2: Стабильная старая модель gemini-pro
-                model_pro = genai.GenerativeModel(fallback_model)
-                return model_pro.generate_content(f"Write a professional B2B email for {company}. Product: {product}. Ton: {tone}. Language: French.").text
+                model_pro = genai.GenerativeModel(model_name="gemini-1.5-pro")
+                return model_pro.generate_content(prompt).text
             except Exception as final_e:
-                return f"Désolé, le service AI est indisponible. Ошибка: {str(final_e)}"
+                return f"Désolé, le service AI est indisponible. Техническая ошибка: {str(final_e)}"
 
 # --- 4. DATA HELPERS ---
 if 'pipeline_key' not in st.session_state: st.session_state['pipeline_key'] = 0
