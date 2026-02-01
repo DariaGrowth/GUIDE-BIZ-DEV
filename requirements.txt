@@ -1,6 +1,7 @@
 streamlit
-pandas
 supabase
-plotly
 google-generativeai
-xlsxwriter
+plotly
+pandas
+numpy
+openpyxl
