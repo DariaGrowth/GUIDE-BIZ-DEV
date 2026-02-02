@@ -113,7 +113,8 @@ CSS_THEME = """
         max-width: 30px !important;
         min-width: 30px !important;
     }
-    [data-testid="stSidebar"] [data-testid="column"]:last-child .stButton > button {
+    /* Cibler uniquement les boutons de navigation (pas Export/Import) */
+    [data-testid="stSidebar"] > div > div:first-child [data-testid="column"]:last-child .stButton > button {
         background: transparent !important;
         border: none !important;
         color: #586069 !important;
@@ -127,15 +128,9 @@ CSS_THEME = """
         box-shadow: none !important;
         width: 100% !important;
     }
-    [data-testid="stSidebar"] [data-testid="column"]:last-child .stButton > button:hover {
+    [data-testid="stSidebar"] > div > div:first-child [data-testid="column"]:last-child .stButton > button:hover {
         background: #f6f8fa !important;
         color: #24292e !important;
-    }
-    /* Bouton sélectionné */
-    [data-testid="stSidebar"] [data-testid="column"]:last-child .stButton > button[kind="primary"] {
-        background: #e6f7ed !important;
-        color: #047857 !important;
-        font-weight: 600 !important;
     }
 
     /* ── SECTION DONNEES (Sidebar Bottom) ── */
@@ -1151,20 +1146,25 @@ def render_sidebar():
             # Adapter la couleur du SVG
             icon_display = icon.replace('stroke="#1E3F35"', f'stroke="{color}"').replace('fill="#1E3F35"', f'fill="{color}"').replace('width="32" height="32"', 'width="18" height="18"')
             
+            # Conteneur avec background coloré
+            st.markdown(f"""<div style='background: {bg}; border-radius: 6px; margin: 2px 8px; padding: 2px 0; transition: background 0.15s;'>""", unsafe_allow_html=True)
+            
             col1, col2 = st.columns([0.15, 0.85])
             with col1:
-                st.markdown(f"<div style='padding: 8px 0;'>{icon_display}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='padding: 6px 0 6px 4px;'>{icon_display}</div>", unsafe_allow_html=True)
             with col2:
                 if st.button(label, key=f"nav_{key}", use_container_width=True):
                     st.session_state.selected_page = key
                     st.rerun()
+            
+            st.markdown("</div>", unsafe_allow_html=True)
         
         sel = st.session_state.selected_page
 
         st.markdown("---")
         
         # Section DONNÉES (en bas de la sidebar)
-        st.markdown("<p style='font-size: 11px; font-weight: 700; color: #959da5; text-transform: uppercase; letter-spacing: 0.8px; margin: 16px 0 8px;'>Données</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 11px; font-weight: 700; color: #959da5; text-transform: uppercase; letter-spacing: 0.8px; margin: 20px 8px 12px; position: relative; z-index: 100;'>Données</p>", unsafe_allow_html=True)
         
         col_exp, col_imp = st.columns(2)
         with col_exp:
