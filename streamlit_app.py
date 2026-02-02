@@ -349,7 +349,7 @@ def count_sample_alerts():
 def ai_generate_smart_email( company, product, tone, country, prospect_id):
     """Génère un email ultra-personnalisé en synthétisant historique + samples + news."""
     # Récupérer l'historique des activités
-    activities = get_sub_data(_supabase, "activities", prospect_id)
+    activities = get_sub_data( "activities", prospect_id)
     activity_summary = ""
     if not activities.empty:
         last_acts = activities.head(3)
@@ -358,7 +358,7 @@ def ai_generate_smart_email( company, product, tone, country, prospect_id):
         )
 
     # Récupérer les samples
-    samples = get_sub_data(_supabase, "samples", prospect_id)
+    samples = get_sub_data( "samples", prospect_id)
     sample_summary = ""
     if not samples.empty:
         sample_summary = "\n".join(
@@ -440,7 +440,7 @@ def fetch_weekly_news():
             return {"content": "⚠️ Clé Perplexity non configurée.", "created_at": today.isoformat(), "is_error": True}
 
         # Récupérer les noms de prospects pour la veille
-        prospects = get_prospects(_supabase)
+        prospects = get_prospects()
         prospect_names = prospects["company_name"].dropna().unique().tolist()[:5]
         companies_str = ", ".join(prospect_names) if prospect_names else "secteur alimentaire industriel"
 
@@ -497,7 +497,7 @@ def generate_linkedin_url(company_name):
 
 def export_prospects_excel():
     """Export de tous les prospects en .xlsx."""
-    df = get_prospects(_supabase)
+    df = get_prospects()
     if df.empty:
         return None
 
@@ -766,7 +766,7 @@ def show_prospect_card( pid, data):
             st.markdown("<p class='label-field'>👥 CONTACTS</p>", unsafe_allow_html=True)
 
             if "editing_contacts" not in st.session_state:
-                st.session_state["editing_contacts"] = get_sub_data(_supabase, "contacts", pid).to_dict("records")
+                st.session_state["editing_contacts"] = get_sub_data( "contacts", pid).to_dict("records")
 
             hc = st.columns([1.2, 1.2, 1.6, 1.2, 0.4])
             for label, col in zip(["Nom", "Poste", "Email", "Tel", ""], hc):
@@ -813,7 +813,7 @@ def show_prospect_card( pid, data):
                     st.rerun()
 
             st.markdown("---")
-            samples_df = get_sub_data(_supabase, "samples", pid)
+            samples_df = get_sub_data( "samples", pid)
             if samples_df.empty:
                 st.info("Aucun échantillon envoyé pour cette société.")
             else:
@@ -897,7 +897,7 @@ def show_prospect_card( pid, data):
                     st.rerun()
 
             # Afficher historique
-            activities = get_sub_data(_supabase, "activities", pid)
+            activities = get_sub_data( "activities", pid)
             if activities.empty:
                 st.info("Aucune activité enregistrée.")
             else:
@@ -987,8 +987,8 @@ def render_sidebar():
         st.write("")
 
         # Compteurs d'alertes
-        retention_cnt = count_retention_alerts(_supabase)
-        sample_cnt = count_sample_alerts(_supabase)
+        retention_cnt = count_retention_alerts()
+        sample_cnt = count_sample_alerts()
         total_alerts = retention_cnt + sample_cnt
 
         NAV_ITEMS = {
@@ -1024,7 +1024,7 @@ def page_pipeline():
     st.markdown('<p class="section-title">☰ Pipeline</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Vue complète de tous vos projets en cours</p>', unsafe_allow_html=True)
 
-    df_raw = get_prospects(_supabase)
+    df_raw = get_prospects()
     if df_raw.empty:
         st.info("Aucun prospect enregistré. Créez-en un depuis la sidebar !")
         return
@@ -1100,7 +1100,7 @@ def page_kanban():
     st.markdown('<p class="section-title">▦ Kanban Board</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Glissez vos projets entre les étapes</p>', unsafe_allow_html=True)
 
-    df = get_prospects(_supabase)
+    df = get_prospects()
     if df.empty:
         st.info("Aucun prospect pour afficher le Kanban.")
         return
@@ -1158,7 +1158,7 @@ def page_dashboard():
     st.markdown('<p class="section-title">📊 Tableau de Bord</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Analyse stratégique de votre pipeline</p>', unsafe_allow_html=True)
 
-    df = get_prospects(_supabase)
+    df = get_prospects()
     if df.empty:
         st.info("Aucune donnée pour le dashboard.")
         return
@@ -1248,7 +1248,7 @@ def page_news():
     st.markdown('<p class="section-subtitle">Mise à jour automatique chaque mardi à 10h via Perplexity AI</p>', unsafe_allow_html=True)
 
     with st.spinner("Chargement de la veille..."):
-        news = fetch_weekly_news(_supabase)
+        news = fetch_weekly_news()
 
     if news.get("is_error"):
         st.warning(news["content"])
@@ -1290,7 +1290,7 @@ def page_excel():
                 "Télécharge la base complète des prospects au format .xlsx avec un formatage professionnel.</p>",
                 unsafe_allow_html=True,
             )
-            export_buffer = export_prospects_excel(_supabase)
+            export_buffer = export_prospects_excel()
             if export_buffer:
                 st.download_button(
                     label="⬇️ Télécharger l'export Excel",
@@ -1317,7 +1317,7 @@ def page_excel():
             if uploaded is not None:
                 if st.button("📥 Importer", type="primary", use_container_width=True):
                     with st.spinner("Import en cours..."):
-                        result = import_prospects_excel(_supabase, uploaded)
+                        result = import_prospects_excel( uploaded)
                     if result["errors"]:
                         st.warning(f"Erreurs lors de l'import :\n" + "\n".join(result["errors"]))
                     st.success(
@@ -1389,7 +1389,7 @@ def page_webhooks():
                 "contact_role": test_role,
             }
             with st.spinner("Traitement..."):
-                result = process_webhook_lead(_supabase, test_payload)
+                result = process_webhook_lead( test_payload)
 
             if result["success"]:
                 st.success(f"✅ Lead créé avec succès ! ID prospect : {result['prospect_id']}")
