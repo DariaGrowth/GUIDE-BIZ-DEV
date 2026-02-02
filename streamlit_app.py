@@ -281,6 +281,7 @@ def get_status_badge(status):
 # =============================================================================
 
 def get_prospects():
+    global SUPABASE_CLIENT
     """Récupère tous les prospects. Le _ devant supabase évite le hashing dans le cache."""
     try:
         res = __SUPABASE_CLIENT.table("prospects").select("*").order("last_action_date", desc=True).execute()
@@ -290,6 +291,7 @@ def get_prospects():
 
 
 def get_sub_data( table, prospect_id):
+    global SUPABASE_CLIENT
     try:
         data = (
             __SUPABASE_CLIENT.table(table)
@@ -305,6 +307,7 @@ def get_sub_data( table, prospect_id):
 
 
 def count_retention_alerts():
+    global SUPABASE_CLIENT
     """Compte les clients actifs sans interaction depuis 45+ jours."""
     forty_five_days_ago = (datetime.now() - timedelta(days=45)).isoformat()
     try:
@@ -321,6 +324,7 @@ def count_retention_alerts():
 
 
 def count_sample_alerts():
+    global SUPABASE_CLIENT
     """Compte les échantillons sans feedback depuis 15+ jours."""
     fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
     try:
@@ -341,6 +345,7 @@ def count_sample_alerts():
 # =============================================================================
 
 def ai_generate_smart_email( company, product, tone, country, prospect_id):
+    global SUPABASE_CLIENT
     """Génère un email ultra-personnalisé en synthétisant historique + samples + news."""
     # Récupérer l'historique des activités
     activities = get_sub_data(_supabase, "activities", prospect_id)
@@ -415,6 +420,7 @@ def ai_transcribe_audio(audio_bytes):
 
 
 def fetch_weekly_news():
+    global SUPABASE_CLIENT
     """Récupère la veille stratégique via Perplexity API."""
     try:
         # Vérifie si une veille existe déjà cette semaine (mardi)
@@ -490,6 +496,7 @@ def generate_linkedin_url(company_name):
 # =============================================================================
 
 def export_prospects_excel():
+    global SUPABASE_CLIENT
     """Export de tous les prospects en .xlsx."""
     df = get_prospects(_supabase)
     if df.empty:
@@ -544,6 +551,7 @@ def export_prospects_excel():
 
 
 def import_prospects_excel( uploaded_file):
+    global SUPABASE_CLIENT
     """Import massif depuis un fichier Excel vers Supabase."""
     try:
         df = pd.read_excel(uploaded_file, engine="openpyxl")
@@ -602,6 +610,7 @@ def import_prospects_excel( uploaded_file):
 # =============================================================================
 
 def process_webhook_lead( payload):
+    global SUPABASE_CLIENT
     """
     Traite un lead entrant depuis Make.com (Clay, Waalaxy, etc.).
     Payload attendu (JSON) :
@@ -671,6 +680,7 @@ def process_webhook_lead( payload):
 
 @st.dialog(" ", width="large")
 def show_prospect_card( pid, data):
+    global SUPABASE_CLIENT
     pid = int(pid)
     company_name = data.get("company_name", "")
 
@@ -957,6 +967,7 @@ def show_prospect_card( pid, data):
 # =============================================================================
 
 def render_sidebar():
+    global SUPABASE_CLIENT
     with st.sidebar:
         st.markdown(
             "<div style='padding: 16px 0 8px;'>"
@@ -1015,6 +1026,7 @@ def render_sidebar():
 # =============================================================================
 
 def page_pipeline():
+    global SUPABASE_CLIENT
     st.markdown('<p class="section-title">☰ Pipeline</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Vue complète de tous vos projets en cours</p>', unsafe_allow_html=True)
 
@@ -1091,6 +1103,7 @@ def page_pipeline():
 
 
 def page_kanban():
+    global SUPABASE_CLIENT
     st.markdown('<p class="section-title">▦ Kanban Board</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Glissez vos projets entre les étapes</p>', unsafe_allow_html=True)
 
@@ -1149,6 +1162,7 @@ def page_kanban():
 
 
 def page_dashboard():
+    global SUPABASE_CLIENT
     st.markdown('<p class="section-title">📊 Tableau de Bord</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Analyse stratégique de votre pipeline</p>', unsafe_allow_html=True)
 
@@ -1198,6 +1212,7 @@ def page_dashboard():
 
 
 def page_contacts():
+    global SUPABASE_CLIENT
     st.markdown('<p class="section-title">👤 Annuaire Global</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Tous vos contacts centralisés</p>', unsafe_allow_html=True)
 
@@ -1220,6 +1235,7 @@ def page_contacts():
 
 
 def page_samples():
+    global SUPABASE_CLIENT
     st.markdown('<p class="section-title">🧪 Gestion des Échantillons</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Suivi de tous les échantillons envoyés</p>', unsafe_allow_html=True)
 
@@ -1238,6 +1254,7 @@ def page_samples():
 
 
 def page_news():
+    global SUPABASE_CLIENT
     st.markdown('<p class="section-title">📰 Veille Stratégique</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Mise à jour automatique chaque mardi à 10h via Perplexity AI</p>', unsafe_allow_html=True)
 
@@ -1270,6 +1287,7 @@ def page_news():
 
 
 def page_excel():
+    global SUPABASE_CLIENT
     st.markdown('<p class="section-title">📥 Import / Export Excel</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Gérez vos données en format Excel</p>', unsafe_allow_html=True)
 
@@ -1323,6 +1341,7 @@ def page_excel():
 
 
 def page_webhooks():
+    global SUPABASE_CLIENT
     st.markdown('<p class="section-title">🔗 Webhooks Make.com</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Points d\'entrée pour recevoir des leads depuis Make.com</p>', unsafe_allow_html=True)
 
@@ -1393,6 +1412,7 @@ def page_webhooks():
 
 
 def page_alertes():
+    global SUPABASE_CLIENT
     st.markdown('<p class="section-title">🔔 Alertes & Relances</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Surveillance automatique de vos clients et échantillons</p>', unsafe_allow_html=True)
 
@@ -1487,6 +1507,8 @@ def page_alertes():
 # =============================================================================
 
 def main():
+    global SUPABASE_CLIENT
+    
     # Auth
     if not check_auth():
         return
