@@ -520,7 +520,7 @@ def get_status_badge(status):
 def get_prospects():
     """Récupère tous les prospects. Le _ devant supabase évite le hashing dans le cache."""
     try:
-        res = __get_supabase().table("prospects").select("*").order("last_action_date", desc=True).execute()
+        res = _get_supabase().table("prospects").select("*").order("last_action_date", desc=True).execute()
         return pd.DataFrame(res.data)
     except Exception:
         return pd.DataFrame()
@@ -529,7 +529,7 @@ def get_prospects():
 def get_sub_data( table, prospect_id):
     try:
         data = (
-            __get_supabase().table(table)
+            _get_supabase().table(table)
             .select("*")
             .eq("prospect_id", prospect_id)
             .order("id", desc=True)
@@ -546,7 +546,7 @@ def count_retention_alerts():
     forty_five_days_ago = (datetime.now() - timedelta(days=45)).isoformat()
     try:
         res = (
-            __get_supabase().table("prospects")
+            _get_supabase().table("prospects")
             .select("id", count="exact")
             .eq("status", "Client Actif")
             .lte("last_action_date", forty_five_days_ago)
@@ -562,7 +562,7 @@ def count_sample_alerts():
     fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
     try:
         res = (
-            __get_supabase().table("samples")
+            _get_supabase().table("samples")
             .select("id", count="exact")
             .is_("feedback", "null")
             .lte("date_sent", fifteen_days_ago)
@@ -661,7 +661,7 @@ def fetch_weekly_news():
         last_tuesday = (today - timedelta(days=days_since_tuesday)).strftime("%Y-%m-%d")
 
         # Cherche une veille existante pour cette semaine
-        existing = _get_supabase().table("weekly_news").select("*").gte("created_at", last_tuesday).order("created_at", desc=True).execute()
+        existing = get_supabase().table("weekly_news").select("*").gte("created_at", last_tuesday).order("created_at", desc=True).execute()
         if existing.data:
             return existing.data[0]
 
@@ -700,7 +700,7 @@ def fetch_weekly_news():
         content = result["choices"][0]["message"]["content"]
 
         # Sauvegarder dans Supabase
-        _get_supabase().table("weekly_news").insert({
+        get_supabase().table("weekly_news").insert({
             "content": content,
             "created_at": today.isoformat(),
         }).execute()
@@ -818,12 +818,12 @@ def import_prospects_excel( uploaded_file):
 
             try:
                 # Vérifie si le prospect existe déjà
-                existing = _get_supabase().table("prospects").select("id").eq("company_name", company).execute()
+                existing = get_supabase().table("prospects").select("id").eq("company_name", company).execute()
                 if existing.data:
-                    _get_supabase().table("prospects").update(record).eq("company_name", company).execute()
+                    get_supabase().table("prospects").update(record).eq("company_name", company).execute()
                     updated += 1
                 else:
-                    _get_supabase().table("prospects").insert(record).execute()
+                    get_supabase().table("prospects").insert(record).execute()
                     inserted += 1
             except Exception as e:
                 errors.append(f"{company} : {str(e)}")
@@ -860,7 +860,7 @@ def process_webhook_lead( payload):
             return {"success": False, "error": "company_name est obligatoire"}
 
         # Créer ou récupérer le prospect
-        existing = _get_supabase().table("prospects").select("id").eq("company_name", company).execute()
+        existing = get_supabase().table("prospects").select("id").eq("company_name", company).execute()
         if existing.data:
             prospect_id = existing.data[0]["id"]
         else:
@@ -873,7 +873,7 @@ def process_webhook_lead( payload):
                 "last_action_date": datetime.now().isoformat(),
                 "last_salon": payload.get("source", "Webhook"),
             }
-            res = _get_supabase().table("prospects").insert(new_prospect).execute()
+            res = get_supabase().table("prospects").insert(new_prospect).execute()
             prospect_id = res.data[0]["id"]
 
         # Ajouter le contact si fourni
@@ -886,10 +886,10 @@ def process_webhook_lead( payload):
                 "role": payload.get("contact_role", ""),
                 "phone": payload.get("contact_phone", ""),
             }
-            _get_supabase().table("contacts").insert(contact).execute()
+            get_supabase().table("contacts").insert(contact).execute()
 
         # Enregistrer dans le journal
-        _get_supabase().table("activities").insert({
+        get_supabase().table("activities").insert({
             "prospect_id": prospect_id,
             "type": "Webhook",
             "content": f"Lead reçu via {payload.get('source', 'Make.com')}",
@@ -1034,7 +1034,7 @@ def show_prospect_card( pid, data):
                 s_prod = st.selectbox("Produit", PRODUITS, key=f"sp_{pid}")
             with cs3:
                 if st.button("+ Ajouter", type="primary"):
-                    _get_supabase().table("samples").insert({
+                    get_supabase().table("samples").insert({
                         "prospect_id": pid,
                         "reference": s_ref,
                         "product_name": s_prod,
@@ -1062,10 +1062,10 @@ def show_prospect_card( pid, data):
                             s_idx = S_OPTS.index(r["status"]) if r["status"] in S_OPTS else 0
                             new_s = st.selectbox("Statut", S_OPTS, index=s_idx, key=f"ss_{r['id']}", label_visibility="collapsed")
                             if new_s != r["status"]:
-                                _get_supabase().table("samples").update({"status": new_s}).eq("id", r["id"]).execute()
+                                get_supabase().table("samples").update({"status": new_s}).eq("id", r["id"]).execute()
                         with sh3:
                             if st.button("🗑️", key=f"ds_{r['id']}"):
-                                _get_supabase().table("samples").delete().eq("id", r["id"]).execute()
+                                get_supabase().table("samples").delete().eq("id", r["id"]).execute()
                                 st.rerun()
                         new_f = st.text_area(
                             "Feedback R&D", value=r.get("feedback") or "",
@@ -1073,7 +1073,7 @@ def show_prospect_card( pid, data):
                             label_visibility="collapsed",
                         )
                         if new_f != (r.get("feedback") or ""):
-                            _get_supabase().table("samples").update({"feedback": new_f}).eq("id", r["id"]).execute()
+                            get_supabase().table("samples").update({"feedback": new_f}).eq("id", r["id"]).execute()
 
         # ──────── ONGLET 3 : Journal & Voice-to-Text ────────
         with tab3:
@@ -1102,7 +1102,7 @@ def show_prospect_card( pid, data):
                     if "voice_transcription" in st.session_state:
                         st.text_area("📝 Transcription", value=st.session_state["voice_transcription"], height=100, key=f"trans_{pid}")
                         if st.button("💾 Sauvegarder dans le journal", type="primary"):
-                            _get_supabase().table("activities").insert({
+                            get_supabase().table("activities").insert({
                                 "prospect_id": pid,
                                 "type": "Compte-rendu vocal",
                                 "content": st.session_state["voice_transcription"],
@@ -1119,7 +1119,7 @@ def show_prospect_card( pid, data):
             note = st.text_area("Nouvelle activité...", key=f"act_n_{pid}", placeholder="Décris une réunion, un email, une action...", height=70)
             if st.button("+ Enregistrer la note"):
                 if note.strip():
-                    _get_supabase().table("activities").insert({
+                    get_supabase().table("activities").insert({
                         "prospect_id": pid,
                         "type": "Note",
                         "content": note,
@@ -1162,11 +1162,11 @@ def show_prospect_card( pid, data):
                 "notes": pain,
                 "tech_notes": tech,
             }
-            _get_supabase().table("prospects").update(update_data).eq("id", pid).execute()
+            get_supabase().table("prospects").update(update_data).eq("id", pid).execute()
 
             # Supprimer les contacts marqués
             if "contacts_to_delete" in st.session_state and st.session_state["contacts_to_delete"]:
-                _get_supabase().table("contacts").delete().in_("id", st.session_state.pop("contacts_to_delete")).execute()
+                get_supabase().table("contacts").delete().in_("id", st.session_state.pop("contacts_to_delete")).execute()
 
             # Upsert des contacts
             for rc in st.session_state.get("editing_contacts", []):
@@ -1179,9 +1179,9 @@ def show_prospect_card( pid, data):
                         "phone": rc.get("phone", ""),
                     }
                     if rc.get("id"):
-                        _get_supabase().table("contacts").upsert({**payload, "id": int(rc["id"])}).execute()
+                        get_supabase().table("contacts").upsert({**payload, "id": int(rc["id"])}).execute()
                     else:
-                        _get_supabase().table("contacts").insert(payload).execute()
+                        get_supabase().table("contacts").insert(payload).execute()
 
             reset_pipeline()
             st.rerun()
@@ -1217,7 +1217,7 @@ def render_sidebar():
         st.markdown("---")
 
         if st.button("⊕ Nouveau Projet"):
-            res = _get_supabase().table("prospects").insert({
+            res = get_supabase().table("prospects").insert({
                 "company_name": "Nouveau Prospect",
                 "status": "Prospection",
                 "last_action_date": datetime.now().isoformat(),
@@ -1302,7 +1302,7 @@ def page_pipeline():
 
     # Précharger samples
     try:
-        s_map = pd.DataFrame(_get_supabase().table("samples").select("prospect_id").execute().data)
+        s_map = pd.DataFrame(get_supabase().table("samples").select("prospect_id").execute().data)
     except Exception:
         s_map = pd.DataFrame()
 
@@ -1381,7 +1381,7 @@ def page_kanban():
                 km1, km2, km3 = st.columns([1, 2, 1])
                 with km1:
                     if i > 0 and st.button("←", key=f"prev_{row['id']}"):
-                        _get_supabase().table("prospects").update({"status": STAGES[i - 1]}).eq("id", row["id"]).execute()
+                        get_supabase().table("prospects").update({"status": STAGES[i - 1]}).eq("id", row["id"]).execute()
                         reset_pipeline()
                         st.rerun()
                 with km2:
@@ -1390,7 +1390,7 @@ def page_kanban():
                         st.rerun()
                 with km3:
                     if i < len(STAGES) - 1 and st.button("→", key=f"next_{row['id']}"):
-                        _get_supabase().table("prospects").update({"status": STAGES[i + 1]}).eq("id", row["id"]).execute()
+                        get_supabase().table("prospects").update({"status": STAGES[i + 1]}).eq("id", row["id"]).execute()
                         reset_pipeline()
                         st.rerun()
 
@@ -1451,7 +1451,7 @@ def page_contacts():
     search_q = st.text_input("🔍 Rechercher...", placeholder="Nom, Poste, Email, Entreprise...", label_visibility="collapsed")
 
     try:
-        cons = pd.DataFrame(_get_supabase().table("contacts").select("*, prospects(company_name)").execute().data)
+        cons = pd.DataFrame(get_supabase().table("contacts").select("*, prospects(company_name)").execute().data)
     except Exception:
         cons = pd.DataFrame()
 
@@ -1471,7 +1471,7 @@ def page_samples():
     st.markdown('<p class="section-subtitle">Suivi de tous les échantillons envoyés</p>', unsafe_allow_html=True)
 
     try:
-        samp = pd.DataFrame(_get_supabase().table("samples").select("*, prospects(company_name)").execute().data)
+        samp = pd.DataFrame(get_supabase().table("samples").select("*, prospects(company_name)").execute().data)
     except Exception:
         samp = pd.DataFrame()
 
@@ -1509,7 +1509,7 @@ def page_news():
     st.write("")
     if st.button("🔄 Forcer une nouvelle veille"):
         try:
-            _get_supabase().table("weekly_news").delete().neq("id", 0).execute()
+            get_supabase().table("weekly_news").delete().neq("id", 0).execute()
             st.cache_data.clear()
             st.rerun()
         except Exception:
@@ -1650,7 +1650,7 @@ def page_alertes():
     forty_five_days_ago = (datetime.now() - timedelta(days=45)).isoformat()
     try:
         retention_alerts = pd.DataFrame(
-            _get_supabase().table("prospects")
+            get_supabase().table("prospects")
             .select("*")
             .eq("status", "Client Actif")
             .lte("last_action_date", forty_five_days_ago)
@@ -1694,7 +1694,7 @@ def page_alertes():
     fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
     try:
         sample_alerts = pd.DataFrame(
-            _get_supabase().table("samples")
+            get_supabase().table("samples")
             .select("*, prospects(company_name)")
             .is_("feedback", "null")
             .lte("date_sent", fifteen_days_ago)
