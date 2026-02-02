@@ -1,4 +1,4 @@
- # =============================================================================
+# =============================================================================
 # ING GROWTH AI — CRM Stratégique
 # Version 2.0 | Structure modulaire | Streamlit + Supabase + Gemini + Perplexity
 # =============================================================================
@@ -61,7 +61,7 @@ ICON_EXPORTER = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" s
 
 st.set_page_config(
     page_title="ING Growth AI",
-    page_icon="🧬",
+    page_icon="data:image/svg+xml;utf8," + urllib.parse.quote(ICON_FUSION_AURORA),
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={"Get help": None, "Report a bug": None, "About": None},
@@ -104,44 +104,38 @@ CSS_THEME = """
         background: #047857 !important;
     }
 
-    /* ── NAVIGATION (Style GitHub/Linear) ── */
-    [data-testid="stSidebar"] [role="radiogroup"] {
-        gap: 0px !important;
-        padding: 8px 0 !important;
+    /* ── NAVIGATION BUTTONS (Custom avec icônes) ── */
+    [data-testid="stSidebar"] [data-testid="column"] {
+        padding: 0 !important;
+        gap: 4px !important;
     }
-    [data-testid="stSidebar"] [role="radiogroup"] label {
+    [data-testid="stSidebar"] [data-testid="column"]:first-child {
+        max-width: 30px !important;
+        min-width: 30px !important;
+    }
+    [data-testid="stSidebar"] [data-testid="column"]:last-child .stButton > button {
         background: transparent !important;
         border: none !important;
-        border-radius: 6px !important;
-        padding: 8px 12px !important;
-        margin: 2px 8px !important;
+        color: #586069 !important;
         font-size: 14px !important;
         font-weight: 500 !important;
-        color: #586069 !important;
+        padding: 8px 12px !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        border-radius: 6px !important;
         transition: all 0.15s !important;
-        cursor: pointer !important;
+        box-shadow: none !important;
+        width: 100% !important;
     }
-    [data-testid="stSidebar"] [role="radiogroup"] label svg {
-        stroke: #586069 !important;
-        transition: stroke 0.15s !important;
-    }
-    [data-testid="stSidebar"] [role="radiogroup"] label:hover {
+    [data-testid="stSidebar"] [data-testid="column"]:last-child .stButton > button:hover {
         background: #f6f8fa !important;
         color: #24292e !important;
     }
-    [data-testid="stSidebar"] [role="radiogroup"] label:hover svg {
-        stroke: #24292e !important;
-    }
-    [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] > div:first-child {
-        display: none !important;
-    }
-    [data-testid="stSidebar"] [role="radiogroup"] label[aria-checked="true"] {
+    /* Bouton sélectionné */
+    [data-testid="stSidebar"] [data-testid="column"]:last-child .stButton > button[kind="primary"] {
         background: #e6f7ed !important;
         color: #047857 !important;
         font-weight: 600 !important;
-    }
-    [data-testid="stSidebar"] [role="radiogroup"] label[aria-checked="true"] svg {
-        stroke: #047857 !important;
     }
 
     /* ── SECTION DONNEES (Sidebar Bottom) ── */
@@ -1132,26 +1126,40 @@ def render_sidebar():
         sample_cnt = count_sample_alerts()
         total_alerts = retention_cnt + sample_cnt
 
-        # Navigation
-        NAV_ITEMS = {
-            "Dashboard": "Tableau de Bord",
-            "Pipeline": "Pipeline",
-            "Kanban": "Kanban",
-            "Samples": "Échantillons",
-            "Contacts": "Contacts",
-            "News": "Veille Stratégique",
-            "Excel": "Import / Export",
-            "Webhooks": "Webhooks Make",
-            "Alertes": f"À Relancer ({total_alerts})" if total_alerts > 0 else "À Relancer",
-        }
-
-        sel = st.radio(
-            "Navigation",
-            list(NAV_ITEMS.keys()),
-            format_func=lambda x: NAV_ITEMS[x],
-            label_visibility="collapsed",
-            index=1,
-        )
+        # Navigation avec icônes SVG
+        if 'selected_page' not in st.session_state:
+            st.session_state.selected_page = 'Pipeline'
+        
+        nav_items = [
+            ("Dashboard", "Tableau de Bord", ICON_TABLEAU_DE_BORD),
+            ("Pipeline", "Pipeline", ICON_PIPELINE),
+            ("Kanban", "Kanban", ICON_KANBAN),
+            ("Samples", "Échantillons", ICON_ECHANTILLONS),
+            ("Contacts", "Contacts", ICON_CONTACTS),
+            ("News", "Veille Stratégique", ICON_VEILLE_STRATEGIQUE),
+            ("Excel", "Import / Export", ICON_EXPORTER),
+            ("Webhooks", "Webhooks Make", ICON_WEBHOOKS),
+            ("Alertes", f"À Relancer ({total_alerts})" if total_alerts > 0 else "À Relancer", ICON_A_RELANCER),
+        ]
+        
+        for key, label, icon in nav_items:
+            is_selected = (st.session_state.selected_page == key)
+            bg = "#e6f7ed" if is_selected else "transparent"
+            color = "#047857" if is_selected else "#586069"
+            weight = "600" if is_selected else "500"
+            
+            # Adapter la couleur du SVG
+            icon_display = icon.replace('stroke="#1E3F35"', f'stroke="{color}"').replace('fill="#1E3F35"', f'fill="{color}"').replace('width="32" height="32"', 'width="18" height="18"')
+            
+            col1, col2 = st.columns([0.15, 0.85])
+            with col1:
+                st.markdown(f"<div style='padding: 8px 0;'>{icon_display}</div>", unsafe_allow_html=True)
+            with col2:
+                if st.button(label, key=f"nav_{key}", use_container_width=True):
+                    st.session_state.selected_page = key
+                    st.rerun()
+        
+        sel = st.session_state.selected_page
 
         st.markdown("---")
         
