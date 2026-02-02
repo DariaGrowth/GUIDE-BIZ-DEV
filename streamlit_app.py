@@ -1,4 +1,4 @@
-# =============================================================================
+ # =============================================================================
 # ING GROWTH AI — CRM Stratégique
 # Version 2.0 | Structure modulaire | Streamlit + Supabase + Gemini + Perplexity
 # =============================================================================
@@ -24,34 +24,36 @@ from io import BytesIO
 # SVG ICONS
 # =============================================================================
 
-ICON_TABLEAU_DE_BORD = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="8" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/><rect x="13" y="14" width="8" height="7" rx="2"/></svg>"""
-
-ICON_PIPELINE = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 8h-3"/><path d="M3 21c3 0 7-1 7-8"/><circle cx="17.5" cy="15" r="2.5"/><path d="M17.5 17.5V22"/></svg>"""
-
-ICON_KANBAN = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M8 3v18"/><path d="M16 3v18"/><path d="M3 8h5"/><path d="M8 12h8"/><path d="M16 7h5"/></svg>"""
-
-ICON_ECHANTILLONS = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.5L5 21h14l-5-11.5V2h-4z"/><path d="M8.5 15h7"/><rect x="10" y="2" width="4" height="1" rx="0.5" fill="currentColor"/></svg>"""
-
-ICON_VEILLE_STRATEGIQUE = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 8-4 4-4 4 4-4 4-4Z" fill="currentColor"/><path d="M12 7V5M12 19v-2M7 12H5M19 12h-2"/></svg>"""
-
-ICON_CONTACTS = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><circle cx="5" cy="19" r="2"/><line x1="7" y1="7" x2="10" y2="10"/><line x1="14" y1="14" x2="17" y2="17"/><line x1="17" y1="7" x2="14" y2="10"/><line x1="10" y1="14" x2="7" y2="17"/></svg>"""
-
-ICON_A_RELANCER = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><circle cx="18" cy="5" r="2" fill="currentColor"/></svg>"""
-
-ICON_WEBHOOKS = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M9 19h3.5a3.5 3.5 0 0 0 3.5-3.5V8.5A3.5 3.5 0 0 1 19.5 5H21"/><path d="M6 16v-3.5A3.5 3.5 0 0 1 9.5 9H15"/></svg>"""
-
-ICON_EXPORTER = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="m9 12 3 3-3 3"/></svg>"""
-
-ICON_FUSION_AURORA = """<svg width="40" height="40" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="grad_fav_aurora" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#047857;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  <path d="M28 4c-4 10-12 14-22 14 10 4 18 12 22 22 4-10 12-18 22-22-10-4-18-8-22-14z" fill="url(#grad_fav_aurora)"/>
-  <path d="M28 14c-2 6-8 10-14 10 6 2 12 8 14 14 2-6 8-10 14-10-6-2-12-4-14-14z" fill="white" fill-opacity="0.4"/>
+# --- LOGOS ET FAVICONS (STYLE FUSION) ---
+ICON_FUSION_AURORA = """<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="grad_fav_aurora" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#1E3F35;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#1E3F35;stop-opacity:1" />
+        </linearGradient>
+    </defs>
+    <path d="M28 4c-4 10-12 14-22 14 10 4 18 12 22 22 4-10 12-18 22-22-10-4-18-8-22-14z" fill="url(#grad_fav_aurora)"/>
+    <path d="M28 14c-2 6-8 10-14 10 6 2 12 8 14 14 2-6 8-10 14-10-6-2-12-4-14-14z" fill="white" fill-opacity="0.3"/>
 </svg>"""
+
+# --- ICÔNES DE NAVIGATION (APPROUVÉES) ---
+ICON_TABLEAU_DE_BORD = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3F35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="8" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/><rect x="13" y="14" width="8" height="7" rx="2"/></svg>"""
+
+ICON_PIPELINE = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3F35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 8h-3"/><path d="M3 21c3 0 7-1 7-8"/><circle cx="17.5" cy="15" r="2.5"/><path d="M17.5 17.5V22"/></svg>"""
+
+ICON_KANBAN = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3F35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M8 3v18"/><path d="M16 3v18"/><path d="M3 8h5"/><path d="M8 12h8"/><path d="M16 7h5"/></svg>"""
+
+ICON_ECHANTILLONS = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3F35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.5L5 21h14l-5-11.5V2h-4z"/><path d="M8.5 15h7"/><rect x="10" y="2" width="4" height="1" rx="0.5" fill="#1E3F35"/></svg>"""
+
+ICON_VEILLE_STRATEGIQUE = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3F35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 8-4 4-4 4 4-4 4-4Z" fill="#1E3F35"/><path d="M12 7V5M12 19v-2M7 12H5M19 12h-2"/></svg>"""
+
+ICON_CONTACTS = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3F35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><circle cx="5" cy="19" r="2"/><line x1="7" y1="7" x2="10" y2="10"/><line x1="14" y1="14" x2="17" y2="17"/><line x1="17" y1="7" x2="14" y2="10"/><line x1="10" y1="14" x2="7" y2="17"/></svg>"""
+
+ICON_A_RELANCER = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3F35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><circle cx="18" cy="5" r="2" fill="#1E3F35"/></svg>"""
+
+ICON_WEBHOOKS = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3F35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M9 19h3.5a3.5 3.5 0 0 0 3.5-3.5V8.5A3.5 3.5 0 0 1 19.5 5H21"/><path d="M6 16v-3.5A3.5 3.5 0 0 1 9.5 9H15"/></svg>"""
+
+ICON_EXPORTER = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3F35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="m9 12 3 3-3 3"/><rect x="6" y="12" width="8" height="8" rx="1" opacity="0.3"/></svg>"""
 
 # =============================================================================
 # 1. CONFIGURATION GLOBALE & STYLES
@@ -1130,16 +1132,17 @@ def render_sidebar():
         sample_cnt = count_sample_alerts()
         total_alerts = retention_cnt + sample_cnt
 
+        # Navigation
         NAV_ITEMS = {
-            "Dashboard": f"<span style='display:inline-flex;align-items:center;gap:8px;'>{ICON_TABLEAU_DE_BORD}<span>Tableau de Bord</span></span>",
-            "Pipeline": f"<span style='display:inline-flex;align-items:center;gap:8px;'>{ICON_PIPELINE}<span>Pipeline</span></span>",
-            "Kanban": f"<span style='display:inline-flex;align-items:center;gap:8px;'>{ICON_KANBAN}<span>Kanban</span></span>",
-            "Samples": f"<span style='display:inline-flex;align-items:center;gap:8px;'>{ICON_ECHANTILLONS}<span>Échantillons</span></span>",
-            "Contacts": f"<span style='display:inline-flex;align-items:center;gap:8px;'>{ICON_CONTACTS}<span>Contacts</span></span>",
-            "News": f"<span style='display:inline-flex;align-items:center;gap:8px;'>{ICON_VEILLE_STRATEGIQUE}<span>Veille Stratégique</span></span>",
-            "Excel": f"<span style='display:inline-flex;align-items:center;gap:8px;'>{ICON_EXPORTER}<span>Import / Export</span></span>",
-            "Webhooks": f"<span style='display:inline-flex;align-items:center;gap:8px;'>{ICON_WEBHOOKS}<span>Webhooks Make</span></span>",
-            "Alertes": f"<span style='display:inline-flex;align-items:center;gap:8px;'>{ICON_A_RELANCER}<span>À Relancer ({total_alerts})</span></span>" if total_alerts > 0 else f"<span style='display:inline-flex;align-items:center;gap:8px;'>{ICON_A_RELANCER}<span>À Relancer</span></span>",
+            "Dashboard": "Tableau de Bord",
+            "Pipeline": "Pipeline",
+            "Kanban": "Kanban",
+            "Samples": "Échantillons",
+            "Contacts": "Contacts",
+            "News": "Veille Stratégique",
+            "Excel": "Import / Export",
+            "Webhooks": "Webhooks Make",
+            "Alertes": f"À Relancer ({total_alerts})" if total_alerts > 0 else "À Relancer",
         }
 
         sel = st.radio(
