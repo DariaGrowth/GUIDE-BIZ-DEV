@@ -34,136 +34,367 @@ st.set_page_config(
 
 CSS_THEME = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-    /* ── BASE ── */
-    .stApp { background-color: #ffffff !important; font-family: 'Inter', sans-serif; }
-    section[data-testid="stSidebar"] { background-color: #f8fafc; border-right: 1px solid #e2e8f0; }
+    /* ── BASE MODERNE ── */
+    .stApp { 
+        background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%) !important; 
+        font-family: 'Inter', -apple-system, sans-serif; 
+    }
+    section[data-testid="stSidebar"] { 
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border-right: 1px solid #e5e7eb;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.02);
+    }
     [data-testid="stVerticalBlock"] { gap: 0rem !important; }
-    .stApp h1, .stApp h2, .stApp h3 { font-family: 'Inter', sans-serif !important; color: #0f172a !important; }
+    .stApp h1, .stApp h2, .stApp h3 { 
+        font-family: 'Inter', sans-serif !important; 
+        color: #111827 !important; 
+        font-weight: 800 !important;
+        letter-spacing: -0.02em !important;
+    }
 
-    /* ── SIDEBAR BOUTONS ── */
+    /* ── SIDEBAR HEADER MODERNE ── */
+    [data-testid="stSidebar"] > div:first-child {
+        padding-top: 2rem;
+    }
+
+    /* ── BOUTON NOUVEAU PROJET ── */
     [data-testid="stSidebar"] .stButton > button {
-        width: 100%; background-color: #047857 !important; color: white !important;
-        border: none; border-radius: 8px; padding: 11px 16px; font-weight: 700;
-        font-size: 13px; box-shadow: 0 2px 4px rgba(4,120,87,0.25);
-        transition: all 0.2s ease; letter-spacing: 0.3px;
+        width: 100%; 
+        background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+        color: white !important;
+        border: none !important; 
+        border-radius: 10px !important; 
+        padding: 13px 18px !important; 
+        font-weight: 700 !important;
+        font-size: 13.5px !important; 
+        letter-spacing: 0.02em !important;
+        box-shadow: 0 2px 8px rgba(5,150,105,0.25), 0 1px 2px rgba(5,150,105,0.1) !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        text-transform: none !important;
     }
     [data-testid="stSidebar"] .stButton > button:hover {
-        background-color: #065f46 !important; transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(4,120,87,0.3);
+        background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(5,150,105,0.3), 0 2px 4px rgba(5,150,105,0.15) !important;
+    }
+    [data-testid="stSidebar"] .stButton > button:active {
+        transform: translateY(0px) !important;
     }
 
-    /* ── PIPELINE HEADER ── */
-    .pipeline-header-row { padding: 10px 18px 6px; margin-bottom: 2px; display: flex; align-items: center; }
+    /* ── NAVIGATION RADIO BUTTONS (Moderne & Minimaliste) ── */
+    [data-testid="stSidebar"] [role="radiogroup"] {
+        gap: 2px !important;
+        padding: 0 !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 11px 14px !important;
+        margin: 0 !important;
+        font-size: 13.5px !important;
+        font-weight: 500 !important;
+        color: #6b7280 !important;
+        transition: all 0.2s ease !important;
+        cursor: pointer !important;
+        letter-spacing: 0.01em !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label:hover {
+        background: #f3f4f6 !important;
+        color: #374151 !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label[data-baseweb="radio"] > div:first-child {
+        display: none !important;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label[aria-checked="true"] {
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+        color: #047857 !important;
+        font-weight: 700 !important;
+        border-left: 3px solid #059669 !important;
+        padding-left: 11px !important;
+    }
+
+    /* ── PIPELINE MODERNE ── */
+    .pipeline-header-row { 
+        padding: 12px 20px 8px; 
+        margin-bottom: 4px; 
+        display: flex; 
+        align-items: center;
+        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+        border-radius: 10px 10px 0 0;
+        border-bottom: 2px solid #e5e7eb;
+    }
     .header-text-style {
-        color: #047857 !important; font-size: 11px !important; font-weight: 800 !important;
-        text-transform: uppercase; letter-spacing: 1px;
+        color: #047857 !important; 
+        font-size: 10.5px !important; 
+        font-weight: 900 !important;
+        text-transform: uppercase; 
+        letter-spacing: 1.2px !important;
     }
 
     /* ── PIPELINE ROWS ── */
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        background-color: #ffffff !important; border: none !important;
-        border-bottom: 1px solid #f1f5f9 !important; border-radius: 0px !important;
-        padding: 3px 18px !important; margin-bottom: 0px !important;
-        transition: background 0.15s ease;
+        background: #ffffff !important; 
+        border: 1px solid #f3f4f6 !important;
+        border-radius: 8px !important;
+        padding: 10px 20px !important; 
+        margin-bottom: 6px !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"]:hover { background-color: #f8fafc !important; }
+    div[data-testid="stVerticalBlockBorderWrapper"]:hover { 
+        background: #fafafa !important;
+        border-color: #e5e7eb !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+        transform: translateY(-1px) !important;
+    }
 
-    /* ── COMPANY NAME (Link Style) ── */
+    /* ── COMPANY NAME LINKS ── */
     div[data-testid="column"]:first-child .stButton > button {
-        background: transparent !important; border: none !important; padding: 0 !important;
-        margin: 0 !important; color: #047857 !important; font-weight: 700 !important;
-        font-size: 14px !important; text-align: left !important; box-shadow: none !important;
-        min-height: 0px !important; height: 34px !important; line-height: 34px !important;
-        display: inline-block !important; width: auto !important;
-        text-decoration: none; transition: color 0.15s;
+        background: transparent !important; 
+        border: none !important; 
+        padding: 0 !important;
+        margin: 0 !important; 
+        color: #047857 !important; 
+        font-weight: 800 !important;
+        font-size: 14px !important; 
+        text-align: left !important; 
+        box-shadow: none !important;
+        min-height: 0px !important; 
+        height: 36px !important; 
+        line-height: 36px !important;
+        display: inline-block !important; 
+        width: auto !important;
+        text-decoration: none !important; 
+        transition: all 0.15s !important;
+        letter-spacing: -0.01em !important;
     }
-    div[data-testid="column"]:first-child .stButton > button:hover { color: #065f46 !important; text-decoration: underline; }
+    div[data-testid="column"]:first-child .stButton > button:hover { 
+        color: #059669 !important; 
+        text-decoration: underline !important;
+        text-decoration-thickness: 2px !important;
+        text-underline-offset: 3px !important;
+    }
 
     /* ── TRASH / DELETE ── */
-    .trash-container { display: flex; align-items: center; justify-content: center; height: 36px; }
-    .trash-container button {
-        background: transparent !important; border: none !important; box-shadow: none !important;
-        color: #94a3b8 !important; padding: 0 !important; font-size: 16px !important;
-        width: 30px !important; height: 30px !important; border-radius: 6px;
-        transition: all 0.15s;
+    .trash-container { 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        height: 36px; 
     }
-    .trash-container button:hover { color: #ef4444 !important; background: #fee2e2 !important; }
+    .trash-container button {
+        background: transparent !important; 
+        border: none !important; 
+        box-shadow: none !important;
+        color: #9ca3af !important; 
+        padding: 0 !important; 
+        font-size: 15px !important;
+        width: 32px !important; 
+        height: 32px !important; 
+        border-radius: 7px !important;
+        transition: all 0.2s !important;
+    }
+    .trash-container button:hover { 
+        color: #ef4444 !important; 
+        background: #fef2f2 !important;
+        transform: scale(1.1) !important;
+    }
 
-    /* ── BADGES ── */
-    .badge { padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 700;
-             display: inline-block; letter-spacing: 0.3px; }
-    .badge-green { background: #dcfce7; color: #166534; }
-    .badge-emerald { background: #d1fae5; color: #047857; }
-    .badge-yellow { background: #fef9c3; color: #854d0e; }
-    .badge-amber { background: #fef3c7; color: #92400e; }
-    .badge-blue { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .badge-purple { background: #ede9fe; color: #6d28d9; }
-    .badge-gray { background: #f1f5f9; color: #64748b; }
-    .badge-red { background: #fee2e2; color: #dc2626; }
+    /* ── BADGES MODERNES ── */
+    .badge { 
+        padding: 4px 12px; 
+        border-radius: 14px; 
+        font-size: 10px; 
+        font-weight: 800;
+        display: inline-block; 
+        letter-spacing: 0.05em; 
+        text-transform: uppercase;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .badge-green { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; }
+    .badge-emerald { background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%); color: #047857; }
+    .badge-yellow { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; }
+    .badge-amber { background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%); color: #78350f; }
+    .badge-blue { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; }
+    .badge-purple { background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); color: #6b21a8; }
+    .badge-gray { background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); color: #4b5563; }
+    .badge-red { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b; }
 
     /* ── LABELS ── */
-    .label-sm { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase;
-                letter-spacing: 0.8px; margin-bottom: 4px; display: block; }
-    .label-field { font-size: 11px !important; font-weight: 700 !important; color: #64748b !important;
-                   text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
-
-    /* ── KANBAN ── */
-    .kanban-card {
-        background: white; border: 1px solid #e2e8f0; border-radius: 10px;
-        padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        transition: all 0.2s ease;
+    .label-sm { 
+        font-size: 9.5px; 
+        font-weight: 900; 
+        color: #9ca3af; 
+        text-transform: uppercase;
+        letter-spacing: 1px; 
+        margin-bottom: 5px; 
+        display: block; 
     }
-    .kanban-card:hover { border-color: #047857; box-shadow: 0 3px 8px rgba(4,120,87,0.12); transform: translateY(-1px); }
+    .label-field { 
+        font-size: 10.5px !important; 
+        font-weight: 800 !important; 
+        color: #6b7280 !important;
+        text-transform: uppercase; 
+        letter-spacing: 0.8px; 
+        margin-bottom: 4px; 
+    }
 
-    /* ── ALERT BOXES ── */
+    /* ── KANBAN CARDS ── */
+    .kanban-card {
+        background: white; 
+        border: 1px solid #e5e7eb; 
+        border-radius: 10px;
+        padding: 15px; 
+        margin-bottom: 10px; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .kanban-card:hover { 
+        border-color: #059669; 
+        box-shadow: 0 4px 12px rgba(5,150,105,0.15); 
+        transform: translateY(-2px);
+    }
+
+    /* ── ALERT BOXES MODERNES ── */
     .alert-retention {
-        background: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626;
-        border-radius: 8px; padding: 14px 18px; margin-bottom: 10px;
+        background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%); 
+        border: 1px solid #fecaca; 
+        border-left: 4px solid #dc2626;
+        border-radius: 10px; 
+        padding: 16px 20px; 
+        margin-bottom: 12px;
+        box-shadow: 0 2px 6px rgba(220,38,38,0.08);
     }
     .alert-news {
-        background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #047857;
-        border-radius: 8px; padding: 14px 18px; margin-bottom: 10px;
+        background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%); 
+        border: 1px solid #bbf7d0; 
+        border-left: 4px solid #059669;
+        border-radius: 10px; 
+        padding: 16px 20px; 
+        margin-bottom: 12px;
+        box-shadow: 0 2px 6px rgba(5,150,105,0.08);
     }
-
-    /* ── FILTER BAR ── */
-    .filter-bar {
-        background: #047857; border-radius: 10px; padding: 14px 20px;
-        margin-bottom: 18px;
-    }
-    .filter-bar .stSelectbox label { color: white !important; font-weight: 700 !important; font-size: 11px !important; }
 
     /* ── SECTION TITLES ── */
     .section-title {
-        font-size: 22px; font-weight: 800; color: #0f172a;
-        margin-bottom: 4px; letter-spacing: -0.3px;
+        font-size: 24px; 
+        font-weight: 900; 
+        color: #111827;
+        margin-bottom: 5px; 
+        letter-spacing: -0.03em;
+        background: linear-gradient(135deg, #047857 0%, #059669 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
-    .section-subtitle { font-size: 13px; color: #64748b; margin-bottom: 18px; font-weight: 500; }
+    .section-subtitle { 
+        font-size: 13px; 
+        color: #6b7280; 
+        margin-bottom: 20px; 
+        font-weight: 500; 
+    }
 
-    /* ── VOICE RECORDER ── */
+    /* ── METRICS CARDS ── */
+    [data-testid="stMetric"] { 
+        background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%); 
+        border-radius: 12px; 
+        border: 1px solid #e5e7eb; 
+        padding: 16px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        transition: all 0.2s;
+    }
+    [data-testid="stMetric"]:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        transform: translateY(-2px);
+    }
+    [data-testid="stMetricValue"] { 
+        color: #047857 !important; 
+        font-weight: 900 !important;
+        font-size: 28px !important;
+    }
+    [data-testid="stMetricLabel"] { 
+        color: #6b7280 !important; 
+        font-size: 10.5px !important; 
+        font-weight: 700 !important; 
+        text-transform: uppercase !important; 
+        letter-spacing: 0.8px !important; 
+    }
+
+    /* ── TABS MODERNES ── */
+    .stTabs [data-baseweb="tab-list"] { 
+        gap: 4px !important;
+        border-bottom: 2px solid #e5e7eb !important;
+    }
+    .stTabs [data-baseweb="tab"] { 
+        font-weight: 600 !important; 
+        font-size: 13px !important; 
+        color: #6b7280 !important;
+        padding: 10px 18px !important;
+        border-radius: 8px 8px 0 0 !important;
+        transition: all 0.2s !important;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        background: #f9fafb !important;
+        color: #374151 !important;
+    }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] { 
+        color: #047857 !important; 
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+        border-bottom: 3px solid #059669 !important;
+        font-weight: 800 !important;
+    }
+
+    /* ── VOICE BOX ── */
     .voice-box {
-        background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 10px;
-        padding: 20px; text-align: center; margin: 10px 0;
+        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+        border: 2px dashed #d1d5db;
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        margin: 12px 0;
+        transition: all 0.3s;
     }
-    .voice-box:hover { border-color: #047857; background: #f0fdf4; }
+    .voice-box:hover {
+        border-color: #059669;
+        background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+        box-shadow: 0 4px 12px rgba(5,150,105,0.1);
+    }
 
-    /* ── WEBHOOK INFO ── */
+    /* ── WEBHOOK BOX ── */
     .webhook-box {
-        background: #0f172a; border-radius: 8px; padding: 14px 18px;
-        font-family: 'JetBrains Mono', monospace; font-size: 13px;
-        color: #22c55e; word-break: break-all;
+        background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+        border-radius: 10px;
+        padding: 16px 20px;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 12px;
+        color: #10b981;
+        word-break: break-all;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        border: 1px solid #374151;
     }
 
-    /* ── TABS ── */
-    .stTabs [data-baseid="tabs"] { border-bottom: 2px solid #e2e8f0; }
-    .stTabs [role="tab"] { font-weight: 600 !important; font-size: 13px !important; color: #64748b !important; }
-    .stTabs [role="tab"][aria-selected="true"] { color: #047857 !important; border-bottom-color: #047857 !important; }
+    /* ── INPUTS & FORMS ── */
+    .stTextInput input, .stTextArea textarea, .stSelectbox select {
+        border-radius: 8px !important;
+        border: 1.5px solid #e5e7eb !important;
+        transition: all 0.2s !important;
+    }
+    .stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox select:focus {
+        border-color: #059669 !important;
+        box-shadow: 0 0 0 3px rgba(5,150,105,0.1) !important;
+    }
 
-    /* ── METRICS ── */
-    [data-testid="stMetric"] { background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; padding: 12px !important; }
-    [data-testid="stMetricValue"] { color: #047857 !important; font-weight: 800 !important; }
-    [data-testid="stMetricLabel"] { color: #64748b !important; font-size: 11px !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; }
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { 
+        background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%); 
+        border-radius: 10px; 
+    }
+    ::-webkit-scrollbar-thumb:hover { background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%); }
 </style>
 """
 st.markdown(CSS_THEME, unsafe_allow_html=True)
@@ -965,12 +1196,22 @@ def show_prospect_card( pid, data):
 def render_sidebar():
     with st.sidebar:
         st.markdown(
-            "<div style='padding: 16px 0 8px;'>"
-            "<div style='display:flex; align-items:center; gap:10px;'>"
-            "<span style='font-size:28px;'>🧬</span>"
-            "<div><div style='font-weight:800; font-size:15px; color:#0f172a;'>ING Growth</div>"
-            "<div style='font-size:10px; color:#94a3b8; font-weight:600; letter-spacing:0.5px;'>AI PLATFORM</div></div>"
-            "</div></div>",
+            "<div style='padding: 0 0 24px; text-align: center;'>"
+            "<svg width='48' height='48' viewBox='0 0 48 48' style='margin-bottom: 10px;'>"
+            "<defs>"
+            "<linearGradient id='logoGrad' x1='0%' y1='0%' x2='100%' y2='100%'>"
+            "<stop offset='0%' style='stop-color:#059669;stop-opacity:1' />"
+            "<stop offset='100%' style='stop-color:#047857;stop-opacity:1' />"
+            "</linearGradient>"
+            "</defs>"
+            "<rect width='48' height='48' rx='12' fill='url(#logoGrad)'/>"
+            "<path d='M24 14 L32 20 L32 32 L24 38 L16 32 L16 20 Z' fill='white' opacity='0.3'/>"
+            "<circle cx='24' cy='24' r='6' fill='white'/>"
+            "<circle cx='24' cy='24' r='3' fill='url(#logoGrad)'/>"
+            "</svg>"
+            "<div style='font-weight: 900; font-size: 18px; color: #111827; letter-spacing: -0.02em; margin-bottom: 2px;'>ING Growth</div>"
+            "<div style='font-size: 10px; color: #9ca3af; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;'>AI Platform</div>"
+            "</div>",
             unsafe_allow_html=True,
         )
         st.markdown("---")
@@ -992,15 +1233,15 @@ def render_sidebar():
         total_alerts = retention_cnt + sample_cnt
 
         NAV_ITEMS = {
-            "Dashboard": "📊  Tableau de bord",
-            "Pipeline": "☰   Pipeline",
-            "Kanban": "▦   Kanban",
-            "Samples": "🧪  Échantillons",
-            "Contacts": "👤  Contacts",
-            "News": "📰  Veille Stratégique",
-            "Excel": "📥  Import / Export",
-            "Webhooks": "🔗  Webhooks Make",
-            "Alertes": f"🔔  Alertes ({total_alerts})" if total_alerts > 0 else "🔔  Alertes",
+            "Dashboard": "◉  Tableau de bord",
+            "Pipeline": "≡  Pipeline",
+            "Kanban": "▦  Kanban",
+            "Samples": "⚗  Échantillons",
+            "Contacts": "⚊  Contacts",
+            "News": "◈  Veille Stratégique",
+            "Excel": "⊞  Import / Export",
+            "Webhooks": "⊗  Webhooks Make",
+            "Alertes": f"⬡  Alertes ({total_alerts})" if total_alerts > 0 else "⬡  Alertes",
         }
 
         sel = st.radio(
