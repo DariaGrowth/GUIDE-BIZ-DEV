@@ -106,18 +106,33 @@ CSS_THEME = """
         background: #2A5548 !important;
         box-shadow: none !important;
     }
-    [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button:focus {
+    [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button:focus,
+    [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button:focus-visible,
+    [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button:active {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* ── RESET COMPLET DES BOUTONS STREAMLIT DANS SIDEBAR ── */
+    [data-testid="stSidebar"] button {
+        border: none !important;
+        outline: none !important;
+    }
+    [data-testid="stSidebar"] button:focus,
+    [data-testid="stSidebar"] button:focus-visible {
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
     }
     
     /* ── NAVIGATION - DESIGN PLAT SANS CONTOURS ── */
+    [data-testid="stSidebar"] [data-testid="column"] .stButton,
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button {
         background: white !important;
         color: #4B5563 !important;
-        border: none !important;
-        outline: none !important;
+        border: 0px solid transparent !important;
+        outline: 0px solid transparent !important;
         border-radius: 0px !important;
         padding: 11px 14px !important;
         margin: 0px !important;
@@ -130,21 +145,20 @@ CSS_THEME = """
         width: 100% !important;
     }
     
-    /* Reset du focus/active pour enlever les contours */
+    /* Reset TOUS les états pour enlever les contours */
+    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover,
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button:focus,
+    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:focus-visible,
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button:active {
-        border: none !important;
-        outline: none !important;
+        border: 0px solid transparent !important;
+        outline: 0px solid transparent !important;
         box-shadow: none !important;
     }
     
-    /* Hover - fond vert clair */
+    /* Hover - fond vert clair UNIQUEMENT */
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
         background: #D1FAE5 !important;
         color: #065F46 !important;
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
     }
     
     /* Hover sur les icônes */
