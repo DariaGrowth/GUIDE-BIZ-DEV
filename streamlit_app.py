@@ -110,43 +110,35 @@ CSS_THEME = """
         transform: translateY(0px) !important;
     }
 
-    /* ── NAVIGATION ITEMS (Design professionnel épuré) ── */
-    .nav-item {
-        position: relative;
-    }
-    .nav-item:hover {
-        background: #F0F4F3 !important;
-        border-left-color: #1E3F35 !important;
-    }
-    .nav-item:hover span {
-        color: #1E3F35 !important;
-    }
-    .nav-item:hover svg {
-        stroke: #1E3F35 !important;
-        fill: #1E3F35 !important;
-    }
-    .nav-item-selected {
-        background: #F8FAF9 !important;
-        box-shadow: 0 1px 3px rgba(30, 63, 53, 0.08) !important;
+    /* ── NAVIGATION BUTTONS STYLING ── */
+    /* Cibler spécifiquement les boutons de navigation (pas Nouveau Projet ni Export/Import) */
+    [data-testid="stSidebar"] [data-testid="column"]:nth-child(2) .stButton > button {
+        background: transparent !important;
+        color: #6B7280 !important;
+        border: none !important;
+        border-left: 3px solid transparent !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        margin: 2px 0px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: none !important;
     }
     
-    /* Cacher les boutons de navigation (colonnes de droite) */
-    [data-testid="stSidebar"] [data-testid="column"]:has(button[key*="nav_"]) {
-        width: 0 !important;
-        max-width: 0 !important;
-        min-width: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: hidden !important;
+    [data-testid="stSidebar"] [data-testid="column"]:nth-child(2) .stButton > button:hover {
+        background: #F0F4F3 !important;
+        color: #1E3F35 !important;
+        border-left-color: #1E3F35 !important;
+        box-shadow: none !important;
     }
-    [data-testid="stSidebar"] button[key*="nav_"] {
-        opacity: 0 !important;
-        width: 0 !important;
-        height: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        position: absolute !important;
-        pointer-events: all !important;
+    
+    /* Styling de la colonne icône */
+    [data-testid="stSidebar"] [data-testid="column"]:nth-child(1) {
+        max-width: 40px !important;
+        padding-right: 0 !important;
     }
 
     /* ── SECTION DONNEES (Boutons Export/Import) ── */
@@ -1162,52 +1154,24 @@ def render_sidebar():
         for key, label, icon in nav_items:
             is_selected = (st.session_state.selected_page == key)
             
-            # Couleurs selon l'état
+            # Adapter la couleur du SVG selon l'état
             if is_selected:
-                bg_color = "#F8FAF9"
-                text_color = "#1E3F35"
                 icon_color = "#1E3F35"
-                border_color = "#1E3F35"
-                font_weight = "600"
             else:
-                bg_color = "transparent"
-                text_color = "#6B7280"
                 icon_color = "#9CA3AF"
-                border_color = "transparent"
-                font_weight = "500"
             
-            # Adapter la couleur du SVG
             icon_display = icon.replace('stroke="#1E3F35"', f'stroke="{icon_color}"').replace('fill="#1E3F35"', f'fill="{icon_color}"').replace('width="32" height="32"', 'width="18" height="18"')
             
-            # Créer deux colonnes : une pour l'icône et le label, une pour le bouton invisible
-            col_nav, col_btn = st.columns([0.95, 0.05])
+            # Créer une ligne avec icône + bouton
+            col_icon, col_btn = st.columns([0.12, 0.88])
             
-            with col_nav:
-                # Conteneur visuel avec effet hover via CSS class
-                nav_item_html = f"""
-                <div class='nav-item {"nav-item-selected" if is_selected else ""}' style='
-                    display: flex; 
-                    align-items: center; 
-                    gap: 12px; 
-                    padding: 10px 12px; 
-                    margin: 2px 0px;
-                    border-radius: 8px;
-                    background: {bg_color};
-                    border-left: 3px solid {border_color};
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    cursor: pointer;
-                '>
-                    <div style='width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;'>
-                        {icon_display}
-                    </div>
-                    <span style='color: {text_color}; font-size: 14px; font-weight: {font_weight}; flex: 1;'>{label}</span>
-                </div>
-                """
-                st.markdown(nav_item_html, unsafe_allow_html=True)
+            with col_icon:
+                st.markdown(f"<div style='padding: 8px 0 8px 8px;'>{icon_display}</div>", unsafe_allow_html=True)
             
             with col_btn:
-                # Bouton cliquable invisible
-                if st.button("→", key=f"nav_{key}"):
+                # Bouton avec classe CSS custom
+                btn_class = "nav-btn-selected" if is_selected else "nav-btn"
+                if st.button(label, key=f"nav_{key}", use_container_width=True):
                     st.session_state.selected_page = key
                     st.rerun()
         
