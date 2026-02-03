@@ -130,19 +130,21 @@ CSS_THEME = """
     [data-testid="stSidebar"] [data-testid="column"] .stButton,
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button {
         background: white !important;
-        color: #4B5563 !important;
+        color: #1F2937 !important;
         border: 0px solid transparent !important;
         outline: 0px solid transparent !important;
         border-radius: 0px !important;
-        padding: 11px 14px !important;
+        padding: 12px 14px 12px 8px !important;
         margin: 0px !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
         text-align: left !important;
         justify-content: flex-start !important;
         transition: all 0.15s ease !important;
         box-shadow: none !important;
         width: 100% !important;
+        line-height: 1.4 !important;
+        letter-spacing: -0.01em !important;
     }
     
     /* Reset TOUS les états pour enlever les contours */
@@ -167,17 +169,30 @@ CSS_THEME = """
         fill: #065F46 !important;
     }
     
-    /* Enlever l'espace entre les lignes */
+    /* Enlever l'espace entre les lignes et aligner */
     [data-testid="stSidebar"] [data-testid="column"] {
         padding: 0 !important;
         gap: 0 !important;
+        display: flex !important;
+        align-items: center !important;
     }
     
-    /* Colonne icône */
+    /* Colonne icône - alignement vertical centré */
     [data-testid="stSidebar"] [data-testid="column"]:nth-child(1) {
-        max-width: 44px !important;
-        min-width: 44px !important;
+        max-width: 42px !important;
+        min-width: 42px !important;
         padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* Alignement des icônes SVG */
+    [data-testid="stSidebar"] [data-testid="column"]:nth-child(1) > div {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 12px 0 !important;
     }
     
     /* Styling de la colonne icône */
