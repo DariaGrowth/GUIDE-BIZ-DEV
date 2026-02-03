@@ -1225,17 +1225,15 @@ def render_sidebar():
             else:
                 icon_color = "#9CA3AF"
             
-            icon_display = icon.replace('stroke="#1E3F35"', f'stroke="{icon_color}"').replace('fill="#1E3F35"', f'fill="{icon_color}"').replace('width="32" height="32"', 'width="18" height="18"')
+            icon_display = icon.replace('stroke="#1E3F35"', f'stroke="{icon_color}"').replace('fill="#1E3F35"', f'fill="{icon_color}"').replace('width="32" height="32"', 'width="20" height="20"')
             
-            # Créer une ligne avec icône + bouton
-            col_icon, col_btn = st.columns([0.12, 0.88])
+            # Créer une ligne avec icône + bouton - alignement parfait
+            col_icon, col_btn = st.columns([0.13, 0.87])
             
             with col_icon:
-                st.markdown(f"<div style='padding: 8px 0 8px 8px;'>{icon_display}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='display: flex; align-items: center; justify-content: center; height: 100%; padding: 0;'>{icon_display}</div>", unsafe_allow_html=True)
             
             with col_btn:
-                # Bouton avec classe CSS custom
-                btn_class = "nav-btn-selected" if is_selected else "nav-btn"
                 if st.button(label, key=f"nav_{key}", use_container_width=True):
                     st.session_state.selected_page = key
                     st.rerun()
