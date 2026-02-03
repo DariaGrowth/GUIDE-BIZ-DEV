@@ -108,54 +108,35 @@ CSS_THEME = """
         box-shadow: 0 4px 12px rgba(30, 63, 53, 0.3) !important;
     }
     
-    /* ── NAVIGATION BUTTONS - DESIGN ÉPURÉ BLANC ── */
-    /* Cibler uniquement les boutons DANS les colonnes (navigation), pas le premier bouton */
+    /* ── NAVIGATION BUTTONS - ULTRA ÉPURÉ ── */
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button {
         background: transparent !important;
-        color: #6B7280 !important;
+        color: #374151 !important;
         border: none !important;
-        border-radius: 8px !important;
-        padding: 10px 12px 10px 9px !important;
-        margin: 2px 0px !important;
+        border-radius: 0px !important;
+        padding: 10px 12px !important;
+        margin: 0px !important;
         font-size: 14px !important;
         font-weight: 500 !important;
         text-align: left !important;
         justify-content: flex-start !important;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: all 0.2s ease !important;
         box-shadow: none !important;
         width: 100% !important;
-        position: relative !important;
     }
     
-    /* Ajouter une bordure gauche invisible par défaut */
-    [data-testid="stSidebar"] [data-testid="column"] .stButton > button::before {
-        content: '' !important;
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        bottom: 0 !important;
-        width: 3px !important;
-        background: transparent !important;
-        border-radius: 0 2px 2px 0 !important;
-        transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-    
-    /* Hover effect - fond gris très léger + bordure verte + texte vert */
+    /* Hover effect - fond vert clair comme le screenshot */
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
-        background: #F8FAF9 !important;
-        color: #1E3F35 !important;
+        background: #D1FAE5 !important;
+        color: #065F46 !important;
         box-shadow: none !important;
     }
     
-    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover::before {
-        background: #1E3F35 !important;
-    }
-    
-    /* Hover effect sur les icônes - changer la couleur au survol */
+    /* Hover effect sur les icônes */
     [data-testid="stSidebar"] [data-testid="column"]:hover svg {
-        stroke: #1E3F35 !important;
-        fill: #1E3F35 !important;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        stroke: #065F46 !important;
+        fill: #065F46 !important;
+        transition: all 0.2s !important;
     }
     
     /* Styling de la colonne icône */
@@ -1722,7 +1703,7 @@ def main():
     if "active_prospect_id" in st.session_state:
         try:
             row_data = get_supabase().table("prospects").select("*").eq("id", st.session_state["active_prospect_id"]).execute().data[0]
-            show_prospect_card(supabase, st.session_state["active_prospect_id"], row_data)
+            show_prospect_card(st.session_state["active_prospect_id"], row_data)
         except Exception:
             safe_del("active_prospect_id")
 
