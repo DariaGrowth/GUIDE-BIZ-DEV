@@ -88,7 +88,7 @@ CSS_THEME = """
     }
 
     /* ── BOUTON NOUVEAU PROJET (Design professionnel) ── */
-    [data-testid="stSidebar"] .stButton > button {
+    [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button {
         width: 100% !important; 
         background: linear-gradient(135deg, #1E3F35 0%, #2A5548 100%) !important;
         color: white !important;
@@ -100,45 +100,73 @@ CSS_THEME = """
         box-shadow: 0 2px 8px rgba(30, 63, 53, 0.2) !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         text-transform: none !important;
+        margin-bottom: 16px !important;
     }
-    [data-testid="stSidebar"] .stButton > button:hover {
+    [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button:hover {
         background: linear-gradient(135deg, #2A5548 0%, #1E3F35 100%) !important;
         transform: translateY(-2px) !important;
         box-shadow: 0 4px 12px rgba(30, 63, 53, 0.3) !important;
     }
-    [data-testid="stSidebar"] .stButton > button:active {
-        transform: translateY(0px) !important;
-    }
-
-    /* ── NAVIGATION BUTTONS STYLING ── */
-    /* Cibler spécifiquement les boutons de navigation (pas Nouveau Projet ni Export/Import) */
-    [data-testid="stSidebar"] [data-testid="column"]:nth-child(2) .stButton > button {
+    
+    /* ── NAVIGATION BUTTONS - DESIGN ÉPURÉ BLANC ── */
+    /* Cibler uniquement les boutons DANS les colonnes (navigation), pas le premier bouton */
+    [data-testid="stSidebar"] [data-testid="column"] .stButton > button {
         background: transparent !important;
         color: #6B7280 !important;
         border: none !important;
-        border-left: 3px solid transparent !important;
         border-radius: 8px !important;
-        padding: 10px 12px !important;
+        padding: 10px 12px 10px 9px !important;
         margin: 2px 0px !important;
         font-size: 14px !important;
         font-weight: 500 !important;
         text-align: left !important;
         justify-content: flex-start !important;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        position: relative !important;
+    }
+    
+    /* Ajouter une bordure gauche invisible par défaut */
+    [data-testid="stSidebar"] [data-testid="column"] .stButton > button::before {
+        content: '' !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        width: 3px !important;
+        background: transparent !important;
+        border-radius: 0 2px 2px 0 !important;
+        transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    
+    /* Hover effect - fond gris très léger + bordure verte + texte vert */
+    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
+        background: #F8FAF9 !important;
+        color: #1E3F35 !important;
         box-shadow: none !important;
     }
     
-    [data-testid="stSidebar"] [data-testid="column"]:nth-child(2) .stButton > button:hover {
-        background: #F0F4F3 !important;
-        color: #1E3F35 !important;
-        border-left-color: #1E3F35 !important;
-        box-shadow: none !important;
+    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover::before {
+        background: #1E3F35 !important;
+    }
+    
+    /* Hover effect sur les icônes - changer la couleur au survol */
+    [data-testid="stSidebar"] [data-testid="column"]:hover svg {
+        stroke: #1E3F35 !important;
+        fill: #1E3F35 !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     
     /* Styling de la colonne icône */
     [data-testid="stSidebar"] [data-testid="column"]:nth-child(1) {
         max-width: 40px !important;
+        min-width: 40px !important;
         padding-right: 0 !important;
+    }
+    
+    [data-testid="stSidebar"] [data-testid="column"]:nth-child(2) {
+        padding-left: 4px !important;
     }
 
     /* ── SECTION DONNEES (Boutons Export/Import) ── */
