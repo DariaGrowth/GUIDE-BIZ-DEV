@@ -1,6 +1,6 @@
 # =============================================================================
 # ING GROWTH AI — CRM Stratégique
-# Version 2.0 | Structure modulaire | Streamlit + Supabase + Gemini + Perplexity
+# Version 2.1 CORRIGÉE | Structure modulaire | Streamlit + Supabase + Gemini + Perplexity
 # =============================================================================
 
 import streamlit as st
@@ -24,7 +24,6 @@ from io import BytesIO
 # SVG ICONS
 # =============================================================================
 
-# --- LOGOS ET FAVICONS (STYLE FUSION) ---
 ICON_FUSION_AURORA = """<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
         <linearGradient id="grad_fav_aurora" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -36,7 +35,6 @@ ICON_FUSION_AURORA = """<svg width="56" height="56" viewBox="0 0 56 56" fill="no
     <path d="M28 14c-2 6-8 10-14 10 6 2 12 8 14 14 2-6 8-10 14-10-6-2-12-4-14-14z" fill="white" fill-opacity="0.3"/>
 </svg>"""
 
-# --- ICÔNES DE NAVIGATION (APPROUVÉES) ---
 ICON_TABLEAU_DE_BORD = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3F35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="8" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/><rect x="13" y="14" width="8" height="7" rx="2"/></svg>"""
 
 ICON_PIPELINE = """<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E3F35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 8h-3"/><path d="M3 21c3 0 7-1 7-8"/><circle cx="17.5" cy="15" r="2.5"/><path d="M17.5 17.5V22"/></svg>"""
@@ -71,7 +69,6 @@ CSS_THEME = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-    /* ── BASE ULTRA CLEAN ── */
     .stApp { 
         background: #fafbfc !important; 
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
@@ -104,165 +101,39 @@ CSS_THEME = """
     }
     [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button:hover {
         background: #2A5548 !important;
-        box-shadow: none !important;
     }
-    [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button:focus,
-    [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button:focus-visible,
-    [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button:active {
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    
-    /* ── RESET COMPLET DES BOUTONS STREAMLIT DANS SIDEBAR ── */
-    [data-testid="stSidebar"] button {
-        border: none !important;
-        outline: none !important;
-    }
-    [data-testid="stSidebar"] button:focus,
-    [data-testid="stSidebar"] button:focus-visible {
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    
-    /* ── NAVIGATION - STYLE EXACTEMENT COMME SCREENSHOT ── */
+
+    /* ── NAVIGATION ── */
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button {
         background: transparent !important;
         color: #374151 !important;
         border: 0px !important;
-        outline: 0px !important;
-        border-radius: 0px !important;
         padding: 10px 8px 10px 4px !important;
-        margin: 0px !important;
         font-size: 15px !important;
         font-weight: 500 !important;
         text-align: left !important;
         justify-content: flex-start !important;
-        transition: background 0.15s ease, color 0.15s ease !important;
-        box-shadow: none !important;
         width: 100% !important;
-        line-height: 1.5 !important;
     }
-    
-    /* Tous les états - aucun contour */
-    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover,
-    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:focus,
-    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:focus-visible,
-    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:active {
-        border: 0px !important;
-        outline: 0px !important;
-        box-shadow: none !important;
-    }
-    
-    /* Hover - fond vert clair */
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
         background: #D1FAE5 !important;
         color: #065F46 !important;
     }
-    
-    /* Hover icônes */
-    [data-testid="stSidebar"] [data-testid="column"]:hover svg {
-        stroke: #065F46 !important;
-        fill: #065F46 !important;
-    }
-    
-    /* Colonnes alignées */
-    [data-testid="stSidebar"] [data-testid="column"] {
-        padding: 0 !important;
-        gap: 0 !important;
-    }
-    
-    /* Colonne icône */
-    [data-testid="stSidebar"] [data-testid="column"]:nth-child(1) {
-        max-width: 40px !important;
-        min-width: 40px !important;
-    }
-    
-    /* Styling de la colonne icône */
-    [data-testid="stSidebar"] [data-testid="column"]:nth-child(1) {
-        max-width: 40px !important;
-        min-width: 40px !important;
-        padding-right: 0 !important;
-    }
-    
-    [data-testid="stSidebar"] [data-testid="column"]:nth-child(2) {
-        padding-left: 4px !important;
-    }
 
-    /* ── SECTION DONNEES (Boutons Export/Import) ── */
-    [data-testid="stSidebar"] > div > div:last-child {
-        border-top: 1px solid #E5E7EB;
-        padding-top: 16px;
-        margin-top: auto;
-    }
-    [data-testid="stSidebar"] [data-testid="column"] .stButton > button {
-        background: #FFFFFF !important;
-        color: #374151 !important;
-        border: 1px solid #D1D5DB !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        padding: 8px 14px !important;
-        border-radius: 6px !important;
-        transition: all 0.2s !important;
-    }
-    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
-        background: #F9FAFB !important;
-        border-color: #1E3F35 !important;
-        color: #1E3F35 !important;
-    }
-
-    /* ── PIPELINE HEADER ── */
-    .pipeline-header-row { 
-        padding: 12px 16px; 
-        margin-bottom: 8px; 
-        display: flex; 
-        align-items: center;
-        background: #fafbfc;
-        border-bottom: 1px solid #e1e4e8;
-    }
-    .header-text-style {
-        color: #6a737d !important; 
-        font-size: 12px !important; 
-        font-weight: 600 !important;
-        text-transform: uppercase; 
-        letter-spacing: 0.5px !important;
-    }
-
-    /* ── PIPELINE ROWS (Flat Cards) ── */
+    /* ── PIPELINE ROWS ── */
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background: #ffffff !important; 
         border: 1px solid #e1e4e8 !important;
         border-radius: 6px !important;
         padding: 12px 16px !important; 
         margin-bottom: 8px !important;
-        transition: all 0.15s !important;
     }
     div[data-testid="stVerticalBlockBorderWrapper"]:hover { 
         border-color: #d1d5db !important;
         box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
     }
 
-    /* ── COMPANY NAME LINKS ── */
-    div[data-testid="column"]:first-child .stButton > button {
-        background: transparent !important; 
-        border: none !important; 
-        padding: 0 !important;
-        margin: 0 !important; 
-        color: #0366d6 !important; 
-        font-weight: 600 !important;
-        font-size: 14px !important; 
-        text-align: left !important; 
-        box-shadow: none !important;
-        height: auto !important;
-        line-height: 1.5 !important;
-        text-decoration: none !important;
-    }
-    div[data-testid="column"]:first-child .stButton > button:hover { 
-        text-decoration: underline !important;
-    }
-
-    /* ── BADGES (Flat Style) ── */
+    /* ── BADGES ── */
     .badge { 
         padding: 4px 10px; 
         border-radius: 12px; 
@@ -275,6 +146,9 @@ CSS_THEME = """
     .badge-blue { background: #cce5ff; color: #004085; }
     .badge-gray { background: #e9ecef; color: #495057; }
     .badge-red { background: #f8d7da; color: #721c24; }
+    .badge-purple { background: #e9d5ff; color: #6b21a8; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+    .badge-emerald { background: #d1fae5; color: #065f46; }
 
     /* ── METRICS ── */
     [data-testid="stMetric"] { 
@@ -282,27 +156,6 @@ CSS_THEME = """
         border-radius: 6px; 
         border: 1px solid #e1e4e8; 
         padding: 16px !important;
-    }
-    [data-testid="stMetricValue"] { 
-        color: #24292e !important; 
-        font-weight: 700 !important;
-    }
-    [data-testid="stMetricLabel"] { 
-        color: #586069 !important; 
-        font-size: 12px !important; 
-        font-weight: 600 !important; 
-        text-transform: uppercase !important;
-    }
-
-    /* ── INPUTS ── */
-    .stTextInput input, .stTextArea textarea, .stSelectbox select {
-        border: 1px solid #e1e4e8 !important;
-        border-radius: 6px !important;
-        font-size: 14px !important;
-    }
-    .stTextInput input:focus, .stTextArea textarea:focus {
-        border-color: #0366d6 !important;
-        box-shadow: 0 0 0 3px rgba(3,102,214,0.1) !important;
     }
 
     /* ── SECTION TITLES ── */
@@ -316,36 +169,14 @@ CSS_THEME = """
         font-size: 14px; 
         color: #586069; 
         margin-bottom: 20px; 
-        font-weight: 400; 
     }
 
-    /* ── TABS ── */
-    .stTabs [data-baseweb="tab-list"] { 
-        gap: 8px !important;
-        border-bottom: 1px solid #e1e4e8 !important;
-    }
-    .stTabs [data-baseweb="tab"] { 
-        font-weight: 500 !important; 
-        font-size: 14px !important; 
-        color: #586069 !important;
-        padding: 8px 16px !important;
-    }
-    .stTabs [data-baseweb="tab"][aria-selected="true"] { 
-        color: #24292e !important; 
-        border-bottom: 2px solid #0366d6 !important;
+    .header-text-style {
+        color: #6a737d !important; 
+        font-size: 12px !important; 
         font-weight: 600 !important;
-    }
-
-    /* ── BUTTONS (Primary) ── */
-    .stButton > button[kind="primary"] {
-        background: #0366d6 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 6px !important;
-        font-weight: 600 !important;
-    }
-    .stButton > button[kind="primary"]:hover {
-        background: #0256c4 !important;
+        text-transform: uppercase; 
+        letter-spacing: 0.5px !important;
     }
 </style>
 """
@@ -357,44 +188,35 @@ st.markdown(CSS_THEME, unsafe_allow_html=True)
 # =============================================================================
 
 def check_auth():
-    """Accès restreint par mot de passe ou lien unique via query param."""
     access_token = st.secrets.get("ACCESS_TOKEN", "")
     access_password = st.secrets.get("ACCESS_PASSWORD", "")
 
-    # Vérification via query parameter (lien unique)
     query_params = st.query_params
     if "token" in query_params:
         if query_params["token"] == access_token:
             st.session_state["authenticated"] = True
             return True
 
-    # Déjà authentifié dans cette session
     if st.session_state.get("authenticated", False):
         return True
 
-    # Sinon → écran de login
     col_left, col_center, col_right = st.columns([1, 1.2, 1])
     with col_center:
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown(
             "<div style='text-align:center;'>"
             "<div style='font-size:42px; margin-bottom:8px;'>🧬</div>"
-            "<h2 style='color:#0f172a; font-weight:800; margin:0; font-size:24px;'>ING Growth AI</h2>"
-            "<p style='color:#64748b; font-size:13px; margin-top:4px;'>Plateforme Business Development</p>"
+            "<h2 style='color:#0f172a; font-weight:800;'>ING Growth AI</h2>"
+            "<p style='color:#64748b; font-size:13px;'>Plateforme Business Development</p>"
             "</div>", unsafe_allow_html=True
         )
-        st.markdown("<br>", unsafe_allow_html=True)
-        pwd = st.text_input("Mot de passe", type="password", placeholder="Entrez votre mot de passe", label_visibility="collapsed")
+        pwd = st.text_input("Mot de passe", type="password", label_visibility="collapsed")
         if st.button("Se connecter", use_container_width=True, type="primary"):
             if pwd and pwd == access_password:
                 st.session_state["authenticated"] = True
                 st.rerun()
             else:
                 st.error("Mot de passe incorrect.")
-        st.markdown(
-            "<p style='text-align:center; font-size:11px; color:#94a3b8; margin-top:16px;'>"
-            "Vous pouvez aussi accéder via un lien unique partagé.</p>", unsafe_allow_html=True
-        )
     return False
 
 
@@ -404,7 +226,6 @@ def check_auth():
 
 @st.cache_resource
 def init_connections():
-    """Initialize and cache Supabase client."""
     try:
         url = st.secrets["SUPABASE_URL"]
         key = st.secrets["SUPABASE_KEY"]
@@ -416,7 +237,6 @@ def init_connections():
 
 
 def get_supabase():
-    """Get cached Supabase client from session state."""
     if 'supabase' not in st.session_state:
         st.session_state.supabase = init_connections()
     return st.session_state.supabase
@@ -451,7 +271,6 @@ def clean_prod_name(name):
 
 
 def get_status_badge(status):
-    """Retourne le HTML d'un badge coloré selon le statut."""
     mapping = {
         "Prospection": ("badge badge-gray", "Prospection"),
         "Qualification": ("badge badge-blue", "Qualification"),
@@ -470,18 +289,17 @@ def get_status_badge(status):
 # =============================================================================
 
 def get_prospects():
-    """Récupère tous les prospects. Le _ devant supabase évite le hashing dans le cache."""
     try:
-        res = _get_supabase().table("prospects").select("*").order("last_action_date", desc=True).execute()
+        res = get_supabase().table("prospects").select("*").order("last_action_date", desc=True).execute()
         return pd.DataFrame(res.data)
     except Exception:
         return pd.DataFrame()
 
 
-def get_sub_data( table, prospect_id):
+def get_sub_data(table, prospect_id):
     try:
         data = (
-            _get_supabase().table(table)
+            get_supabase().table(table)
             .select("*")
             .eq("prospect_id", prospect_id)
             .order("id", desc=True)
@@ -494,11 +312,10 @@ def get_sub_data( table, prospect_id):
 
 
 def count_retention_alerts():
-    """Compte les clients actifs sans interaction depuis 45+ jours."""
     forty_five_days_ago = (datetime.now() - timedelta(days=45)).isoformat()
     try:
         res = (
-            _get_supabase().table("prospects")
+            get_supabase().table("prospects")
             .select("id", count="exact")
             .eq("status", "Client Actif")
             .lte("last_action_date", forty_five_days_ago)
@@ -510,11 +327,10 @@ def count_retention_alerts():
 
 
 def count_sample_alerts():
-    """Compte les échantillons sans feedback depuis 15+ jours."""
     fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
     try:
         res = (
-            _get_supabase().table("samples")
+            get_supabase().table("samples")
             .select("id", count="exact")
             .is_("feedback", "null")
             .lte("date_sent", fifteen_days_ago)
@@ -526,13 +342,11 @@ def count_sample_alerts():
 
 
 # =============================================================================
-# 6. AI CORE — Gemini + Perplexity
+# 6. AI CORE — Gemini
 # =============================================================================
 
-def ai_generate_smart_email( company, product, tone, country, prospect_id):
-    """Génère un email ultra-personnalisé en synthétisant historique + samples + news."""
-    # Récupérer l'historique des activités
-    activities = get_sub_data( "activities", prospect_id)
+def ai_generate_smart_email(company, product, tone, country, prospect_id):
+    activities = get_sub_data("activities", prospect_id)
     activity_summary = ""
     if not activities.empty:
         last_acts = activities.head(3)
@@ -540,8 +354,7 @@ def ai_generate_smart_email( company, product, tone, country, prospect_id):
             [f"- {row.get('date','')[:10]} : {row.get('content','')}" for _, row in last_acts.iterrows()]
         )
 
-    # Récupérer les samples
-    samples = get_sub_data( "samples", prospect_id)
+    samples = get_sub_data("samples", prospect_id)
     sample_summary = ""
     if not samples.empty:
         sample_summary = "\n".join(
@@ -569,98 +382,11 @@ def ai_generate_smart_email( company, product, tone, country, prospect_id):
     """
 
     try:
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            tools=[{"google_search_retrieval": {}}],
-        )
+        model = genai.GenerativeModel(model_name="gemini-1.5-flash")
         response = model.generate_content(prompt)
         return response.text
-    except Exception:
-        try:
-            model_basic = genai.GenerativeModel(model_name="gemini-1.5-flash")
-            return model_basic.generate_content(prompt).text
-        except Exception as e:
-            return f"⚠️ Service AI indisponible. Erreur : {str(e)}"
-
-
-def ai_transcribe_audio(audio_bytes):
-    """Transcribe un fichier audio via Gemini."""
-    try:
-        import base64
-        audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
-        model = genai.GenerativeModel(model_name="gemini-1.5-flash")
-        response = model.generate_content([
-            {
-                "inline_data": {
-                    "mime_type": "audio/wav",
-                    "data": audio_b64,
-                }
-            },
-            "Transcribe ce fichier audio en français. Retourne uniquement le texte transcrit, sans introduction ni explication."
-        ])
-        return response.text
     except Exception as e:
-        return f"⚠️ Erreur de transcription : {str(e)}"
-
-
-def fetch_weekly_news():
-    """Récupère la veille stratégique via Perplexity API."""
-    try:
-        # Vérifie si une veille existe déjà cette semaine (mardi)
-        today = datetime.now()
-        # Calcul du dernier mardi
-        days_since_tuesday = (today.weekday() - 1) % 7
-        last_tuesday = (today - timedelta(days=days_since_tuesday)).strftime("%Y-%m-%d")
-
-        # Cherche une veille existante pour cette semaine
-        existing = get_supabase().table("weekly_news").select("*").gte("created_at", last_tuesday).order("created_at", desc=True).execute()
-        if existing.data:
-            return existing.data[0]
-
-        # Sinon, génère une nouvelle via Perplexity
-        perplexity_key = st.secrets.get("PERPLEXITY_API_KEY", "")
-        if not perplexity_key:
-            return {"content": "⚠️ Clé Perplexity non configurée.", "created_at": today.isoformat(), "is_error": True}
-
-        # Récupérer les noms de prospects pour la veille
-        prospects = get_prospects()
-        prospect_names = prospects["company_name"].dropna().unique().tolist()[:5]
-        companies_str = ", ".join(prospect_names) if prospect_names else "secteur alimentaire industriel"
-
-        headers = {
-            "Authorization": f"Bearer {perplexity_key}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": "sonar",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "Tu es un analyste stratégique. Fournis une veille concise en français.",
-                },
-                {
-                    "role": "user",
-                    "content": f"Résume les dernières actualités importantes concernant ces entreprises et le secteur : {companies_str}. "
-                               f"Focus sur : acquisitions, lancements produits, partenariats, problèmes qualité, innovations. "
-                               f"Format : bullet points courts, max 8 points, très synthétique.",
-                },
-            ],
-        }
-        resp = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=payload, timeout=30)
-        resp.raise_for_status()
-        result = resp.json()
-        content = result["choices"][0]["message"]["content"]
-
-        # Sauvegarder dans Supabase
-        get_supabase().table("weekly_news").insert({
-            "content": content,
-            "created_at": today.isoformat(),
-        }).execute()
-
-        return {"content": content, "created_at": today.isoformat()}
-
-    except Exception as e:
-        return {"content": f"⚠️ Erreur lors de la veille : {str(e)}", "created_at": datetime.now().isoformat(), "is_error": True}
+        return f"⚠️ Service AI indisponible. Erreur : {str(e)}"
 
 
 # =============================================================================
@@ -668,7 +394,6 @@ def fetch_weekly_news():
 # =============================================================================
 
 def generate_linkedin_url(company_name):
-    """Génère une URL de recherche LinkedIn ciblée R&D / Purchasing."""
     query = f'{company_name} "R&D" OR "Purchasing" OR "Achats" OR "Recherche"'
     encoded = urllib.parse.quote(query)
     return f"https://www.linkedin.com/search/results/people/?keywords={encoded}"
@@ -679,12 +404,10 @@ def generate_linkedin_url(company_name):
 # =============================================================================
 
 def export_prospects_excel():
-    """Export de tous les prospects en .xlsx."""
     df = get_prospects()
     if df.empty:
         return None
 
-    # Colonnes à exporter
     cols_export = ["id", "company_name", "status", "country", "potential_volume",
                    "product_interest", "segment", "website_url", "last_action_date",
                    "notes", "tech_notes", "last_salon"]
@@ -698,46 +421,13 @@ def export_prospects_excel():
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
         df_export.to_excel(writer, index=False, sheet_name="Prospects")
-        # Styling basique
-        wb = writer.book
-        ws = writer.sheets["Prospects"]
-        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-
-        header_font = Font(name="Inter", bold=True, color="FFFFFF", size=10)
-        header_fill = PatternFill(start_color="047857", end_color="047857", fill_type="solid")
-        thin_border = Border(
-            left=Side(style="thin", color="E2E8F0"),
-            right=Side(style="thin", color="E2E8F0"),
-            top=Side(style="thin", color="E2E8F0"),
-            bottom=Side(style="thin", color="E2E8F0"),
-        )
-
-        for cell in ws[1]:
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            cell.border = thin_border
-
-        for row in ws.iter_rows(min_row=2, max_row=ws.max_row, max_col=ws.max_column):
-            for cell in row:
-                cell.border = thin_border
-                cell.font = Font(name="Inter", size=10)
-
-        # Largeurs auto
-        for col in ws.columns:
-            max_len = max(len(str(cell.value or "")) for cell in col)
-            ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 40)
-
     buffer.seek(0)
     return buffer
 
 
-def import_prospects_excel( uploaded_file):
-    """Import massif depuis un fichier Excel vers Supabase."""
+def import_prospects_excel(uploaded_file):
     try:
         df = pd.read_excel(uploaded_file, engine="openpyxl")
-
-        # Mapping des colonnes possibles vers les colonnes Supabase
         col_mapping = {
             "Société": "company_name", "société": "company_name", "Company": "company_name",
             "Statut": "status", "statut": "status",
@@ -769,7 +459,6 @@ def import_prospects_excel( uploaded_file):
                 record["last_action_date"] = datetime.now().isoformat()
 
             try:
-                # Vérifie si le prospect existe déjà
                 existing = get_supabase().table("prospects").select("id").eq("company_name", company).execute()
                 if existing.data:
                     get_supabase().table("prospects").update(record).eq("company_name", company).execute()
@@ -781,121 +470,90 @@ def import_prospects_excel( uploaded_file):
                 errors.append(f"{company} : {str(e)}")
 
         return {"inserted": inserted, "updated": updated, "errors": errors}
-
     except Exception as e:
         return {"inserted": 0, "updated": 0, "errors": [str(e)]}
 
 
 # =============================================================================
-# 9. WEBHOOKS MAKE.COM — Logic Layer
+# 9. VEILLE STRATEGIQUE (Perplexity)
 # =============================================================================
 
-def process_webhook_lead( payload):
-    """
-    Traite un lead entrant depuis Make.com (Clay, Waalaxy, etc.).
-    Payload attendu (JSON) :
-    {
-        "company_name": "...",
-        "country": "...",
-        "product_interest": "...",
-        "segment": "...",
-        "source": "...",         // ex: "Clay", "Waalaxy", "LinkedIn"
-        "contact_name": "...",
-        "contact_email": "...",
-        "contact_role": "...",
-        "contact_phone": "..."
-    }
-    """
+def fetch_weekly_news():
     try:
-        company = payload.get("company_name", "").strip()
-        if not company:
-            return {"success": False, "error": "company_name est obligatoire"}
+        today = datetime.now()
+        days_since_tuesday = (today.weekday() - 1) % 7
+        last_tuesday = (today - timedelta(days=days_since_tuesday)).strftime("%Y-%m-%d")
 
-        # Créer ou récupérer le prospect
-        existing = get_supabase().table("prospects").select("id").eq("company_name", company).execute()
+        existing = get_supabase().table("weekly_news").select("*").gte("created_at", last_tuesday).order("created_at", desc=True).execute()
         if existing.data:
-            prospect_id = existing.data[0]["id"]
-        else:
-            new_prospect = {
-                "company_name": company,
-                "status": "Prospection",
-                "country": payload.get("country", ""),
-                "product_interest": payload.get("product_interest", ""),
-                "segment": payload.get("segment", ""),
-                "last_action_date": datetime.now().isoformat(),
-                "last_salon": payload.get("source", "Webhook"),
-            }
-            res = get_supabase().table("prospects").insert(new_prospect).execute()
-            prospect_id = res.data[0]["id"]
+            return existing.data[0]
 
-        # Ajouter le contact si fourni
-        contact_name = payload.get("contact_name", "").strip()
-        if contact_name:
-            contact = {
-                "prospect_id": prospect_id,
-                "name": contact_name,
-                "email": payload.get("contact_email", ""),
-                "role": payload.get("contact_role", ""),
-                "phone": payload.get("contact_phone", ""),
-            }
-            get_supabase().table("contacts").insert(contact).execute()
+        perplexity_key = st.secrets.get("PERPLEXITY_API_KEY", "")
+        if not perplexity_key:
+            return {"content": "⚠️ Clé Perplexity non configurée.", "created_at": today.isoformat(), "is_error": True}
 
-        # Enregistrer dans le journal
-        get_supabase().table("activities").insert({
-            "prospect_id": prospect_id,
-            "type": "Webhook",
-            "content": f"Lead reçu via {payload.get('source', 'Make.com')}",
-            "date": datetime.now().isoformat(),
-        }).execute()
+        prospects = get_prospects()
+        prospect_names = prospects["company_name"].dropna().unique().tolist()[:5]
+        companies_str = ", ".join(prospect_names) if prospect_names else "secteur alimentaire industriel"
 
-        return {"success": True, "prospect_id": prospect_id}
+        headers = {
+            "Authorization": f"Bearer {perplexity_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": "sonar",
+            "messages": [
+                {"role": "system", "content": "Tu es un analyste stratégique. Fournis une veille concise en français."},
+                {"role": "user", "content": f"Résume les dernières actualités importantes concernant ces entreprises et le secteur : {companies_str}. Focus sur : acquisitions, lancements produits, partenariats. Format : bullet points courts, max 8 points."},
+            ],
+        }
+        resp = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=payload, timeout=30)
+        resp.raise_for_status()
+        result = resp.json()
+        content = result["choices"][0]["message"]["content"]
+
+        get_supabase().table("weekly_news").insert({"content": content, "created_at": today.isoformat()}).execute()
+        return {"content": content, "created_at": today.isoformat()}
 
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"content": f"⚠️ Erreur lors de la veille : {str(e)}", "created_at": datetime.now().isoformat(), "is_error": True}
 
 
 # =============================================================================
-# 10. MODAL — FICHE PROSPECT AUGMENTÉE
+# 10. MODAL — FICHE PROSPECT (CORRIGÉE)
 # =============================================================================
 
-@st.dialog("Nouveau Projet", width="large")
+@st.dialog("Fiche Projet", width="large")
 def show_prospect_card(pid, data):
-    """Fiche prospect complète - Style moderne et professionnel"""
+    """Fiche prospect complète - Version corrigée"""
     pid = int(pid)
     company_name = data.get("company_name", "")
     
-    # Sous-titre
-    st.markdown(
-        "<p style='color: #6B7280; font-size: 14px; margin: -20px 0 24px;'>Gestion et Suivi R&D</p>",
-        unsafe_allow_html=True
-    )
+    # Constantes
+    PRODUITS = ["LENGOOD® (Substitut Œuf)", "PEPTIPEA® (Protéine)", "NEWGOOD® (Nouveauté)"]
+    APPLICATIONS = ["Boulangerie / Pâtisserie", "Sauces", "Confiserie", "Plats cuisinés", "Boissons"]
+    STATUTS = ["Prospection", "Qualification", "Échantillons en test", "Tests en cours", "Négociation", "Contrat", "Client Actif"]
     
-    # Layout principal : Gauche (formulaire) + Droite (onglets)
+    st.markdown("<p style='color: #6B7280; font-size: 14px; margin: -20px 0 24px;'>Gestion et Suivi R&D</p>", unsafe_allow_html=True)
+    
     col_left, col_right = st.columns([2, 3], gap="large")
     
     # ══════════════════════════════════════════════════════════════
     # COLONNE GAUCHE : FORMULAIRE PRINCIPAL
     # ══════════════════════════════════════════════════════════════
     with col_left:
-        # Société / Client
         st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>SOCIÉTÉ / CLIENT</p>", unsafe_allow_html=True)
         name = st.text_input("Société", value=company_name, key=f"n_{pid}", label_visibility="collapsed")
         
         st.write("")
         
-        # Statut Pipeline
         st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>STATUT PIPELINE</p>", unsafe_allow_html=True)
-        STATUTS = [
-            "Prospection", "Qualification", "Échantillons en test",
-            "Tests en cours", "Négociation", "Contrat", "Client Actif",
-        ]
         current_status = data.get("status", "Prospection")
         status_idx = next((i for i, s in enumerate(STATUTS) if s == current_status), 0)
         stat = st.selectbox("Statut", STATUTS, index=status_idx, key=f"stat_{pid}", label_visibility="collapsed")
         
         st.write("")
         
-        # Pays / Potentiel
         c1, c2 = st.columns(2)
         with c1:
             st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>PAYS</p>", unsafe_allow_html=True)
@@ -906,14 +564,24 @@ def show_prospect_card(pid, data):
         
         st.write("")
         
-        # Dernier Salon / Source
         st.markdown(
-            "<div style='background: #F3F4F6; padding: 14px; border-radius: 8px; margin-bottom: 24px;'>"
-            "<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;'>"
-            "📍 DERNIER SALON / SOURCE</p></div>",
+            "<div style='background: #F3F4F6; padding: 14px; border-radius: 8px; margin-bottom: 16px;'>"
+            "<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 8px;'>📍 DERNIER SALON / SOURCE</p></div>",
             unsafe_allow_html=True
         )
         source = st.text_input("Source", value=data.get("last_salon", ""), placeholder="ex: CFIA 2026", key=f"source_{pid}", label_visibility="collapsed")
+        
+        # LinkedIn Social Selling
+        st.write("")
+        st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>🔗 LINKEDIN SOCIAL SELLING</p>", unsafe_allow_html=True)
+        linkedin_url = generate_linkedin_url(company_name)
+        st.markdown(
+            f"<a href='{linkedin_url}' target='_blank' style='display:inline-flex; align-items:center; gap:6px; "
+            f"background:#0a66c2; color:white; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:700; "
+            f"text-decoration:none;'>"
+            f"<span style='font-size:15px;'>in</span> Rechercher R&D / Purchasing</a>",
+            unsafe_allow_html=True,
+        )
     
     # ══════════════════════════════════════════════════════════════
     # COLONNE DROITE : 3 ONGLETS
@@ -925,9 +593,6 @@ def show_prospect_card(pid, data):
         # ONGLET 1 : Contexte & Technique
         # ─────────────────────────────────────────────────────────
         with tab1:
-            PRODUITS = ["LENGOOD® (Substitut Œuf)", "PEPTIPEA® (Protéine)", "NEWGOOD® (Nouveauté)"]
-            APPLICATIONS = ["Boulangerie / Pâtisserie", "Sauces", "Confiserie", "Plats cuisinés", "Boissons"]
-            
             cr1, cr2 = st.columns(2)
             with cr1:
                 st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>INGRÉDIENT INGOOD</p>", unsafe_allow_html=True)
@@ -1009,15 +674,16 @@ def show_prospect_card(pid, data):
             with cs2:
                 s_prod = st.selectbox("Produit", PRODUITS, key=f"sp_{pid}", label_visibility="collapsed")
             with cs3:
-                if st.button("Ajouter", type="primary", use_container_width=True):
-                    get_supabase().table("samples").insert({
-                        "prospect_id": pid,
-                        "reference": s_ref,
-                        "product_name": s_prod,
-                        "status": "En test",
-                        "date_sent": datetime.now().isoformat(),
-                    }).execute()
-                    st.rerun()
+                if st.button("Ajouter", type="primary", use_container_width=True, key=f"add_sample_{pid}"):
+                    if s_ref.strip():
+                        get_supabase().table("samples").insert({
+                            "prospect_id": pid,
+                            "reference": s_ref,
+                            "product_name": s_prod,
+                            "status": "En test",
+                            "date_sent": datetime.now().isoformat(),
+                        }).execute()
+                        st.rerun()
         
         # ─────────────────────────────────────────────────────────
         # ONGLET 3 : Journal d'Activité
@@ -1044,7 +710,7 @@ def show_prospect_card(pid, data):
             act_type = st.selectbox("Type", ["Email", "Appel", "RDV", "Note"], key=f"act_type_{pid}")
             act_content = st.text_area("Contenu", key=f"act_content_{pid}", height=80, placeholder="Décrivez l'action...", label_visibility="collapsed")
             
-            if st.button("Enregistrer", type="primary"):
+            if st.button("Enregistrer activité", type="primary", key=f"save_act_{pid}"):
                 if act_content.strip():
                     get_supabase().table("activities").insert({
                         "prospect_id": pid,
@@ -1062,11 +728,11 @@ def show_prospect_card(pid, data):
     
     col_btn1, col_btn2 = st.columns([1, 1])
     with col_btn1:
-        if st.button("Annuler", use_container_width=True):
+        if st.button("Annuler", use_container_width=True, key=f"cancel_{pid}"):
+            safe_del("active_prospect_id")
             st.rerun()
     with col_btn2:
-        if st.button("Enregistrer", type="primary", use_container_width=True):
-            # Sauvegarder les données
+        if st.button("💾 Enregistrer", type="primary", use_container_width=True, key=f"save_{pid}"):
             try:
                 get_supabase().table("prospects").update({
                     "company_name": name,
@@ -1083,252 +749,10 @@ def show_prospect_card(pid, data):
                 
                 st.success("✅ Prospect mis à jour avec succès !")
                 time.sleep(1)
+                reset_pipeline()
                 st.rerun()
             except Exception as e:
                 st.error(f"❌ Erreur : {str(e)}")
-            except Exception:
-                last_c_date = st.date_input("DERNIER CONTACT", value=datetime.now(), key=f"date_{pid}")
-
-            st.markdown("---")
-
-            # ── LINKEDIN SOCIAL SELLING ──
-            st.markdown("<p class='label-field'>🔗 SOCIAL SELLING — LINKEDIN</p>", unsafe_allow_html=True)
-            linkedin_url = generate_linkedin_url(company_name)
-            st.markdown(
-                f"<a href='{linkedin_url}' target='_blank' style='display:inline-flex; align-items:center; gap:6px; "
-                f"background:#0a66c2; color:white; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:700; "
-                f"text-decoration:none; margin-top:4px;'>"
-                f"<span style='font-size:15px;'>in</span> Rechercher R&D / Purchasing</a>",
-                unsafe_allow_html=True,
-            )
-
-            st.markdown("---")
-
-            # ── SMART EMAIL AI ──
-            st.markdown("<p class='label-field'>🪄 SMART EMAIL AI</p>", unsafe_allow_html=True)
-            tone = st.selectbox("Ton", ["Professionnel", "Relance amicale", "Urgent / Technique"], key=f"tone_{pid}")
-            if st.button("✨ Générer l'email", use_container_width=True, type="primary"):
-                with st.spinner("Analyse en cours..."):
-                    st.session_state["ai_draft"] = ai_generate_smart_email(
-                        _supabase, company_name, data.get("product_interest", ""), tone, data.get("country", ""), pid
-                    )
-            if "ai_draft" in st.session_state:
-                st.text_area("📧 Brouillon AI", value=st.session_state["ai_draft"], height=180, key=f"draft_{pid}")
-
-    # ── COLONNE DROITE : 3 ONGLETS ──
-    with col_right:
-        tab1, tab2, tab3 = st.tabs(["📋 Contexte & Technique", "🧪 Suivi Samples", "📓 Journal & Voice"])
-
-        # ──────── ONGLET 1 : Contexte & Technique ────────
-        with tab1:
-            PRODUITS = ["LENGOOD® (Substitut Œuf)", "PEPTIPEA® (Protéine)", "NEWGOOD® (Nouveauté)"]
-            APPLICATIONS = ["Boulangerie", "Sauces", "Confiserie", "Plats cuisinés", "Boissons"]
-
-            cr1, cr2 = st.columns(2)
-            with cr1:
-                prod_idx = PRODUITS.index(data.get("product_interest")) if data.get("product_interest") in PRODUITS else 0
-                prod = st.selectbox("INGRÉDIENT", PRODUITS, index=prod_idx, key=f"prod_{pid}")
-            with cr2:
-                app_idx = APPLICATIONS.index(data.get("segment")) if data.get("segment") in APPLICATIONS else 0
-                app = st.selectbox("APPLICATION", APPLICATIONS, index=app_idx, key=f"app_{pid}")
-
-            pain = st.text_area("PROBLÉMATIQUE", value=data.get("notes", ""), height=75, key=f"pain_{pid}")
-            tech = st.text_area("NOTES R&D", value=data.get("tech_notes", ""), height=75, key=f"tech_{pid}")
-
-            st.markdown("---")
-            st.markdown("<p class='label-field'>👥 CONTACTS</p>", unsafe_allow_html=True)
-
-            if "editing_contacts" not in st.session_state:
-                st.session_state["editing_contacts"] = get_sub_data( "contacts", pid).to_dict("records")
-
-            hc = st.columns([1.2, 1.2, 1.6, 1.2, 0.4])
-            for label, col in zip(["Nom", "Poste", "Email", "Tel", ""], hc):
-                col.markdown(f'<span class="label-sm">{label}</span>', unsafe_allow_html=True)
-
-            for i, c in enumerate(st.session_state["editing_contacts"]):
-                r = st.columns([1.2, 1.2, 1.6, 1.2, 0.4])
-                st.session_state["editing_contacts"][i]["name"] = r[0].text_input("N", value=c.get("name", ""), key=f"cn_{i}", label_visibility="collapsed")
-                st.session_state["editing_contacts"][i]["role"] = r[1].text_input("P", value=c.get("role", ""), key=f"cp_{i}", label_visibility="collapsed")
-                st.session_state["editing_contacts"][i]["email"] = r[2].text_input("E", value=c.get("email", ""), key=f"ce_{i}", label_visibility="collapsed")
-                st.session_state["editing_contacts"][i]["phone"] = r[3].text_input("T", value=c.get("phone", ""), key=f"ct_{i}", label_visibility="collapsed")
-                with r[4]:
-                    st.markdown('<div class="trash-container">', unsafe_allow_html=True)
-                    if st.button("🗑️", key=f"del_c_{i}"):
-                        if c.get("id"):
-                            if "contacts_to_delete" not in st.session_state:
-                                st.session_state["contacts_to_delete"] = []
-                            st.session_state["contacts_to_delete"].append(c["id"])
-                        st.session_state["editing_contacts"].pop(i)
-                        st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
-
-            if st.button("⊕ Ajouter un contact"):
-                st.session_state["editing_contacts"].append({"id": None, "name": ""})
-                st.rerun()
-
-        # ──────── ONGLET 2 : Suivi Samples ────────
-        with tab2:
-            st.markdown("<p class='label-field'>📦 ENVOYER UN ÉCHANTILLON</p>", unsafe_allow_html=True)
-            cs1, cs2, cs3 = st.columns([2.2, 1.5, 0.7])
-            with cs1:
-                s_ref = st.text_input("Référence / Lot", key=f"sr_{pid}", placeholder="Ex: LOT-2024-001")
-            with cs2:
-                s_prod = st.selectbox("Produit", PRODUITS, key=f"sp_{pid}")
-            with cs3:
-                if st.button("+ Ajouter", type="primary"):
-                    get_supabase().table("samples").insert({
-                        "prospect_id": pid,
-                        "reference": s_ref,
-                        "product_name": s_prod,
-                        "status": "En test",
-                        "date_sent": datetime.now().isoformat(),
-                    }).execute()
-                    st.rerun()
-
-            st.markdown("---")
-            samples_df = get_sub_data( "samples", pid)
-            if samples_df.empty:
-                st.info("Aucun échantillon envoyé pour cette société.")
-            else:
-                S_OPTS = ["En test", "Validé", "Rejeté", "Perdu"]
-                for _, r in samples_df.iterrows():
-                    with st.container(border=True):
-                        sh1, sh2, sh3 = st.columns([3.5, 1.5, 0.5])
-                        with sh1:
-                            st.markdown(
-                                f"**{clean_prod_name(r['product_name'])}** · {r['reference']} "
-                                f"<small style='color:#94a3b8;'>({r['date_sent'][:10]})</small>",
-                                unsafe_allow_html=True,
-                            )
-                        with sh2:
-                            s_idx = S_OPTS.index(r["status"]) if r["status"] in S_OPTS else 0
-                            new_s = st.selectbox("Statut", S_OPTS, index=s_idx, key=f"ss_{r['id']}", label_visibility="collapsed")
-                            if new_s != r["status"]:
-                                get_supabase().table("samples").update({"status": new_s}).eq("id", r["id"]).execute()
-                        with sh3:
-                            if st.button("🗑️", key=f"ds_{r['id']}"):
-                                get_supabase().table("samples").delete().eq("id", r["id"]).execute()
-                                st.rerun()
-                        new_f = st.text_area(
-                            "Feedback R&D", value=r.get("feedback") or "",
-                            key=f"f_{r['id']}", height=60, placeholder="Retour technique...",
-                            label_visibility="collapsed",
-                        )
-                        if new_f != (r.get("feedback") or ""):
-                            get_supabase().table("samples").update({"feedback": new_f}).eq("id", r["id"]).execute()
-
-        # ──────── ONGLET 3 : Journal & Voice-to-Text ────────
-        with tab3:
-            st.markdown("<p class='label-field'>🎤 COMPTE-RENDU VOCAL</p>", unsafe_allow_html=True)
-            st.markdown(
-                '<div class="voice-box">'
-                '<p style="color:#64748b; font-size:13px; margin:0 0 10px;">Enregistre un audio après un RDV.<br>'
-                '<span style="color:#94a3b8; font-size:11px;">Format accepté : WAV, MP3, OGG</span></p>'
-                '</div>',
-                unsafe_allow_html=True,
-            )
-            audio_input = st.audio_input("Enregistrer un message vocal", key=f"audio_{pid}", label_visibility="collapsed")
-
-            if audio_input is not None:
-                audio_bytes = audio_input.getvalue()
-                if audio_bytes:
-                    col_t1, col_t2 = st.columns([3, 1])
-                    with col_t1:
-                        st.audio(audio_input)
-                    with col_t2:
-                        if st.button("🎧 Transcrire", type="primary"):
-                            with st.spinner("Transcription en cours..."):
-                                transcription = ai_transcribe_audio(audio_bytes)
-                                st.session_state["voice_transcription"] = transcription
-
-                    if "voice_transcription" in st.session_state:
-                        st.text_area("📝 Transcription", value=st.session_state["voice_transcription"], height=100, key=f"trans_{pid}")
-                        if st.button("💾 Sauvegarder dans le journal", type="primary"):
-                            get_supabase().table("activities").insert({
-                                "prospect_id": pid,
-                                "type": "Compte-rendu vocal",
-                                "content": st.session_state["voice_transcription"],
-                                "date": datetime.now().isoformat(),
-                            }).execute()
-                            safe_del("voice_transcription")
-                            st.success("✅ Sauvegardé dans le journal !")
-                            st.rerun()
-
-            st.markdown("---")
-            st.markdown("<p class='label-field'>📓 HISTORIQUE D'ACTIVITÉS</p>", unsafe_allow_html=True)
-
-            # Nouvelle note manuelle
-            note = st.text_area("Nouvelle activité...", key=f"act_n_{pid}", placeholder="Décris une réunion, un email, une action...", height=70)
-            if st.button("+ Enregistrer la note"):
-                if note.strip():
-                    get_supabase().table("activities").insert({
-                        "prospect_id": pid,
-                        "type": "Note",
-                        "content": note,
-                        "date": datetime.now().isoformat(),
-                    }).execute()
-                    st.rerun()
-
-            # Afficher historique
-            activities = get_sub_data( "activities", pid)
-            if activities.empty:
-                st.info("Aucune activité enregistrée.")
-            else:
-                for _, act in activities.iterrows():
-                    act_type = act.get("type", "Note")
-                    type_icon = "🎤" if "vocal" in act_type.lower() else "📝" if act_type == "Note" else "🔗" if act_type == "Webhook" else "📋"
-                    with st.container(border=True):
-                        st.markdown(
-                            f"<div style='display:flex; align-items:center; gap:8px; margin-bottom:4px;'>"
-                            f"<span style='font-size:14px;'>{type_icon}</span>"
-                            f"<span style='font-size:11px; color:#94a3b8; font-weight:600;'>{act['date'][:10]}</span>"
-                            f"<span class='badge badge-gray' style='font-size:9px;'>{act_type}</span>"
-                            f"</div>",
-                            unsafe_allow_html=True,
-                        )
-                        st.write(act["content"])
-
-    # ── BOUTON SAUVEGARDER ──
-    st.markdown("---")
-    if st.button("💾 Enregistrer & Fermer", type="primary", use_container_width=True):
-        try:
-            update_data = {
-                "company_name": name,
-                "status": stat,
-                "country": pays,
-                "potential_volume": float(vol),
-                "website_url": web_url,
-                "last_action_date": last_c_date.isoformat(),
-                "product_interest": prod,
-                "segment": app,
-                "notes": pain,
-                "tech_notes": tech,
-            }
-            get_supabase().table("prospects").update(update_data).eq("id", pid).execute()
-
-            # Supprimer les contacts marqués
-            if "contacts_to_delete" in st.session_state and st.session_state["contacts_to_delete"]:
-                get_supabase().table("contacts").delete().in_("id", st.session_state.pop("contacts_to_delete")).execute()
-
-            # Upsert des contacts
-            for rc in st.session_state.get("editing_contacts", []):
-                if str(rc.get("name", "")).strip():
-                    payload = {
-                        "prospect_id": pid,
-                        "name": rc["name"],
-                        "role": rc.get("role", ""),
-                        "email": rc.get("email", ""),
-                        "phone": rc.get("phone", ""),
-                    }
-                    if rc.get("id"):
-                        get_supabase().table("contacts").upsert({**payload, "id": int(rc["id"])}).execute()
-                    else:
-                        get_supabase().table("contacts").insert(payload).execute()
-
-            reset_pipeline()
-            st.rerun()
-        except Exception as e:
-            st.error(f"❌ Erreur : {e}")
 
 
 # =============================================================================
@@ -1340,13 +764,16 @@ def render_sidebar():
         st.markdown(
             f"<div style='padding: 24px 0; text-align: center;'>"
             f"{ICON_FUSION_AURORA}"
-            f"<div style='font-weight: 600; font-size: 17px; color: #24292e; margin-top: 12px; margin-bottom: 2px;'>ING Growth</div>"
-            f"<div style='font-size: 11px; color: #959da5; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase;'>AI Platform</div>"
+            f"<div style='font-weight: 600; font-size: 17px; color: #24292e; margin-top: 12px;'>ING Growth</div>"
+            f"<div style='font-size: 11px; color: #959da5; text-transform: uppercase;'>AI Platform</div>"
             f"</div>",
             unsafe_allow_html=True,
         )
         st.markdown("---")
 
+        # ══════════════════════════════════════════════════════════════
+        # BOUTON NOUVEAU PROJET - CORRIGÉ
+        # ══════════════════════════════════════════════════════════════
         if st.button("⊕ Nouveau Projet", key="btn_nouveau_projet", use_container_width=True):
             try:
                 supabase_client = get_supabase()
@@ -1358,23 +785,20 @@ def render_sidebar():
                     }).execute()
                     if res.data and len(res.data) > 0:
                         st.session_state["open_new_id"] = res.data[0]["id"]
-                        st.success("✅ Nouveau projet créé !")
                         st.rerun()
                     else:
-                        st.error("❌ Erreur lors de la création du projet")
+                        st.error("❌ Erreur lors de la création")
                 else:
-                    st.error("❌ Connexion à la base de données non disponible")
+                    st.error("❌ Connexion base de données non disponible")
             except Exception as e:
                 st.error(f"❌ Erreur : {str(e)}")
 
         st.write("")
 
-        # Compteurs d'alertes
         retention_cnt = count_retention_alerts()
         sample_cnt = count_sample_alerts()
         total_alerts = retention_cnt + sample_cnt
 
-        # Navigation avec icônes SVG - Design professionnel épuré
         if 'selected_page' not in st.session_state:
             st.session_state.selected_page = 'Pipeline'
         
@@ -1392,46 +816,33 @@ def render_sidebar():
         
         for key, label, icon in nav_items:
             is_selected = (st.session_state.selected_page == key)
-            
-            # Adapter la couleur du SVG selon l'état
-            if is_selected:
-                icon_color = "#1E3F35"
-            else:
-                icon_color = "#9CA3AF"
-            
+            icon_color = "#1E3F35" if is_selected else "#9CA3AF"
             icon_display = icon.replace('stroke="#1E3F35"', f'stroke="{icon_color}"').replace('fill="#1E3F35"', f'fill="{icon_color}"').replace('width="32" height="32"', 'width="20" height="20"')
             
-            # Créer une ligne avec icône + bouton - alignement parfait
             col_icon, col_btn = st.columns([0.13, 0.87])
-            
             with col_icon:
-                st.markdown(f"<div style='display: flex; align-items: center; justify-content: center; height: 100%; padding: 0;'>{icon_display}</div>", unsafe_allow_html=True)
-            
+                st.markdown(f"<div style='display: flex; align-items: center; justify-content: center; height: 100%;'>{icon_display}</div>", unsafe_allow_html=True)
             with col_btn:
                 if st.button(label, key=f"nav_{key}", use_container_width=True):
                     st.session_state.selected_page = key
                     st.rerun()
         
-        sel = st.session_state.selected_page
-
         st.markdown("---")
-        
-        # Section DONNÉES (en bas de la sidebar)
-        st.markdown("<p style='font-size: 11px; font-weight: 700; color: #959da5; text-transform: uppercase; letter-spacing: 0.8px; margin: 20px 8px 12px; position: relative; z-index: 100;'>Données</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 11px; font-weight: 700; color: #959da5; text-transform: uppercase;'>Données</p>", unsafe_allow_html=True)
         
         col_exp, col_imp = st.columns(2)
         with col_exp:
-            if st.button("Exporter", use_container_width=True, key="sidebar_export", help="Télécharger en .xlsx"):
-                st.session_state['nav_to_excel_export'] = True
+            if st.button("Exporter", use_container_width=True, key="sidebar_export"):
+                st.session_state.selected_page = "Excel"
                 st.rerun()
         with col_imp:
-            if st.button("Importer", use_container_width=True, key="sidebar_import", help="Upload un .xlsx"):
-                st.session_state['nav_to_excel_import'] = True
+            if st.button("Importer", use_container_width=True, key="sidebar_import"):
+                st.session_state.selected_page = "Excel"
                 st.rerun()
         
         st.markdown("---")
         st.caption("👤 Utilisateur · ING Growth AI")
-        return sel
+        return st.session_state.selected_page
 
 
 # =============================================================================
@@ -1447,7 +858,6 @@ def page_pipeline():
         st.info("Aucun prospect enregistré. Créez-en un depuis la sidebar !")
         return
 
-    # Filtres
     with st.container(border=True):
         f1, f2, f3 = st.columns(3)
         with f1:
@@ -1468,16 +878,12 @@ def page_pipeline():
 
     st.write("")
 
-    # Header columns
     W = [3.2, 1, 1.5, 1.8, 1.4, 1.6, 1.2]
-    st.markdown('<div class="pipeline-header-row">', unsafe_allow_html=True)
     h_cols = st.columns(W)
     HEADERS = ["SOCIÉTÉ", "PAYS", "PRODUIT", "STATUT", "CONTACT", "SOURCE", "SAMPLES"]
     for i, label in enumerate(HEADERS):
         h_cols[i].markdown(f'<span class="header-text-style">{label}</span>', unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
-    # Précharger samples
     try:
         s_map = pd.DataFrame(get_supabase().table("samples").select("prospect_id").execute().data)
     except Exception:
@@ -1493,7 +899,6 @@ def page_pipeline():
             r[2].markdown(f"<span style='color:#047857; font-weight:700; font-size:12px;'>{clean_prod_name(row.get('product_interest'))}</span>", unsafe_allow_html=True)
             r[3].markdown(get_status_badge(row.get("status")), unsafe_allow_html=True)
 
-            # Dernier contact
             if row.get("last_action_date"):
                 try:
                     dt = datetime.strptime(row["last_action_date"][:10], "%Y-%m-%d")
@@ -1537,39 +942,33 @@ def page_kanban():
             count = len(df[df["status"] == stage])
             st.markdown(
                 f"<div style='border-bottom: 3px solid {color}; padding-bottom:6px; margin-bottom:10px;'>"
-                f"<p style='font-weight:800; color:{color}; font-size:10px; margin:0; text-transform:uppercase; letter-spacing:0.5px;'>"
-                f"{stage}</p>"
-                f"<p style='font-size:10px; color:#94a3b8; margin:2px 0 0;'>{count} projet{'s' if count != 1 else ''}</p>"
+                f"<p style='font-weight:800; color:{color}; font-size:10px; text-transform:uppercase;'>{stage}</p>"
+                f"<p style='font-size:10px; color:#94a3b8;'>{count} projet{'s' if count != 1 else ''}</p>"
                 f"</div>",
                 unsafe_allow_html=True,
             )
 
             stage_df = df[df["status"] == stage]
             for _, row in stage_df.iterrows():
-                st.markdown(
-                    f"<div class='kanban-card'>"
-                    f"<div style='font-weight:700; color:#0f172a; font-size:13px;'>{row['company_name']}</div>"
-                    f"<div style='font-size:10px; color:#64748b; margin-top:4px;'>🌍 {row.get('country') or 'N/A'}</div>"
-                    f"<div style='font-size:10px; color:#047857; font-weight:600;'>📦 {clean_prod_name(row.get('product_interest'))}</div>"
-                    f"<div style='font-size:11px; font-weight:800; color:#047857; margin-top:6px;'>{int(row.get('potential_volume', 0))} T</div>"
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
-                km1, km2, km3 = st.columns([1, 2, 1])
-                with km1:
-                    if i > 0 and st.button("←", key=f"prev_{row['id']}"):
-                        get_supabase().table("prospects").update({"status": STAGES[i - 1]}).eq("id", row["id"]).execute()
-                        reset_pipeline()
-                        st.rerun()
-                with km2:
-                    if st.button("Ouvrir", key=f"kb_{row['id']}", use_container_width=True):
-                        st.session_state["active_prospect_id"] = row["id"]
-                        st.rerun()
-                with km3:
-                    if i < len(STAGES) - 1 and st.button("→", key=f"next_{row['id']}"):
-                        get_supabase().table("prospects").update({"status": STAGES[i + 1]}).eq("id", row["id"]).execute()
-                        reset_pipeline()
-                        st.rerun()
+                with st.container(border=True):
+                    st.markdown(f"**{row['company_name']}**")
+                    st.caption(f"🌍 {row.get('country') or 'N/A'} · {int(row.get('potential_volume', 0))} T")
+                    
+                    km1, km2, km3 = st.columns([1, 2, 1])
+                    with km1:
+                        if i > 0 and st.button("←", key=f"prev_{row['id']}"):
+                            get_supabase().table("prospects").update({"status": STAGES[i - 1]}).eq("id", row["id"]).execute()
+                            reset_pipeline()
+                            st.rerun()
+                    with km2:
+                        if st.button("Ouvrir", key=f"kb_{row['id']}", use_container_width=True):
+                            st.session_state["active_prospect_id"] = row["id"]
+                            st.rerun()
+                    with km3:
+                        if i < len(STAGES) - 1 and st.button("→", key=f"next_{row['id']}"):
+                            get_supabase().table("prospects").update({"status": STAGES[i + 1]}).eq("id", row["id"]).execute()
+                            reset_pipeline()
+                            st.rerun()
 
 
 def page_dashboard():
@@ -1581,7 +980,6 @@ def page_dashboard():
         st.info("Aucune donnée pour le dashboard.")
         return
 
-    # KPIs
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Projets actifs", len(df))
     m2.metric("Potentiel total", f"{int(df['potential_volume'].sum())} T")
@@ -1591,7 +989,6 @@ def page_dashboard():
 
     st.write("")
 
-    # Charts
     ca, cb = st.columns(2)
     with ca:
         pie_df = df[df["product_interest"].notna()].copy()
@@ -1610,22 +1007,12 @@ def page_dashboard():
                 use_container_width=True,
             )
 
-    # Répartition par statut
-    st.write("")
-    status_df = df["status"].value_counts().reset_index()
-    status_df.columns = ["Statut", "Nombre"]
-    st.plotly_chart(
-        px.bar(status_df, x="Statut", y="Nombre", title="Répartition par Statut",
-               color_discrete_sequence=["#047857"], orientation="h"),
-        use_container_width=True,
-    )
-
 
 def page_contacts():
     st.markdown('<p class="section-title">👤 Annuaire Global</p>', unsafe_allow_html=True)
     st.markdown('<p class="section-subtitle">Tous vos contacts centralisés</p>', unsafe_allow_html=True)
 
-    search_q = st.text_input("🔍 Rechercher...", placeholder="Nom, Poste, Email, Entreprise...", label_visibility="collapsed")
+    search_q = st.text_input("🔍 Rechercher...", placeholder="Nom, Poste, Email...", label_visibility="collapsed")
 
     try:
         cons = pd.DataFrame(get_supabase().table("contacts").select("*, prospects(company_name)").execute().data)
@@ -1663,7 +1050,7 @@ def page_samples():
 
 def page_news():
     st.markdown('<p class="section-title">📰 Veille Stratégique</p>', unsafe_allow_html=True)
-    st.markdown('<p class="section-subtitle">Mise à jour automatique chaque mardi à 10h via Perplexity AI</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-subtitle">Mise à jour automatique via Perplexity AI</p>', unsafe_allow_html=True)
 
     with st.spinner("Chargement de la veille..."):
         news = fetch_weekly_news()
@@ -1671,19 +1058,9 @@ def page_news():
     if news.get("is_error"):
         st.warning(news["content"])
     else:
-        st.markdown(
-            f'<div class="alert-news">'
-            f'<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">'
-            f'<span style="font-weight:800; color:#047857; font-size:14px;">📰 Veille Hebdomadaire</span>'
-            f'<span style="font-size:11px; color:#64748b;">Généré le {news.get("created_at", "")[:10]}</span>'
-            f'</div>'
-            f'<div style="color:#1e293b; font-size:13px; line-height:1.7;">{news["content"]}</div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown(f"**📰 Veille du {news.get('created_at', '')[:10]}**")
+        st.markdown(news["content"])
 
-    # Option pour forcer une nouvelle génération
-    st.write("")
     if st.button("🔄 Forcer une nouvelle veille"):
         try:
             get_supabase().table("weekly_news").delete().neq("id", 0).execute()
@@ -1699,15 +1076,9 @@ def page_excel():
 
     col_exp, col_imp = st.columns(2, gap="large")
 
-    # ── EXPORT ──
     with col_exp:
         with st.container(border=True):
-            st.markdown("<p class='label-field'>📤 EXPORT DES PROSPECTS</p>", unsafe_allow_html=True)
-            st.markdown(
-                "<p style='font-size:12px; color:#64748b; margin:0 0 12px;'>"
-                "Télécharge la base complète des prospects au format .xlsx avec un formatage professionnel.</p>",
-                unsafe_allow_html=True,
-            )
+            st.markdown("**📤 EXPORT DES PROSPECTS**")
             export_buffer = export_prospects_excel()
             if export_buffer:
                 st.download_button(
@@ -1721,47 +1092,33 @@ def page_excel():
             else:
                 st.info("Aucune donnée à exporter.")
 
-    # ── IMPORT ──
     with col_imp:
         with st.container(border=True):
-            st.markdown("<p class='label-field'>📥 IMPORT MASSIF</p>", unsafe_allow_html=True)
-            st.markdown(
-                "<p style='font-size:12px; color:#64748b; margin:0 0 12px;'>"
-                "Upload un fichier Excel pour créer ou mettre à jour des prospects en masse.<br>"
-                "<strong>Colonnes attendues :</strong> Société, Statut, Pays, Potentiel (T), Produit, Segment.</p>",
-                unsafe_allow_html=True,
-            )
+            st.markdown("**📥 IMPORT MASSIF**")
+            st.caption("Colonnes : Société, Statut, Pays, Potentiel (T), Produit, Segment")
             uploaded = st.file_uploader("Choisir un fichier Excel", type=["xlsx", "xls"], label_visibility="collapsed")
             if uploaded is not None:
                 if st.button("📥 Importer", type="primary", use_container_width=True):
                     with st.spinner("Import en cours..."):
-                        result = import_prospects_excel( uploaded)
+                        result = import_prospects_excel(uploaded)
                     if result["errors"]:
-                        st.warning(f"Erreurs lors de l'import :\n" + "\n".join(result["errors"]))
-                    st.success(
-                        f"✅ Import terminé ! "
-                        f"**{result['inserted']}** nouveau(x) prospect(s) créé(s), "
-                        f"**{result['updated']}** prospect(s) mis à jour."
-                    )
+                        st.warning(f"Erreurs :\n" + "\n".join(result["errors"]))
+                    st.success(f"✅ {result['inserted']} créé(s), {result['updated']} mis à jour")
                     reset_pipeline()
 
 
 def page_webhooks():
     st.markdown('<p class="section-title">🔗 Webhooks Make.com</p>', unsafe_allow_html=True)
-    st.markdown('<p class="section-subtitle">Points d\'entrée pour recevoir des leads depuis Make.com</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-subtitle">Points d\'entrée pour recevoir des leads</p>', unsafe_allow_html=True)
 
-    # URL du webhook (simulée — en prod, ce serait un endpoint FastAPI séparé)
     webhook_url = "https://your-app.streamlit.io/api/webhook/leads"
 
     with st.container(border=True):
-        st.markdown("<p class='label-field'>📌 URL DU WEBHOOK</p>", unsafe_allow_html=True)
-        st.markdown(f'<div class="webhook-box">{webhook_url}</div>', unsafe_allow_html=True)
-        st.caption("Copiez cette URL dans Make.com pour connecter Clay, Waalaxy ou tout autre outil.")
+        st.markdown("**📌 URL DU WEBHOOK**")
+        st.code(webhook_url)
+        st.caption("Copiez cette URL dans Make.com")
 
-    st.write("")
-
-    # Format du payload attendu
-    with st.expander("📋 Format du payload JSON attendu", expanded=True):
+    with st.expander("📋 Format du payload JSON", expanded=True):
         payload_example = {
             "company_name": "Entreprise Exemple SAS",
             "country": "France",
@@ -1770,60 +1127,15 @@ def page_webhooks():
             "source": "Clay",
             "contact_name": "Jean Dupont",
             "contact_email": "jean.dupont@exemple.com",
-            "contact_role": "Purchasing Manager",
-            "contact_phone": "+33 6 12 34 56 78",
         }
         st.code(json.dumps(payload_example, indent=2, ensure_ascii=False), language="json")
-
-    st.write("")
-
-    # Test manuel du webhook
-    with st.container(border=True):
-        st.markdown("<p class='label-field'>🧪 TEST MANUEL DU WEBHOOK</p>", unsafe_allow_html=True)
-        st.markdown(
-            "<p style='font-size:12px; color:#64748b; margin:0 0 12px;'>"
-            "Simulez la réception d'un lead pour tester le pipeline.</p>",
-            unsafe_allow_html=True,
-        )
-        tc1, tc2 = st.columns(2)
-        with tc1:
-            test_company = st.text_input("Société", value="Test Company Demo", key="wh_company")
-            test_country = st.text_input("Pays", value="France", key="wh_country")
-            test_source = st.text_input("Source", value="Clay", key="wh_source")
-        with tc2:
-            test_contact = st.text_input("Nom contact", value="Marie Test", key="wh_contact")
-            test_email = st.text_input("Email", value="marie@test.com", key="wh_email")
-            test_role = st.text_input("Poste", value="R&D Manager", key="wh_role")
-
-        if st.button("▶️ Simuler la réception du lead", type="primary"):
-            test_payload = {
-                "company_name": test_company,
-                "country": test_country,
-                "product_interest": "LENGOOD® (Substitut Œuf)",
-                "segment": "Boulangerie",
-                "source": test_source,
-                "contact_name": test_contact,
-                "contact_email": test_email,
-                "contact_role": test_role,
-            }
-            with st.spinner("Traitement..."):
-                result = process_webhook_lead( test_payload)
-
-            if result["success"]:
-                st.success(f"✅ Lead créé avec succès ! ID prospect : {result['prospect_id']}")
-                reset_pipeline()
-            else:
-                st.error(f"❌ Erreur : {result['error']}")
 
 
 def page_alertes():
     st.markdown('<p class="section-title">🔔 Alertes & Relances</p>', unsafe_allow_html=True)
-    st.markdown('<p class="section-subtitle">Surveillance automatique de vos clients et échantillons</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-subtitle">Surveillance automatique</p>', unsafe_allow_html=True)
 
-    has_alert = False
-
-    # ── ALERTES RÉTENTION : Clients Actifs sans interaction 45+ jours ──
-    st.markdown("<p class='label-field' style='margin-top:8px;'>🚨 ALERTES DE RÉTENTION (45+ jours sans interaction)</p>", unsafe_allow_html=True)
+    st.markdown("**🚨 ALERTES DE RÉTENTION (45+ jours)**")
     forty_five_days_ago = (datetime.now() - timedelta(days=45)).isoformat()
     try:
         retention_alerts = pd.DataFrame(
@@ -1838,36 +1150,17 @@ def page_alertes():
         retention_alerts = pd.DataFrame()
 
     if not retention_alerts.empty:
-        has_alert = True
         for _, alert in retention_alerts.iterrows():
-            last_date = alert.get("last_action_date", "")[:10]
-            try:
-                days = (datetime.now() - datetime.strptime(last_date, "%Y-%m-%d")).days
-            except Exception:
-                days = "?"
-            st.markdown(
-                f'<div class="alert-retention">'
-                f'<div style="display:flex; justify-content:space-between; align-items:center;">'
-                f'<div>'
-                f'<span style="font-weight:800; color:#dc2626; font-size:14px;">⚠️ {alert["company_name"]}</span>'
-                f'<span style="font-size:11px; color:#991b1b;"> · Client Actif</span>'
-                f'</div>'
-                f'<span class="badge badge-red">{days} jours sans contact</span>'
-                f'</div>'
-                f'<p style="font-size:12px; color:#7f1d1d; margin:6px 0 0;">Dernier contact : {last_date} · Aucune interaction depuis plus de 45 jours.</p>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-            if st.button(f"Ouvrir la fiche", key=f"ret_btn_{alert['id']}"):
-                st.session_state["active_prospect_id"] = alert["id"]
-                st.rerun()
+            with st.container(border=True):
+                st.markdown(f"⚠️ **{alert['company_name']}** - Dernier contact: {alert.get('last_action_date', '')[:10]}")
+                if st.button(f"Ouvrir la fiche", key=f"ret_btn_{alert['id']}"):
+                    st.session_state["active_prospect_id"] = alert["id"]
+                    st.rerun()
     else:
         st.success("✅ Tous vos clients actifs sont à jour !")
 
     st.write("")
-
-    # ── ALERTES SAMPLES : Échantillons sans feedback 15+ jours ──
-    st.markdown("<p class='label-field'>🧪 ÉCHANTILLONS EN ATTENTE DE FEEDBACK (15+ jours)</p>", unsafe_allow_html=True)
+    st.markdown("**🧪 ÉCHANTILLONS SANS FEEDBACK (15+ jours)**")
     fifteen_days_ago = (datetime.now() - timedelta(days=15)).isoformat()
     try:
         sample_alerts = pd.DataFrame(
@@ -1882,26 +1175,13 @@ def page_alertes():
         sample_alerts = pd.DataFrame()
 
     if not sample_alerts.empty:
-        has_alert = True
         for _, alert in sample_alerts.iterrows():
             client = alert.get("prospects", {}).get("company_name", "—") if alert.get("prospects") else "—"
-            st.markdown(
-                f'<div class="alert-retention">'
-                f'<div style="display:flex; justify-content:space-between; align-items:center;">'
-                f'<div>'
-                f'<span style="font-weight:800; color:#dc2626; font-size:14px;">🧪 {client}</span>'
-                f'<span style="font-size:11px; color:#991b1b;"> · {alert.get("product_name", "")}</span>'
-                f'</div>'
-                f'<span class="badge badge-red">Sans feedback</span>'
-                f'</div>'
-                f'<p style="font-size:12px; color:#7f1d1d; margin:6px 0 0;">'
-                f'Ref : {alert.get("reference", "")} · Envoyé le {alert.get("date_sent", "")[:10]} · Aucun retour R&D.</p>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-            if st.button(f"Ouvrir la fiche", key=f"sam_btn_{alert.get('prospect_id', alert['id'])}"):
-                st.session_state["active_prospect_id"] = alert.get("prospect_id")
-                st.rerun()
+            with st.container(border=True):
+                st.markdown(f"🧪 **{client}** - {alert.get('product_name', '')} - Envoyé le {alert.get('date_sent', '')[:10]}")
+                if st.button(f"Ouvrir", key=f"sam_btn_{alert.get('prospect_id', alert['id'])}"):
+                    st.session_state["active_prospect_id"] = alert.get("prospect_id")
+                    st.rerun()
     else:
         st.success("✅ Tous vos échantillons ont des feedbacks !")
 
@@ -1911,23 +1191,21 @@ def page_alertes():
 # =============================================================================
 
 def main():
-    # Auth
     if not check_auth():
         return
 
-    # Initialize Supabase
     supabase = get_supabase()
     if not supabase:
         st.stop()
 
-    # Sidebar + routing
     selected_page = render_sidebar()
 
-    # Gestion modal prospect
+    # Gestion modal nouveau prospect
     if "open_new_id" in st.session_state:
         st.session_state["active_prospect_id"] = st.session_state.pop("open_new_id")
         reset_pipeline()
 
+    # Afficher le modal si un prospect est sélectionné
     if "active_prospect_id" in st.session_state:
         try:
             row_data = get_supabase().table("prospects").select("*").eq("id", st.session_state["active_prospect_id"]).execute().data[0]
@@ -1935,7 +1213,7 @@ def main():
         except Exception:
             safe_del("active_prospect_id")
 
-    # Pages routing
+    # Routing des pages
     PAGE_MAP = {
         "Dashboard": page_dashboard,
         "Pipeline": page_pipeline,
