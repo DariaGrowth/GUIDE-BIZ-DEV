@@ -87,56 +87,83 @@ CSS_THEME = """
         font-weight: 600 !important;
     }
 
-    /* ── BOUTON NOUVEAU PROJET (Design professionnel) ── */
+    /* ── BOUTON NOUVEAU PROJET ── */
     [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button {
         width: 100% !important; 
-        background: linear-gradient(135deg, #1E3F35 0%, #2A5548 100%) !important;
+        background: #1E3F35 !important;
         color: white !important;
         border: none !important; 
-        border-radius: 8px !important; 
-        padding: 12px 18px !important; 
+        border-radius: 6px !important; 
+        padding: 11px 16px !important; 
         font-weight: 600 !important;
         font-size: 14px !important; 
-        box-shadow: 0 2px 8px rgba(30, 63, 53, 0.2) !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        text-transform: none !important;
-        margin-bottom: 16px !important;
+        box-shadow: none !important;
+        transition: all 0.2s ease !important;
+        margin-bottom: 20px !important;
+        outline: none !important;
     }
     [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button:hover {
-        background: linear-gradient(135deg, #2A5548 0%, #1E3F35 100%) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 12px rgba(30, 63, 53, 0.3) !important;
+        background: #2A5548 !important;
+        box-shadow: none !important;
+    }
+    [data-testid="stSidebar"] > div > div:first-child .stButton:first-of-type > button:focus {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
     }
     
-    /* ── NAVIGATION BUTTONS - ULTRA ÉPURÉ ── */
+    /* ── NAVIGATION - DESIGN PLAT SANS CONTOURS ── */
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button {
-        background: transparent !important;
-        color: #374151 !important;
+        background: white !important;
+        color: #4B5563 !important;
         border: none !important;
+        outline: none !important;
         border-radius: 0px !important;
-        padding: 10px 12px !important;
+        padding: 11px 14px !important;
         margin: 0px !important;
         font-size: 14px !important;
         font-weight: 500 !important;
         text-align: left !important;
         justify-content: flex-start !important;
-        transition: all 0.2s ease !important;
+        transition: all 0.15s ease !important;
         box-shadow: none !important;
         width: 100% !important;
     }
     
-    /* Hover effect - fond vert clair comme le screenshot */
-    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
-        background: #D1FAE5 !important;
-        color: #065F46 !important;
+    /* Reset du focus/active pour enlever les contours */
+    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:focus,
+    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:active {
+        border: none !important;
+        outline: none !important;
         box-shadow: none !important;
     }
     
-    /* Hover effect sur les icônes */
+    /* Hover - fond vert clair */
+    [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
+        background: #D1FAE5 !important;
+        color: #065F46 !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Hover sur les icônes */
     [data-testid="stSidebar"] [data-testid="column"]:hover svg {
         stroke: #065F46 !important;
         fill: #065F46 !important;
-        transition: all 0.2s !important;
+    }
+    
+    /* Enlever l'espace entre les lignes */
+    [data-testid="stSidebar"] [data-testid="column"] {
+        padding: 0 !important;
+        gap: 0 !important;
+    }
+    
+    /* Colonne icône */
+    [data-testid="stSidebar"] [data-testid="column"]:nth-child(1) {
+        max-width: 44px !important;
+        min-width: 44px !important;
+        padding: 0 !important;
     }
     
     /* Styling de la colonne icône */
