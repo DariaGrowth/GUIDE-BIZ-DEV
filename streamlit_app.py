@@ -126,73 +126,57 @@ CSS_THEME = """
         box-shadow: none !important;
     }
     
-    /* ── NAVIGATION - DESIGN PLAT SANS CONTOURS ── */
-    [data-testid="stSidebar"] [data-testid="column"] .stButton,
+    /* ── NAVIGATION - STYLE EXACTEMENT COMME SCREENSHOT ── */
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button {
-        background: white !important;
-        color: #1F2937 !important;
-        border: 0px solid transparent !important;
-        outline: 0px solid transparent !important;
+        background: transparent !important;
+        color: #374151 !important;
+        border: 0px !important;
+        outline: 0px !important;
         border-radius: 0px !important;
-        padding: 12px 14px 12px 8px !important;
+        padding: 10px 8px 10px 4px !important;
         margin: 0px !important;
         font-size: 15px !important;
-        font-weight: 600 !important;
+        font-weight: 500 !important;
         text-align: left !important;
         justify-content: flex-start !important;
-        transition: all 0.15s ease !important;
+        transition: background 0.15s ease, color 0.15s ease !important;
         box-shadow: none !important;
         width: 100% !important;
-        line-height: 1.4 !important;
-        letter-spacing: -0.01em !important;
+        line-height: 1.5 !important;
     }
     
-    /* Reset TOUS les états pour enlever les contours */
+    /* Tous les états - aucun contour */
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover,
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button:focus,
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button:focus-visible,
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button:active {
-        border: 0px solid transparent !important;
-        outline: 0px solid transparent !important;
+        border: 0px !important;
+        outline: 0px !important;
         box-shadow: none !important;
     }
     
-    /* Hover - fond vert clair UNIQUEMENT */
+    /* Hover - fond vert clair */
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
         background: #D1FAE5 !important;
         color: #065F46 !important;
     }
     
-    /* Hover sur les icônes */
+    /* Hover icônes */
     [data-testid="stSidebar"] [data-testid="column"]:hover svg {
         stroke: #065F46 !important;
         fill: #065F46 !important;
     }
     
-    /* Enlever l'espace entre les lignes et aligner */
+    /* Colonnes alignées */
     [data-testid="stSidebar"] [data-testid="column"] {
         padding: 0 !important;
         gap: 0 !important;
-        display: flex !important;
-        align-items: center !important;
     }
     
-    /* Colonne icône - alignement vertical centré */
+    /* Colonne icône */
     [data-testid="stSidebar"] [data-testid="column"]:nth-child(1) {
-        max-width: 42px !important;
-        min-width: 42px !important;
-        padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-    
-    /* Alignement des icônes SVG */
-    [data-testid="stSidebar"] [data-testid="column"]:nth-child(1) > div {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 12px 0 !important;
+        max-width: 40px !important;
+        min-width: 40px !important;
     }
     
     /* Styling de la colonne icône */
