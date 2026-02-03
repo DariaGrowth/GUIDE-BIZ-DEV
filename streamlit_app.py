@@ -130,16 +130,23 @@ CSS_THEME = """
         box-shadow: 0 1px 3px rgba(30, 63, 53, 0.08) !important;
     }
     
-    /* Cacher les boutons invisibles de navigation */
-    [data-testid="stSidebar"] .stButton > button[aria-label*="nav_click"] {
-        display: none !important;
-        position: absolute !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        height: 0 !important;
+    /* Cacher les boutons de navigation (colonnes de droite) */
+    [data-testid="stSidebar"] [data-testid="column"]:has(button[key*="nav_"]) {
         width: 0 !important;
+        max-width: 0 !important;
+        min-width: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
+        overflow: hidden !important;
+    }
+    [data-testid="stSidebar"] button[key*="nav_"] {
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        position: absolute !important;
+        pointer-events: all !important;
     }
 
     /* ── SECTION DONNEES (Boutons Export/Import) ── */
@@ -1172,33 +1179,37 @@ def render_sidebar():
             # Adapter la couleur du SVG
             icon_display = icon.replace('stroke="#1E3F35"', f'stroke="{icon_color}"').replace('fill="#1E3F35"', f'fill="{icon_color}"').replace('width="32" height="32"', 'width="18" height="18"')
             
-            # Conteneur avec effet hover via CSS class
-            nav_item_html = f"""
-            <div class='nav-item {"nav-item-selected" if is_selected else ""}' style='
-                display: flex; 
-                align-items: center; 
-                gap: 12px; 
-                padding: 10px 12px; 
-                margin: 2px 8px;
-                border-radius: 8px;
-                background: {bg_color};
-                border-left: 3px solid {border_color};
-                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                cursor: pointer;
-            '>
-                <div style='width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;'>
-                    {icon_display}
+            # Créer deux colonnes : une pour l'icône et le label, une pour le bouton invisible
+            col_nav, col_btn = st.columns([0.95, 0.05])
+            
+            with col_nav:
+                # Conteneur visuel avec effet hover via CSS class
+                nav_item_html = f"""
+                <div class='nav-item {"nav-item-selected" if is_selected else ""}' style='
+                    display: flex; 
+                    align-items: center; 
+                    gap: 12px; 
+                    padding: 10px 12px; 
+                    margin: 2px 0px;
+                    border-radius: 8px;
+                    background: {bg_color};
+                    border-left: 3px solid {border_color};
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    cursor: pointer;
+                '>
+                    <div style='width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;'>
+                        {icon_display}
+                    </div>
+                    <span style='color: {text_color}; font-size: 14px; font-weight: {font_weight}; flex: 1;'>{label}</span>
                 </div>
-                <span style='color: {text_color}; font-size: 14px; font-weight: {font_weight}; flex: 1;'>{label}</span>
-            </div>
-            """
+                """
+                st.markdown(nav_item_html, unsafe_allow_html=True)
             
-            st.markdown(nav_item_html, unsafe_allow_html=True)
-            
-            # Bouton invisible pour la détection du clic
-            if st.button(f"nav_click_{key}", key=f"nav_{key}", label_visibility="collapsed"):
-                st.session_state.selected_page = key
-                st.rerun()
+            with col_btn:
+                # Bouton cliquable invisible
+                if st.button("→", key=f"nav_{key}"):
+                    st.session_state.selected_page = key
+                    st.rerun()
         
         sel = st.session_state.selected_page
 
