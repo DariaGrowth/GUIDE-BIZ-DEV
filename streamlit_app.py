@@ -858,44 +858,234 @@ def process_webhook_lead( payload):
 # 10. MODAL — FICHE PROSPECT AUGMENTÉE
 # =============================================================================
 
-@st.dialog(" ", width="large")
-def show_prospect_card( pid, data):
+@st.dialog("Nouveau Projet", width="large")
+def show_prospect_card(pid, data):
+    """Fiche prospect complète - Style moderne et professionnel"""
     pid = int(pid)
     company_name = data.get("company_name", "")
-
+    
+    # Sous-titre
     st.markdown(
-        f"<h2 style='margin-top:-28px; margin-bottom:20px; font-size:22px; color:#0f172a; "
-        f"font-weight:800; border-bottom:2px solid #047857; padding-bottom:10px;'>"
-        f"🧬 {company_name}</h2>",
-        unsafe_allow_html=True,
+        "<p style='color: #6B7280; font-size: 14px; margin: -20px 0 24px;'>Gestion et Suivi R&D</p>",
+        unsafe_allow_html=True
     )
-
-    col_left, col_right = st.columns([1, 2], gap="large")
-
-    # ── COLONNE GAUCHE : CRM + Social Selling ──
+    
+    # Layout principal : Gauche (formulaire) + Droite (onglets)
+    col_left, col_right = st.columns([2, 3], gap="large")
+    
+    # ══════════════════════════════════════════════════════════════
+    # COLONNE GAUCHE : FORMULAIRE PRINCIPAL
+    # ══════════════════════════════════════════════════════════════
     with col_left:
-        with st.container(border=True):
-            name = st.text_input("SOCIÉTÉ", value=company_name, key=f"n_{pid}")
-
-            STATUTS = [
-                "Prospection", "Qualification", "Échantillons en test",
-                "Tests en cours", "Négociation", "Contrat", "Client Actif",
-            ]
-            current_status = data.get("status", "Prospection")
-            status_idx = next((i for i, s in enumerate(STATUTS) if s == current_status), 0)
-            stat = st.selectbox("STATUT", STATUTS, index=status_idx, key=f"stat_{pid}")
-
-            c1, c2 = st.columns(2)
-            with c1:
-                pays = st.text_input("PAYS", value=data.get("country", ""), key=f"pays_{pid}")
-            with c2:
-                vol = st.number_input("POTENTIEL (T)", value=float(data.get("potential_volume") or 0), key=f"vol_{pid}")
-
-            web_url = st.text_input("SITE WEB", value=data.get("website_url", ""), placeholder="https://...", key=f"web_{pid}")
-
-            last_c_str = data.get("last_action_date") or datetime.now().strftime("%Y-%m-%d")
+        # Société / Client
+        st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>SOCIÉTÉ / CLIENT</p>", unsafe_allow_html=True)
+        name = st.text_input("Société", value=company_name, key=f"n_{pid}", label_visibility="collapsed")
+        
+        st.write("")
+        
+        # Statut Pipeline
+        st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>STATUT PIPELINE</p>", unsafe_allow_html=True)
+        STATUTS = [
+            "Prospection", "Qualification", "Échantillons en test",
+            "Tests en cours", "Négociation", "Contrat", "Client Actif",
+        ]
+        current_status = data.get("status", "Prospection")
+        status_idx = next((i for i, s in enumerate(STATUTS) if s == current_status), 0)
+        stat = st.selectbox("Statut", STATUTS, index=status_idx, key=f"stat_{pid}", label_visibility="collapsed")
+        
+        st.write("")
+        
+        # Pays / Potentiel
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>PAYS</p>", unsafe_allow_html=True)
+            pays = st.text_input("Pays", value=data.get("country", ""), key=f"pays_{pid}", label_visibility="collapsed")
+        with c2:
+            st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>POTENTIEL (T)</p>", unsafe_allow_html=True)
+            vol = st.number_input("Potentiel", value=float(data.get("potential_volume") or 0), key=f"vol_{pid}", label_visibility="collapsed")
+        
+        st.write("")
+        
+        # Dernier Salon / Source
+        st.markdown(
+            "<div style='background: #F3F4F6; padding: 14px; border-radius: 8px; margin-bottom: 24px;'>"
+            "<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;'>"
+            "📍 DERNIER SALON / SOURCE</p></div>",
+            unsafe_allow_html=True
+        )
+        source = st.text_input("Source", value=data.get("last_salon", ""), placeholder="ex: CFIA 2026", key=f"source_{pid}", label_visibility="collapsed")
+    
+    # ══════════════════════════════════════════════════════════════
+    # COLONNE DROITE : 3 ONGLETS
+    # ══════════════════════════════════════════════════════════════
+    with col_right:
+        tab1, tab2, tab3 = st.tabs(["📋 Contexte & Technique", "🧪 Suivi Échantillons", "📓 Journal d'Activité"])
+        
+        # ─────────────────────────────────────────────────────────
+        # ONGLET 1 : Contexte & Technique
+        # ─────────────────────────────────────────────────────────
+        with tab1:
+            PRODUITS = ["LENGOOD® (Substitut Œuf)", "PEPTIPEA® (Protéine)", "NEWGOOD® (Nouveauté)"]
+            APPLICATIONS = ["Boulangerie / Pâtisserie", "Sauces", "Confiserie", "Plats cuisinés", "Boissons"]
+            
+            cr1, cr2 = st.columns(2)
+            with cr1:
+                st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>INGRÉDIENT INGOOD</p>", unsafe_allow_html=True)
+                prod_idx = PRODUITS.index(data.get("product_interest")) if data.get("product_interest") in PRODUITS else 0
+                prod = st.selectbox("Ingrédient", PRODUITS, index=prod_idx, key=f"prod_{pid}", label_visibility="collapsed")
+            with cr2:
+                st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>APPLICATION FINALE</p>", unsafe_allow_html=True)
+                app_idx = APPLICATIONS.index(data.get("segment")) if data.get("segment") in APPLICATIONS else 0
+                app = st.selectbox("Application", APPLICATIONS, index=app_idx, key=f"app_{pid}", label_visibility="collapsed")
+            
+            st.write("")
+            st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>PROBLÉMATIQUE / BESOIN (PAIN POINT)</p>", unsafe_allow_html=True)
+            pain = st.text_area(
+                "Problématique",
+                value=data.get("notes", ""),
+                height=100,
+                placeholder="Ex: Volatilité prix œuf, Texture trop sèche, Besoin Clean Label...",
+                key=f"pain_{pid}",
+                label_visibility="collapsed"
+            )
+            
+            st.write("")
+            st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 6px;'>NOTES TECHNIQUES</p>", unsafe_allow_html=True)
+            tech = st.text_area(
+                "Notes techniques",
+                value=data.get("tech_notes", ""),
+                height=100,
+                placeholder="pH, Température cuisson, dosage cible...",
+                key=f"tech_{pid}",
+                label_visibility="collapsed"
+            )
+        
+        # ─────────────────────────────────────────────────────────
+        # ONGLET 2 : Suivi Échantillons
+        # ─────────────────────────────────────────────────────────
+        with tab2:
+            st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 12px;'>📦 ÉCHANTILLONS ENVOYÉS</p>", unsafe_allow_html=True)
+            
+            samples_df = get_sub_data("samples", pid)
+            if samples_df.empty:
+                st.info("Aucun échantillon envoyé pour cette société.")
+            else:
+                S_OPTS = ["En test", "Validé", "Rejeté", "Perdu"]
+                for _, r in samples_df.iterrows():
+                    with st.container(border=True):
+                        sh1, sh2, sh3 = st.columns([3.5, 1.5, 0.5])
+                        with sh1:
+                            st.markdown(
+                                f"**{clean_prod_name(r['product_name'])}** · {r['reference']} "
+                                f"<small style='color:#94a3b8;'>({r['date_sent'][:10]})</small>",
+                                unsafe_allow_html=True,
+                            )
+                        with sh2:
+                            s_idx = S_OPTS.index(r["status"]) if r["status"] in S_OPTS else 0
+                            new_s = st.selectbox("Statut", S_OPTS, index=s_idx, key=f"ss_{r['id']}", label_visibility="collapsed")
+                            if new_s != r["status"]:
+                                get_supabase().table("samples").update({"status": new_s}).eq("id", r["id"]).execute()
+                        with sh3:
+                            if st.button("🗑️", key=f"ds_{r['id']}"):
+                                get_supabase().table("samples").delete().eq("id", r["id"]).execute()
+                                st.rerun()
+                        new_f = st.text_area(
+                            "Feedback R&D",
+                            value=r.get("feedback") or "",
+                            key=f"f_{r['id']}",
+                            height=60,
+                            placeholder="Retour technique...",
+                            label_visibility="collapsed",
+                        )
+                        if new_f != (r.get("feedback") or ""):
+                            get_supabase().table("samples").update({"feedback": new_f}).eq("id", r["id"]).execute()
+            
+            st.write("")
+            st.markdown("---")
+            st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 12px;'>➕ AJOUTER UN ÉCHANTILLON</p>", unsafe_allow_html=True)
+            cs1, cs2, cs3 = st.columns([2.2, 1.5, 0.7])
+            with cs1:
+                s_ref = st.text_input("Référence / Lot", key=f"sr_{pid}", placeholder="Ex: LOT-2024-001", label_visibility="collapsed")
+            with cs2:
+                s_prod = st.selectbox("Produit", PRODUITS, key=f"sp_{pid}", label_visibility="collapsed")
+            with cs3:
+                if st.button("Ajouter", type="primary", use_container_width=True):
+                    get_supabase().table("samples").insert({
+                        "prospect_id": pid,
+                        "reference": s_ref,
+                        "product_name": s_prod,
+                        "status": "En test",
+                        "date_sent": datetime.now().isoformat(),
+                    }).execute()
+                    st.rerun()
+        
+        # ─────────────────────────────────────────────────────────
+        # ONGLET 3 : Journal d'Activité
+        # ─────────────────────────────────────────────────────────
+        with tab3:
+            st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 12px;'>📝 HISTORIQUE DES ACTIONS</p>", unsafe_allow_html=True)
+            
+            activities_df = get_sub_data("activities", pid)
+            if activities_df.empty:
+                st.info("Aucune activité enregistrée.")
+            else:
+                for _, act in activities_df.iterrows():
+                    with st.container(border=True):
+                        st.markdown(
+                            f"**{act['type']}** · <small style='color:#94a3b8;'>{act['date'][:10]}</small>",
+                            unsafe_allow_html=True
+                        )
+                        st.markdown(act['content'])
+            
+            st.write("")
+            st.markdown("---")
+            st.markdown("<p style='font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 12px;'>➕ AJOUTER UNE ACTIVITÉ</p>", unsafe_allow_html=True)
+            
+            act_type = st.selectbox("Type", ["Email", "Appel", "RDV", "Note"], key=f"act_type_{pid}")
+            act_content = st.text_area("Contenu", key=f"act_content_{pid}", height=80, placeholder="Décrivez l'action...", label_visibility="collapsed")
+            
+            if st.button("Enregistrer", type="primary"):
+                if act_content.strip():
+                    get_supabase().table("activities").insert({
+                        "prospect_id": pid,
+                        "type": act_type,
+                        "content": act_content,
+                        "date": datetime.now().isoformat(),
+                    }).execute()
+                    st.success("✅ Activité ajoutée")
+                    st.rerun()
+    
+    # ══════════════════════════════════════════════════════════════
+    # FOOTER : BOUTONS D'ACTION
+    # ══════════════════════════════════════════════════════════════
+    st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
+    
+    col_btn1, col_btn2 = st.columns([1, 1])
+    with col_btn1:
+        if st.button("Annuler", use_container_width=True):
+            st.rerun()
+    with col_btn2:
+        if st.button("Enregistrer", type="primary", use_container_width=True):
+            # Sauvegarder les données
             try:
-                last_c_date = st.date_input("DERNIER CONTACT", value=datetime.strptime(last_c_str[:10], "%Y-%m-%d"), key=f"date_{pid}")
+                get_supabase().table("prospects").update({
+                    "company_name": name,
+                    "status": stat,
+                    "country": pays,
+                    "potential_volume": vol,
+                    "last_salon": source,
+                    "product_interest": prod,
+                    "segment": app,
+                    "notes": pain,
+                    "tech_notes": tech,
+                    "last_action_date": datetime.now().isoformat(),
+                }).eq("id", pid).execute()
+                
+                st.success("✅ Prospect mis à jour avec succès !")
+                time.sleep(1)
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Erreur : {str(e)}")
             except Exception:
                 last_c_date = st.date_input("DERNIER CONTACT", value=datetime.now(), key=f"date_{pid}")
 
