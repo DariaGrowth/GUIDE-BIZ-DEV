@@ -87,69 +87,81 @@ CSS_THEME = """
         font-weight: 600 !important;
     }
 
-    /* ── BOUTON NOUVEAU PROJET (Vert Flat) ── */
+    /* ── BOUTON NOUVEAU PROJET (Design professionnel) ── */
     [data-testid="stSidebar"] .stButton > button {
         width: 100% !important; 
-        background: #059669 !important;
+        background: linear-gradient(135deg, #1E3F35 0%, #2A5548 100%) !important;
         color: white !important;
         border: none !important; 
-        border-radius: 6px !important; 
-        padding: 10px 16px !important; 
+        border-radius: 8px !important; 
+        padding: 12px 18px !important; 
         font-weight: 600 !important;
         font-size: 14px !important; 
-        box-shadow: none !important;
-        transition: background 0.2s !important;
+        box-shadow: 0 2px 8px rgba(30, 63, 53, 0.2) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        text-transform: none !important;
     }
     [data-testid="stSidebar"] .stButton > button:hover {
-        background: #047857 !important;
+        background: linear-gradient(135deg, #2A5548 0%, #1E3F35 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(30, 63, 53, 0.3) !important;
+    }
+    [data-testid="stSidebar"] .stButton > button:active {
+        transform: translateY(0px) !important;
     }
 
-    /* ── NAVIGATION BUTTONS (Custom avec icônes) ── */
-    [data-testid="stSidebar"] [data-testid="column"] {
+    /* ── NAVIGATION ITEMS (Design professionnel épuré) ── */
+    .nav-item {
+        position: relative;
+    }
+    .nav-item:hover {
+        background: #F0F4F3 !important;
+        border-left-color: #1E3F35 !important;
+    }
+    .nav-item:hover span {
+        color: #1E3F35 !important;
+    }
+    .nav-item:hover svg {
+        stroke: #1E3F35 !important;
+        fill: #1E3F35 !important;
+    }
+    .nav-item-selected {
+        background: #F8FAF9 !important;
+        box-shadow: 0 1px 3px rgba(30, 63, 53, 0.08) !important;
+    }
+    
+    /* Cacher les boutons invisibles de navigation */
+    [data-testid="stSidebar"] .stButton > button[aria-label*="nav_click"] {
+        display: none !important;
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        height: 0 !important;
+        width: 0 !important;
         padding: 0 !important;
-        gap: 4px !important;
-    }
-    [data-testid="stSidebar"] [data-testid="column"]:first-child {
-        max-width: 30px !important;
-        min-width: 30px !important;
-    }
-    /* Cibler uniquement les boutons de navigation (pas Export/Import) */
-    [data-testid="stSidebar"] > div > div:first-child [data-testid="column"]:last-child .stButton > button {
-        background: transparent !important;
-        border: none !important;
-        color: #586069 !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        padding: 8px 12px !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
-        border-radius: 6px !important;
-        transition: all 0.15s !important;
-        box-shadow: none !important;
-        width: 100% !important;
-    }
-    [data-testid="stSidebar"] > div > div:first-child [data-testid="column"]:last-child .stButton > button:hover {
-        background: #f6f8fa !important;
-        color: #24292e !important;
+        margin: 0 !important;
     }
 
-    /* ── SECTION DONNEES (Sidebar Bottom) ── */
+    /* ── SECTION DONNEES (Boutons Export/Import) ── */
     [data-testid="stSidebar"] > div > div:last-child {
-        border-top: 1px solid #e1e4e8;
+        border-top: 1px solid #E5E7EB;
         padding-top: 16px;
         margin-top: auto;
     }
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button {
-        background: #ffffff !important;
-        color: #24292e !important;
-        border: 1px solid #d1d5db !important;
+        background: #FFFFFF !important;
+        color: #374151 !important;
+        border: 1px solid #D1D5DB !important;
         font-size: 13px !important;
         font-weight: 500 !important;
-        padding: 6px 12px !important;
+        padding: 8px 14px !important;
+        border-radius: 6px !important;
+        transition: all 0.2s !important;
     }
     [data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
-        background: #f6f8fa !important;
-        border-color: #959da5 !important;
+        background: #F9FAFB !important;
+        border-color: #1E3F35 !important;
+        color: #1E3F35 !important;
     }
 
     /* ── PIPELINE HEADER ── */
@@ -1097,7 +1109,7 @@ def render_sidebar():
         )
         st.markdown("---")
 
-        if st.button("⊕ Nouveau Projet"):
+        if st.button("⊕ Nouveau Projet", key="btn_nouveau_projet", use_container_width=True):
             try:
                 supabase_client = get_supabase()
                 if supabase_client:
@@ -1106,13 +1118,16 @@ def render_sidebar():
                         "status": "Prospection",
                         "last_action_date": datetime.now().isoformat(),
                     }).execute()
-                    if res.data:
+                    if res.data and len(res.data) > 0:
                         st.session_state["open_new_id"] = res.data[0]["id"]
+                        st.success("✅ Nouveau projet créé !")
                         st.rerun()
+                    else:
+                        st.error("❌ Erreur lors de la création du projet")
                 else:
                     st.error("❌ Connexion à la base de données non disponible")
             except Exception as e:
-                st.error(f"❌ Erreur lors de la création : {str(e)}")
+                st.error(f"❌ Erreur : {str(e)}")
 
         st.write("")
 
@@ -1121,7 +1136,7 @@ def render_sidebar():
         sample_cnt = count_sample_alerts()
         total_alerts = retention_cnt + sample_cnt
 
-        # Navigation avec icônes SVG
+        # Navigation avec icônes SVG - Design professionnel épuré
         if 'selected_page' not in st.session_state:
             st.session_state.selected_page = 'Pipeline'
         
@@ -1139,25 +1154,51 @@ def render_sidebar():
         
         for key, label, icon in nav_items:
             is_selected = (st.session_state.selected_page == key)
-            bg = "#e6f7ed" if is_selected else "transparent"
-            color = "#047857" if is_selected else "#586069"
-            weight = "600" if is_selected else "500"
+            
+            # Couleurs selon l'état
+            if is_selected:
+                bg_color = "#F8FAF9"
+                text_color = "#1E3F35"
+                icon_color = "#1E3F35"
+                border_color = "#1E3F35"
+                font_weight = "600"
+            else:
+                bg_color = "transparent"
+                text_color = "#6B7280"
+                icon_color = "#9CA3AF"
+                border_color = "transparent"
+                font_weight = "500"
             
             # Adapter la couleur du SVG
-            icon_display = icon.replace('stroke="#1E3F35"', f'stroke="{color}"').replace('fill="#1E3F35"', f'fill="{color}"').replace('width="32" height="32"', 'width="18" height="18"')
+            icon_display = icon.replace('stroke="#1E3F35"', f'stroke="{icon_color}"').replace('fill="#1E3F35"', f'fill="{icon_color}"').replace('width="32" height="32"', 'width="18" height="18"')
             
-            # Conteneur avec background coloré
-            st.markdown(f"""<div style='background: {bg}; border-radius: 6px; margin: 2px 8px; padding: 2px 0; transition: background 0.15s;'>""", unsafe_allow_html=True)
+            # Conteneur avec effet hover via CSS class
+            nav_item_html = f"""
+            <div class='nav-item {"nav-item-selected" if is_selected else ""}' style='
+                display: flex; 
+                align-items: center; 
+                gap: 12px; 
+                padding: 10px 12px; 
+                margin: 2px 8px;
+                border-radius: 8px;
+                background: {bg_color};
+                border-left: 3px solid {border_color};
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                cursor: pointer;
+            '>
+                <div style='width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;'>
+                    {icon_display}
+                </div>
+                <span style='color: {text_color}; font-size: 14px; font-weight: {font_weight}; flex: 1;'>{label}</span>
+            </div>
+            """
             
-            col1, col2 = st.columns([0.15, 0.85])
-            with col1:
-                st.markdown(f"<div style='padding: 6px 0 6px 4px;'>{icon_display}</div>", unsafe_allow_html=True)
-            with col2:
-                if st.button(label, key=f"nav_{key}", use_container_width=True):
-                    st.session_state.selected_page = key
-                    st.rerun()
+            st.markdown(nav_item_html, unsafe_allow_html=True)
             
-            st.markdown("</div>", unsafe_allow_html=True)
+            # Bouton invisible pour la détection du clic
+            if st.button(f"nav_click_{key}", key=f"nav_{key}", label_visibility="collapsed"):
+                st.session_state.selected_page = key
+                st.rerun()
         
         sel = st.session_state.selected_page
 
