@@ -136,8 +136,9 @@ CSS_THEME = """
         padding: 14px 20px !important;
         font-weight: 600 !important;
         font-size: 14px !important;
-        transition: all 0.2s ease !important;
+        transition: all 0.15s ease !important;
         box-shadow: 0 2px 4px rgba(30,63,53,0.1) !important;
+        margin-bottom: 4px !important;
     }
     
     section[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
@@ -147,26 +148,61 @@ CSS_THEME = """
     }
 
     /* ══════════════════════════════════════════════════════════
-       SIDEBAR - CACHER LES BOUTONS DE NAVIGATION INVISIBLES
+       SIDEBAR - BOUTONS DE NAVIGATION (PLUS D'ESPACEMENT)
     ══════════════════════════════════════════════════════════ */
-    section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
-        position: absolute !important;
-        opacity: 0 !important;
-        height: 44px !important;
+    .nav-normal > div > button,
+    .nav-active > div > button {
         width: 100% !important;
-        top: 0 !important;
-        left: 0 !important;
-        cursor: pointer !important;
-        z-index: 10 !important;
+        background: transparent !important;
+        border: none !important;
+        color: #4B5563 !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        padding: 14px 16px !important;
+        min-height: 48px !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        border-radius: 8px !important;
+        transition: all 0.1s ease !important;
+        margin: 3px 0 !important;
+        border-left: 3px solid transparent !important;
+    }
+    
+    .nav-normal > div > button:hover {
+        background: #F3F4F6 !important;
+        color: var(--primary) !important;
+    }
+    
+    .nav-active > div > button {
+        background: #ECFDF5 !important;
+        color: var(--primary) !important;
+        font-weight: 600 !important;
+        border-left: 3px solid #10B981 !important;
+        border-radius: 0 8px 8px 0 !important;
+    }
+    
+    .nav-active > div > button:hover {
+        background: #D1FAE5 !important;
     }
 
-    /* Container pour les nav items */
-    section[data-testid="stSidebar"] .nav-item-row {
-        position: relative !important;
+    /* ══════════════════════════════════════════════════════════
+       SIDEBAR - BOUTONS EXPORT/IMPORT
+    ══════════════════════════════════════════════════════════ */
+    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button {
+        background: white !important;
+        border: 1px solid #E5E7EB !important;
+        color: #6B7280 !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        padding: 10px 12px !important;
+        border-radius: 8px !important;
+        transition: all 0.1s ease !important;
     }
-
-    section[data-testid="stSidebar"] .nav-item-row:hover {
-        background: var(--bg-hover) !important;
+    
+    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
+        background: #F9FAFB !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
     }
 
     /* ── NAV ITEMS - FLOATING STYLE ── */
@@ -1172,23 +1208,22 @@ def show_prospect_modal(pid, data):
                     st.error(f"Erreur: {str(e)}")
 
 # =============================================================================
-# 7. SIDEBAR NAVIGATION - AVEC ICÔNES SVG
+# 7. SIDEBAR NAVIGATION - SIMPLE ET RÉACTIVE
 # =============================================================================
 
 def render_sidebar():
     with st.sidebar:
         # Logo & Brand
         st.markdown(f"""
-            <div style="text-align: center; padding: 20px 0 24px;">
+            <div style="text-align: center; padding: 16px 0 20px;">
                 {ICON_LOGO}
                 <div style="font-weight: 700; font-size: 18px; color: #111827; margin-top: 12px;">ING Growth</div>
                 <div style="font-size: 11px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 1px;">AI Platform</div>
             </div>
         """, unsafe_allow_html=True)
         
-        # ── NOUVEAU PROJET BUTTON - Style vert ──
-        new_clicked = st.button("✦  Nouveau Projet", key="new_project_main", use_container_width=True, type="primary")
-        if new_clicked:
+        # ── NOUVEAU PROJET BUTTON ──
+        if st.button("✦  Nouveau Projet", key="new_project_main", use_container_width=True, type="primary"):
             try:
                 res = get_supabase().table("prospects").insert({
                     "company_name": "Nouveau Prospect",
@@ -1201,66 +1236,48 @@ def render_sidebar():
             except Exception as e:
                 st.error(f"Erreur: {e}")
         
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
         
-        # ── NAVIGATION avec icônes SVG ──
+        # ── NAVIGATION ──
         if 'selected_page' not in st.session_state:
             st.session_state.selected_page = 'Pipeline'
         
         alert_count = count_alerts()
         
-        # Items de navigation avec clé d'icône
+        # Items de navigation - format simple avec emojis pour fiabilité
         nav_items = [
-            ("Dashboard", "dashboard", "Tableau de Bord"),
-            ("Pipeline", "pipeline", "Pipeline"),
-            ("Kanban", "kanban", "Kanban"),
-            ("Samples", "samples", "Échantillons"),
-            ("Contacts", "contacts", "Contacts"),
-            ("News", "news", "Veille IA"),
-            ("Excel", "export", "Import / Export"),
-            ("Webhooks", "webhook", "Webhooks"),
-            ("Alertes", "alert", f"À Relancer ({alert_count})" if alert_count > 0 else "À Relancer"),
+            ("Dashboard", "📊", "Tableau de Bord"),
+            ("Pipeline", "📋", "Pipeline"),
+            ("Kanban", "▦", "Kanban"),
+            ("Samples", "🧪", "Échantillons"),
+            ("Contacts", "👤", "Contacts"),
+            ("News", "📰", "Veille IA"),
+            ("Excel", "📥", "Import / Export"),
+            ("Webhooks", "🔗", "Webhooks"),
+            ("Alertes", "🔔", f"À Relancer ({alert_count})" if alert_count > 0 else "À Relancer"),
         ]
         
-        for page_key, icon_key, label in nav_items:
+        for page_key, icon, label in nav_items:
             is_active = st.session_state.selected_page == page_key
-            icon_color = "#1E3F35" if is_active else "#6B7280"
-            bg_color = "#ECFDF5" if is_active else "transparent"
-            text_color = "#1E3F35" if is_active else "#4B5563"
-            font_weight = "600" if is_active else "500"
-            border_left = "3px solid #10B981" if is_active else "3px solid transparent"
             
-            # Créer le HTML pour l'item de navigation avec icône SVG alignée
-            st.markdown(f"""
-                <div class="nav-item-row" style="
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    padding: 11px 14px;
-                    margin: 2px 0;
-                    background: {bg_color};
-                    border-left: {border_left};
-                    border-radius: 0 8px 8px 0;
-                    cursor: pointer;
-                    transition: all 0.15s ease;
-                ">
-                    <div style="display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; flex-shrink: 0;">
-                        {get_icon(icon_key, icon_color)}
-                    </div>
-                    <span style="font-size: 14px; font-weight: {font_weight}; color: {text_color};">{label}</span>
-                </div>
-            """, unsafe_allow_html=True)
+            # Utiliser une classe CSS différente selon l'état actif
+            if is_active:
+                st.markdown(f'<div class="nav-active">', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<div class="nav-normal">', unsafe_allow_html=True)
             
-            # Bouton invisible pour le clic (superposé sur le HTML)
-            if st.button("​", key=f"nav_btn_{page_key}", use_container_width=True):
+            # Bouton Streamlit natif - plus réactif
+            if st.button(f"{icon}  {label}", key=f"nav_{page_key}", use_container_width=True):
                 st.session_state.selected_page = page_key
                 st.rerun()
+            
+            st.markdown('</div>', unsafe_allow_html=True)
         
         # ── DATA SECTION ──
-        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         st.markdown("""
             <p style="font-size: 11px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; 
-                      letter-spacing: 0.5px; padding: 0 14px; margin: 0 0 8px 0;">Données</p>
+                      letter-spacing: 0.5px; padding: 0 8px; margin: 0 0 8px 0;">Données</p>
         """, unsafe_allow_html=True)
         
         col_exp, col_imp = st.columns(2)
@@ -1275,7 +1292,7 @@ def render_sidebar():
         
         # Footer
         st.markdown("""
-            <div style="padding: 20px 14px; border-top: 1px solid #E5E7EB; margin-top: 30px;">
+            <div style="padding: 16px 8px; border-top: 1px solid #E5E7EB; margin-top: 24px;">
                 <p style="font-size: 12px; color: #9CA3AF; margin: 0;">👤 Utilisateur connecté</p>
             </div>
         """, unsafe_allow_html=True)
