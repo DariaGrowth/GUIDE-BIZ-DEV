@@ -236,6 +236,36 @@ CSS_THEME = """
         color: var(--primary) !important;
     }
 
+    /* ── NAV BUTTONS (Streamlit compatible) ── */
+    .nav-btn button {
+        background: transparent !important;
+        border: none !important;
+        color: var(--text-secondary) !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        padding: 10px 12px !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        border-radius: 8px !important;
+        transition: all 0.15s ease !important;
+        width: 100% !important;
+        border-left: 3px solid transparent !important;
+    }
+    
+    .nav-btn button:hover {
+        background: var(--bg-hover) !important;
+        color: var(--primary) !important;
+    }
+    
+    .nav-btn-active button {
+        background: #ECFDF5 !important;
+        color: var(--primary) !important;
+        font-weight: 600 !important;
+        border: none !important;
+        border-left: 3px solid var(--accent-green) !important;
+        border-radius: 0 8px 8px 0 !important;
+    }
+
     /* ══════════════════════════════════════════════════════════
        PIPELINE - TABLE DESIGN
     ══════════════════════════════════════════════════════════ */
@@ -1110,7 +1140,6 @@ def render_sidebar():
         # ── NEW PROJECT BUTTON ──
         st.markdown('<div class="new-project-btn">', unsafe_allow_html=True)
         if st.button("⊕  Nouveau Projet", key="new_project", use_container_width=True):
-            # Create new prospect and open modal immediately
             try:
                 res = get_supabase().table("prospects").insert({
                     "company_name": "Nouveau Prospect",
@@ -1133,36 +1162,40 @@ def render_sidebar():
         alert_count = count_alerts()
         
         nav_items = [
-            ("Dashboard", "Tableau de Bord", "dashboard"),
-            ("Pipeline", "Pipeline", "pipeline"),
-            ("Kanban", "Kanban", "kanban"),
-            ("Samples", "Échantillons", "samples"),
-            ("Contacts", "Contacts", "contacts"),
-            ("News", "Veille IA", "news"),
-            ("Excel", "Import / Export", "export"),
-            ("Webhooks", "Webhooks", "webhook"),
-            ("Alertes", f"À Relancer ({alert_count})" if alert_count > 0 else "À Relancer", "alert"),
+            ("Dashboard", "📊", "Tableau de Bord"),
+            ("Pipeline", "📋", "Pipeline"),
+            ("Kanban", "▦", "Kanban"),
+            ("Samples", "🧪", "Échantillons"),
+            ("Contacts", "👤", "Contacts"),
+            ("News", "📰", "Veille IA"),
+            ("Excel", "📥", "Import / Export"),
+            ("Webhooks", "🔗", "Webhooks"),
+            ("Alertes", "🔔", f"À Relancer ({alert_count})" if alert_count > 0 else "À Relancer"),
         ]
         
-        for key, label, icon_name in nav_items:
+        for key, icon, label in nav_items:
             is_active = st.session_state.selected_page == key
-            icon_color = "#1E3F35" if is_active else "#6B7280"
-            active_class = "active" if is_active else ""
             
-            # Using HTML for perfect alignment
-            st.markdown(f"""
-                <div class="nav-item {active_class}" onclick="document.getElementById('nav_{key}').click()">
-                    <div class="nav-icon">{get_icon(icon_name, icon_color)}</div>
-                    <span class="nav-text" style="color: {icon_color};">{label}</span>
-                </div>
-            """, unsafe_allow_html=True)
+            # Style conditionnel pour l'élément actif
+            if is_active:
+                st.markdown(f"""
+                    <style>
+                        div[data-testid="stVerticalBlock"] button[kind="secondary"]:has([data-testid="stMarkdownContainer"]:contains("{label}")) {{
+                            background: #ECFDF5 !important;
+                            border-left: 3px solid #10B981 !important;
+                        }}
+                    </style>
+                """, unsafe_allow_html=True)
             
-            # Hidden button for click handling
-            if st.button(label, key=f"nav_{key}", label_visibility="collapsed"):
+            btn_style = "nav-btn-active" if is_active else "nav-btn"
+            st.markdown(f'<div class="{btn_style}">', unsafe_allow_html=True)
+            if st.button(f"{icon}  {label}", key=f"nav_{key}", use_container_width=True):
                 st.session_state.selected_page = key
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
         
         # ── DATA SECTION ──
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
         st.markdown("<p class='sidebar-section-title'>Données</p>", unsafe_allow_html=True)
         
         col_exp, col_imp = st.columns(2)
@@ -1180,7 +1213,6 @@ def render_sidebar():
             st.markdown('</div>', unsafe_allow_html=True)
         
         # Footer
-        st.markdown("<div style='flex: 1;'></div>", unsafe_allow_html=True)
         st.markdown("""
             <div style="padding: 16px 0; border-top: 1px solid #E5E7EB; margin-top: 24px;">
                 <p style="font-size: 12px; color: #9CA3AF; margin: 0;">👤 Utilisateur connecté</p>
