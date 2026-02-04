@@ -29,21 +29,53 @@ ICON_LOGO = """<svg width="40" height="40" viewBox="0 0 56 56" fill="none" xmlns
 </svg>"""
 
 # Navigation Icons (20x20, stroke-based)
-def get_icon(name, color="#6B7280"):
+def get_icon(name, color="#6B7280", size=20):
     icons = {
-        "dashboard": f'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
-        "pipeline": f'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="7" cy="6" r="2" fill="{color}"/><circle cx="14" cy="12" r="2" fill="{color}"/><circle cx="10" cy="18" r="2" fill="{color}"/></svg>',
-        "kanban": f'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg>',
-        "samples": f'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M9 3v6l-3 12h12l-3-12V3"/><path d="M8 3h8"/><path d="M7 15h10"/></svg>',
-        "contacts": f'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
-        "news": f'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>',
-        "export": f'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>',
-        "webhook": f'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 003 3h6"/></svg>',
-        "alert": f'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M12 3v1m0 16v1m-8-9H3m18 0h-1m-2.5-6.5l-.7.7m-10.6 10.6l-.7.7m0-12l.7.7m10.6 10.6l.7.7"/><circle cx="12" cy="12" r="4"/></svg>',
-        "chevron": f'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>',
-        "flask": f'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.5"><path d="M9 3v6l-4 10a1 1 0 001 1h12a1 1 0 001-1l-4-10V3"/><path d="M8 3h8"/></svg>',
-        "plus": f'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
-        "delete": f'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="1.5"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>',
+        # Navigation
+        "dashboard": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
+        "pipeline": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="7" cy="6" r="2" fill="{color}"/><circle cx="14" cy="12" r="2" fill="{color}"/><circle cx="10" cy="18" r="2" fill="{color}"/></svg>',
+        "kanban": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg>',
+        "samples": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M9 3v6l-3 12h12l-3-12V3"/><path d="M8 3h8"/><path d="M7 15h10"/></svg>',
+        "contacts": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
+        "news": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>',
+        "export": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>',
+        "import": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M12 15V3m0 12l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>',
+        "webhook": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 003 3h6"/></svg>',
+        "alert": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
+        
+        # Actions
+        "chevron": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>',
+        "chevron_left": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>',
+        "plus": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+        "delete": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>',
+        "save": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>',
+        "edit": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+        "close": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+        
+        # Business
+        "flask": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M9 3v6l-3 12h12l-3-12V3"/><path d="M8 3h8"/><path d="M7 15h10"/></svg>',
+        "target": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+        "briefcase": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>',
+        "building": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01"/></svg>',
+        "globe": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
+        "star": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>',
+        
+        # Communication
+        "mail": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg>',
+        "phone": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>',
+        "calendar": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+        "message": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+        "note": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>',
+        
+        # Status
+        "check": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>',
+        "check_circle": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>',
+        "warning": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        "info": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        
+        # Social
+        "linkedin": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="{color}"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 6a2 2 0 100-4 2 2 0 000 4z"/></svg>',
+        "user": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
     }
     return icons.get(name, "")
 
@@ -951,9 +983,13 @@ def show_prospect_modal(pid, data):
         # Action buttons (Hunter AI, Brief R&D)
         bc1, bc2 = st.columns(2)
         with bc1:
-            st.button("🎯 Hunter AI", key=f"hunter_{pid}", use_container_width=True)
+            st.markdown(f'<div style="margin-bottom: 4px;">', unsafe_allow_html=True)
+            st.button(f"Hunter AI", key=f"hunter_{pid}", use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         with bc2:
-            st.button("📋 Brief R&D", key=f"brief_{pid}", use_container_width=True)
+            st.markdown(f'<div style="margin-bottom: 4px;">', unsafe_allow_html=True)
+            st.button(f"Brief R&D", key=f"brief_{pid}", use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("<hr style='margin: 16px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
     
@@ -1029,7 +1065,7 @@ def show_prospect_modal(pid, data):
     # RIGHT COLUMN - TABS
     # ─────────────────────────────────────────────────────────
     with col_right:
-        tab1, tab2, tab3 = st.tabs(["📋 Contexte & Technique", "🧪 Suivi Échantillons", "📓 Journal d'Activité"])
+        tab1, tab2, tab3 = st.tabs(["Contexte & Technique", "Suivi Échantillons", "Journal d'Activité"])
         
         # ── TAB 1: Contexte & Technique ──
         with tab1:
@@ -1098,7 +1134,7 @@ def show_prospect_modal(pid, data):
             
             st.markdown("<hr style='margin: 20px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
             
-            st.markdown('<p class="form-label">➕ AJOUTER UN ÉCHANTILLON</p>', unsafe_allow_html=True)
+            st.markdown(f'<p class="form-label" style="display: flex; align-items: center; gap: 6px;">{get_icon("plus", "#374151", 14)} AJOUTER UN ÉCHANTILLON</p>', unsafe_allow_html=True)
             asc1, asc2, asc3 = st.columns([2, 1.5, 0.8])
             with asc1:
                 s_ref = st.text_input("ref", key=f"sr_{pid}", placeholder="Référence / Lot", label_visibility="collapsed")
@@ -1130,11 +1166,11 @@ def show_prospect_modal(pid, data):
                 """, unsafe_allow_html=True)
             else:
                 for _, act in activities_df.head(5).iterrows():
-                    icon = "📧" if act["type"] == "Email" else "📞" if act["type"] == "Appel" else "📅" if act["type"] == "RDV" else "📝"
+                    act_icon = get_icon("mail", "#6B7280", 16) if act["type"] == "Email" else get_icon("phone", "#6B7280", 16) if act["type"] == "Appel" else get_icon("calendar", "#6B7280", 16) if act["type"] == "RDV" else get_icon("note", "#6B7280", 16)
                     st.markdown(f"""
                         <div style="padding: 12px; background: #F9FAFB; border-radius: 8px; margin-bottom: 8px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                <span style="font-weight: 600; font-size: 13px; color: #374151;">{icon} {act['type']}</span>
+                                <span style="font-weight: 600; font-size: 13px; color: #374151; display: flex; align-items: center; gap: 6px;">{act_icon} {act['type']}</span>
                                 <span style="font-size: 11px; color: #9CA3AF; font-family: 'JetBrains Mono', monospace;">{act['date'][:10]}</span>
                             </div>
                             <p style="font-size: 13px; color: #6B7280; margin: 0;">{act['content'][:100]}{'...' if len(act['content']) > 100 else ''}</p>
@@ -1143,7 +1179,7 @@ def show_prospect_modal(pid, data):
             
             st.markdown("<hr style='margin: 20px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
             
-            st.markdown('<p class="form-label">➕ AJOUTER UNE ACTIVITÉ</p>', unsafe_allow_html=True)
+            st.markdown(f'<p class="form-label" style="display: flex; align-items: center; gap: 6px;">{get_icon("plus", "#374151", 14)} AJOUTER UNE ACTIVITÉ</p>', unsafe_allow_html=True)
             act_type = st.selectbox("type", ["Email", "Appel", "RDV", "Note"], key=f"at_{pid}", label_visibility="collapsed")
             act_content = st.text_area("content", height=80, key=f"ac_{pid}", placeholder="Décrivez l'activité...", label_visibility="collapsed")
             
@@ -1168,13 +1204,13 @@ def show_prospect_modal(pid, data):
     with fc1:
         # Delete button (danger)
         if not is_new:
-            if st.button("🗑️ Supprimer", key=f"del_{pid}", use_container_width=True):
+            if st.button("Supprimer", key=f"del_{pid}", use_container_width=True):
                 st.session_state[f"confirm_delete_{pid}"] = True
                 st.rerun()
     
     # Confirmation de suppression
     if st.session_state.get(f"confirm_delete_{pid}", False):
-        st.warning("⚠️ Êtes-vous sûr de vouloir supprimer ce projet ?")
+        st.warning("Êtes-vous sûr de vouloir supprimer ce projet ?")
         dc1, dc2 = st.columns(2)
         with dc1:
             if st.button("Oui, supprimer", type="primary", key=f"confirm_yes_{pid}"):
@@ -1200,7 +1236,7 @@ def show_prospect_modal(pid, data):
                 st.rerun()
         
         with fc4:
-            if st.button("💾 Enregistrer", type="primary", key=f"save_{pid}", use_container_width=True):
+            if st.button("Enregistrer", type="primary", key=f"save_{pid}", use_container_width=True):
                 try:
                     get_supabase().table("prospects").update({
                         "company_name": name,
@@ -1215,7 +1251,7 @@ def show_prospect_modal(pid, data):
                         "last_action_date": datetime.now().isoformat(),
                     }).eq("id", pid).execute()
                     
-                    st.success("✅ Projet enregistré")
+                    st.toast("Projet enregistré avec succès!")
                     time.sleep(0.5)
                     safe_del("active_prospect_id")
                     reset_pipeline()
@@ -1319,9 +1355,11 @@ def render_sidebar():
 
 def page_pipeline():
     # Header
-    st.markdown("""
+    st.markdown(f"""
         <div style="margin-bottom: 24px;">
-            <h1 style="font-size: 24px; font-weight: 700; color: #111827; margin: 0;">Pipeline Food & Ingrédients</h1>
+            <h1 style="font-size: 24px; font-weight: 700; color: #111827; margin: 0; display: flex; align-items: center; gap: 10px;">
+                {get_icon("pipeline", "#1E3F35", 28)} Pipeline Food & Ingrédients
+            </h1>
             <p style="font-size: 14px; color: #6B7280; margin: 4px 0 0;">Vue complète de tous vos projets en cours</p>
         </div>
     """, unsafe_allow_html=True)
@@ -1443,7 +1481,7 @@ def page_pipeline():
 # =============================================================================
 
 def page_dashboard():
-    st.markdown('<h1 style="font-size: 24px; font-weight: 700;">📊 Tableau de Bord</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("dashboard", "#1E3F35", 28)} Tableau de Bord</h1>', unsafe_allow_html=True)
     
     df = get_prospects()
     if df.empty:
@@ -1473,7 +1511,7 @@ def page_dashboard():
             st.plotly_chart(fig, use_container_width=True)
 
 def page_kanban():
-    st.markdown('<h1 style="font-size: 24px; font-weight: 700;">▦ Kanban Board</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("kanban", "#1E3F35", 28)} Kanban Board</h1>', unsafe_allow_html=True)
     
     df = get_prospects()
     if df.empty:
@@ -1498,7 +1536,7 @@ def page_kanban():
             for _, row in df[df["status"] == stage].iterrows():
                 with st.container(border=True):
                     st.markdown(f"**{row['company_name']}**")
-                    st.caption(f"🌍 {row.get('country', 'N/A')} · {int(row.get('potential_volume', 0))} T")
+                    st.markdown(f'<span style="font-size: 12px; color: #6B7280;">{get_icon("globe", "#9CA3AF", 14)} {row.get("country", "N/A")} · {int(row.get("potential_volume", 0))} T</span>', unsafe_allow_html=True)
                     
                     bc1, bc2, bc3 = st.columns([1, 2, 1])
                     with bc1:
@@ -1515,7 +1553,7 @@ def page_kanban():
                             st.rerun()
 
 def page_samples():
-    st.markdown('<h1 style="font-size: 24px; font-weight: 700;">🧪 Échantillons</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("flask", "#1E3F35", 28)} Échantillons</h1>', unsafe_allow_html=True)
     
     try:
         samp = pd.DataFrame(get_supabase().table("samples").select("*, prospects(company_name)").execute().data)
@@ -1528,7 +1566,7 @@ def page_samples():
         st.info("Aucun échantillon")
 
 def page_contacts():
-    st.markdown('<h1 style="font-size: 24px; font-weight: 700;">👤 Contacts</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("contacts", "#1E3F35", 28)} Contacts</h1>', unsafe_allow_html=True)
     
     try:
         cons = pd.DataFrame(get_supabase().table("contacts").select("*, prospects(company_name)").execute().data)
@@ -1541,16 +1579,16 @@ def page_contacts():
         st.info("Aucun contact")
 
 def page_news():
-    st.markdown('<h1 style="font-size: 24px; font-weight: 700;">📰 Veille IA</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("news", "#1E3F35", 28)} Veille IA</h1>', unsafe_allow_html=True)
     st.info("Veille stratégique via Perplexity AI - Configuration requise")
 
 def page_excel():
-    st.markdown('<h1 style="font-size: 24px; font-weight: 700;">📥 Import / Export</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("export", "#1E3F35", 28)} Import / Export</h1>', unsafe_allow_html=True)
     
     c1, c2 = st.columns(2)
     with c1:
         with st.container(border=True):
-            st.markdown("**📤 Export**")
+            st.markdown(f'<p style="font-weight: 600; display: flex; align-items: center; gap: 8px;">{get_icon("export", "#1E3F35", 18)} Export</p>', unsafe_allow_html=True)
             df = get_prospects()
             if not df.empty:
                 buffer = BytesIO()
@@ -1562,21 +1600,21 @@ def page_excel():
     
     with c2:
         with st.container(border=True):
-            st.markdown("**📥 Import**")
+            st.markdown(f'<p style="font-weight: 600; display: flex; align-items: center; gap: 8px;">{get_icon("import", "#1E3F35", 18)} Import</p>', unsafe_allow_html=True)
             uploaded = st.file_uploader("Fichier Excel", type=["xlsx"], label_visibility="collapsed")
             if uploaded and st.button("Importer", type="primary"):
                 st.success("Import réussi")
 
 def page_webhooks():
-    st.markdown('<h1 style="font-size: 24px; font-weight: 700;">🔗 Webhooks</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("webhook", "#1E3F35", 28)} Webhooks</h1>', unsafe_allow_html=True)
     st.code("https://your-app.streamlit.io/api/webhook/leads")
     st.info("Configurez ce webhook dans Make.com pour recevoir des leads automatiquement")
 
 def page_alertes():
-    st.markdown('<h1 style="font-size: 24px; font-weight: 700;">🔔 Alertes</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("alert", "#1E3F35", 28)} Alertes</h1>', unsafe_allow_html=True)
     
     # Retention alerts
-    st.markdown("**⚠️ Clients sans contact (45+ jours)**")
+    st.markdown(f'<p style="font-weight: 600; display: flex; align-items: center; gap: 8px; margin-top: 16px;">{get_icon("warning", "#F59E0B", 18)} Clients sans contact (45+ jours)</p>', unsafe_allow_html=True)
     try:
         threshold = (datetime.now() - timedelta(days=45)).isoformat()
         alerts = pd.DataFrame(get_supabase().table("prospects").select("*").eq("status", "Client Actif").lte("last_action_date", threshold).execute().data)
@@ -1588,7 +1626,7 @@ def page_alertes():
                         st.session_state["active_prospect_id"] = a["id"]
                         st.rerun()
         else:
-            st.success("✅ Tous les clients sont à jour")
+            st.markdown(f'<p style="color: #10B981; display: flex; align-items: center; gap: 8px;">{get_icon("check_circle", "#10B981", 18)} Tous les clients sont à jour</p>', unsafe_allow_html=True)
     except:
         st.info("Aucune alerte")
 
