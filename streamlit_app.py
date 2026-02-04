@@ -178,56 +178,25 @@ CSS_THEME = """
     }
 
     /* ══════════════════════════════════════════════════════════
-       SIDEBAR - RADIO NAVIGATION (STYLE CUSTOM)
+       SIDEBAR - NAVIGATION BUTTONS (CACHÉS MAIS CLIQUABLES)
     ══════════════════════════════════════════════════════════ */
-    section[data-testid="stSidebar"] .stRadio > div {
-        gap: 4px !important;
-    }
-    
-    section[data-testid="stSidebar"] .stRadio > div > label {
-        display: flex !important;
-        align-items: center !important;
-        padding: 12px 16px !important;
-        margin: 2px 0 !important;
-        border-radius: 8px !important;
+    section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+        opacity: 0 !important;
+        position: absolute !important;
+        width: 100% !important;
+        height: 48px !important;
+        margin-top: -48px !important;
         cursor: pointer !important;
-        transition: all 0.1s ease !important;
-        background: transparent !important;
-        border-left: 3px solid transparent !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        color: #4B5563 !important;
-        min-height: 44px !important;
-    }
-    
-    section[data-testid="stSidebar"] .stRadio > div > label:hover {
-        background: #F3F4F6 !important;
-        color: var(--primary) !important;
-    }
-    
-    section[data-testid="stSidebar"] .stRadio > div > label[data-checked="true"],
-    section[data-testid="stSidebar"] .stRadio > div > label:has(input:checked) {
-        background: #ECFDF5 !important;
-        color: var(--primary) !important;
-        font-weight: 600 !important;
-        border-left: 3px solid #10B981 !important;
-        border-radius: 0 8px 8px 0 !important;
-    }
-    
-    /* Cacher le cercle du radio */
-    section[data-testid="stSidebar"] .stRadio > div > label > div:first-child {
-        display: none !important;
-    }
-    
-    /* Style du texte du radio */
-    section[data-testid="stSidebar"] .stRadio > div > label > div:last-child {
-        margin-left: 0 !important;
+        z-index: 100 !important;
     }
 
     /* ══════════════════════════════════════════════════════════
-       SIDEBAR - BOUTONS EXPORT/IMPORT
+       SIDEBAR - EXPORT/IMPORT BUTTONS
     ══════════════════════════════════════════════════════════ */
-    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button {
+    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button[kind="secondary"] {
+        opacity: 1 !important;
+        position: relative !important;
+        margin-top: 0 !important;
         background: white !important;
         border: 1px solid #E5E7EB !important;
         color: #6B7280 !important;
@@ -235,22 +204,13 @@ CSS_THEME = """
         font-weight: 500 !important;
         padding: 10px 12px !important;
         border-radius: 8px !important;
-        transition: all 0.1s ease !important;
+        height: auto !important;
     }
     
-    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
+    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button[kind="secondary"]:hover {
         background: #F9FAFB !important;
         border-color: var(--primary) !important;
         color: var(--primary) !important;
-    }
-
-    /* ══════════════════════════════════════════════════════════
-       SIDEBAR - SEPARATEURS
-    ══════════════════════════════════════════════════════════ */
-    section[data-testid="stSidebar"] hr {
-        margin: 16px 0 !important;
-        border: none !important;
-        border-top: 1px solid #E5E7EB !important;
     }
 
     /* ── NAV ITEMS - FLOATING STYLE (ancien, gardé pour compatibilité) ── */
@@ -1260,7 +1220,7 @@ def show_prospect_modal(pid, data):
                     st.error(f"Erreur: {str(e)}")
 
 # =============================================================================
-# 7. SIDEBAR NAVIGATION - BOUTONS STREAMLIT PURS
+# 7. SIDEBAR NAVIGATION - AVEC ICÔNES SVG
 # =============================================================================
 
 def render_sidebar():
@@ -1288,7 +1248,7 @@ def render_sidebar():
             except Exception as e:
                 st.error(f"Erreur: {e}")
         
-        st.markdown("---")
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
         
         # ── NAVIGATION ──
         if 'selected_page' not in st.session_state:
@@ -1296,56 +1256,81 @@ def render_sidebar():
         
         alert_count = count_alerts()
         
-        # Navigation avec radio buttons (plus fiable)
-        pages = {
-            "📊  Tableau de Bord": "Dashboard",
-            "📋  Pipeline": "Pipeline", 
-            "▦  Kanban": "Kanban",
-            "🧪  Échantillons": "Samples",
-            "👤  Contacts": "Contacts",
-            "📰  Veille IA": "News",
-            "📥  Import / Export": "Excel",
-            "🔗  Webhooks": "Webhooks",
-            f"🔔  À Relancer ({alert_count})" if alert_count > 0 else "🔔  À Relancer": "Alertes",
-        }
+        # Items de navigation avec icônes SVG
+        nav_items = [
+            ("Dashboard", "dashboard", "Tableau de Bord"),
+            ("Pipeline", "pipeline", "Pipeline"),
+            ("Kanban", "kanban", "Kanban"),
+            ("Samples", "samples", "Échantillons"),
+            ("Contacts", "contacts", "Contacts"),
+            ("News", "news", "Veille IA"),
+            ("Excel", "export", "Import / Export"),
+            ("Webhooks", "webhook", "Webhooks"),
+            ("Alertes", "alert", f"À Relancer ({alert_count})" if alert_count > 0 else "À Relancer"),
+        ]
         
-        # Trouver l'index actuel
-        current_index = 0
-        page_keys = list(pages.values())
-        if st.session_state.selected_page in page_keys:
-            current_index = page_keys.index(st.session_state.selected_page)
+        for page_key, icon_key, label in nav_items:
+            is_active = st.session_state.selected_page == page_key
+            icon_color = "#1E3F35" if is_active else "#6B7280"
+            bg_color = "#ECFDF5" if is_active else "transparent"
+            text_color = "#1E3F35" if is_active else "#4B5563"
+            font_weight = "600" if is_active else "500"
+            border_style = "border-left: 3px solid #10B981;" if is_active else "border-left: 3px solid transparent;"
+            
+            # Afficher l'item avec icône SVG
+            st.markdown(f"""
+                <div onclick="document.querySelector('[data-testid=\\'stButton\\'] button[kind=\\'secondary\\']:nth-of-type({nav_items.index((page_key, icon_key, label)) + 1})').click()" 
+                     style="
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px 16px;
+                    margin: 2px 0;
+                    background: {bg_color};
+                    {border_style}
+                    border-radius: 0 8px 8px 0;
+                    cursor: pointer;
+                    transition: all 0.15s ease;
+                ">
+                    <div style="display: flex; align-items: center; justify-content: center; width: 20px; height: 20px;">
+                        {get_icon(icon_key, icon_color)}
+                    </div>
+                    <span style="font-size: 14px; font-weight: {font_weight}; color: {text_color};">{label}</span>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Bouton caché pour gérer le clic
+            if st.button(label, key=f"nav_{page_key}", use_container_width=True):
+                st.session_state.selected_page = page_key
+                st.rerun()
         
-        selected_label = st.radio(
-            "Navigation",
-            options=list(pages.keys()),
-            index=current_index,
-            key="main_navigation",
-            label_visibility="collapsed"
-        )
-        
-        # Mettre à jour la page sélectionnée
-        new_page = pages[selected_label]
-        if new_page != st.session_state.selected_page:
-            st.session_state.selected_page = new_page
-            st.rerun()
-        
-        st.markdown("---")
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
         
         # ── DATA SECTION ──
-        st.caption("DONNÉES")
+        st.markdown(f"""
+            <p style="font-size: 11px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; 
+                      letter-spacing: 0.5px; padding: 0 16px; margin: 0 0 8px 0;">Données</p>
+        """, unsafe_allow_html=True)
+        
         col_exp, col_imp = st.columns(2)
         with col_exp:
-            if st.button("📤 Export", key="btn_export", use_container_width=True):
+            if st.button("Export", key="btn_export", use_container_width=True):
                 st.session_state.selected_page = "Excel"
                 st.rerun()
         with col_imp:
-            if st.button("📥 Import", key="btn_import", use_container_width=True):
+            if st.button("Import", key="btn_import", use_container_width=True):
                 st.session_state.selected_page = "Excel"
                 st.rerun()
         
         # Footer
-        st.markdown("---")
-        st.caption("👤 Utilisateur connecté")
+        st.markdown(f"""
+            <div style="padding: 16px; border-top: 1px solid #E5E7EB; margin-top: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    {get_icon("user", "#9CA3AF", 16)}
+                    <span style="font-size: 12px; color: #9CA3AF;">Utilisateur connecté</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
         
         return st.session_state.selected_page
 
