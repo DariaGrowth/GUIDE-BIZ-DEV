@@ -138,42 +138,43 @@ CSS_THEME = """
         font-size: 14px !important;
         transition: all 0.15s ease !important;
         box-shadow: 0 2px 4px rgba(30,63,53,0.1) !important;
-        margin-bottom: 4px !important;
     }
     
     section[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
         background: var(--primary-light) !important;
-        transform: translateY(-1px) !important;
         box-shadow: 0 4px 12px rgba(30,63,53,0.2) !important;
     }
 
     /* ══════════════════════════════════════════════════════════
-       SIDEBAR - BOUTONS DE NAVIGATION (PLUS D'ESPACEMENT)
+       SIDEBAR - RADIO NAVIGATION (STYLE CUSTOM)
     ══════════════════════════════════════════════════════════ */
-    .nav-normal > div > button,
-    .nav-active > div > button {
-        width: 100% !important;
-        background: transparent !important;
-        border: none !important;
-        color: #4B5563 !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        padding: 14px 16px !important;
-        min-height: 48px !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
-        border-radius: 8px !important;
-        transition: all 0.1s ease !important;
-        margin: 3px 0 !important;
-        border-left: 3px solid transparent !important;
+    section[data-testid="stSidebar"] .stRadio > div {
+        gap: 4px !important;
     }
     
-    .nav-normal > div > button:hover {
+    section[data-testid="stSidebar"] .stRadio > div > label {
+        display: flex !important;
+        align-items: center !important;
+        padding: 12px 16px !important;
+        margin: 2px 0 !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+        transition: all 0.1s ease !important;
+        background: transparent !important;
+        border-left: 3px solid transparent !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #4B5563 !important;
+        min-height: 44px !important;
+    }
+    
+    section[data-testid="stSidebar"] .stRadio > div > label:hover {
         background: #F3F4F6 !important;
         color: var(--primary) !important;
     }
     
-    .nav-active > div > button {
+    section[data-testid="stSidebar"] .stRadio > div > label[data-checked="true"],
+    section[data-testid="stSidebar"] .stRadio > div > label:has(input:checked) {
         background: #ECFDF5 !important;
         color: var(--primary) !important;
         font-weight: 600 !important;
@@ -181,8 +182,14 @@ CSS_THEME = """
         border-radius: 0 8px 8px 0 !important;
     }
     
-    .nav-active > div > button:hover {
-        background: #D1FAE5 !important;
+    /* Cacher le cercle du radio */
+    section[data-testid="stSidebar"] .stRadio > div > label > div:first-child {
+        display: none !important;
+    }
+    
+    /* Style du texte du radio */
+    section[data-testid="stSidebar"] .stRadio > div > label > div:last-child {
+        margin-left: 0 !important;
     }
 
     /* ══════════════════════════════════════════════════════════
@@ -205,7 +212,16 @@ CSS_THEME = """
         color: var(--primary) !important;
     }
 
-    /* ── NAV ITEMS - FLOATING STYLE ── */
+    /* ══════════════════════════════════════════════════════════
+       SIDEBAR - SEPARATEURS
+    ══════════════════════════════════════════════════════════ */
+    section[data-testid="stSidebar"] hr {
+        margin: 16px 0 !important;
+        border: none !important;
+        border-top: 1px solid #E5E7EB !important;
+    }
+
+    /* ── NAV ITEMS - FLOATING STYLE (ancien, gardé pour compatibilité) ── */
     .nav-item {
         display: flex !important;
         align-items: center !important;
@@ -1208,7 +1224,7 @@ def show_prospect_modal(pid, data):
                     st.error(f"Erreur: {str(e)}")
 
 # =============================================================================
-# 7. SIDEBAR NAVIGATION - SIMPLE ET RÉACTIVE
+# 7. SIDEBAR NAVIGATION - BOUTONS STREAMLIT PURS
 # =============================================================================
 
 def render_sidebar():
@@ -1223,7 +1239,7 @@ def render_sidebar():
         """, unsafe_allow_html=True)
         
         # ── NOUVEAU PROJET BUTTON ──
-        if st.button("✦  Nouveau Projet", key="new_project_main", use_container_width=True, type="primary"):
+        if st.button("✦  Nouveau Projet", key="btn_new_project", use_container_width=True, type="primary"):
             try:
                 res = get_supabase().table("prospects").insert({
                     "company_name": "Nouveau Prospect",
@@ -1236,7 +1252,7 @@ def render_sidebar():
             except Exception as e:
                 st.error(f"Erreur: {e}")
         
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("---")
         
         # ── NAVIGATION ──
         if 'selected_page' not in st.session_state:
@@ -1244,58 +1260,56 @@ def render_sidebar():
         
         alert_count = count_alerts()
         
-        # Items de navigation - format simple avec emojis pour fiabilité
-        nav_items = [
-            ("Dashboard", "📊", "Tableau de Bord"),
-            ("Pipeline", "📋", "Pipeline"),
-            ("Kanban", "▦", "Kanban"),
-            ("Samples", "🧪", "Échantillons"),
-            ("Contacts", "👤", "Contacts"),
-            ("News", "📰", "Veille IA"),
-            ("Excel", "📥", "Import / Export"),
-            ("Webhooks", "🔗", "Webhooks"),
-            ("Alertes", "🔔", f"À Relancer ({alert_count})" if alert_count > 0 else "À Relancer"),
-        ]
+        # Navigation avec radio buttons (plus fiable)
+        pages = {
+            "📊  Tableau de Bord": "Dashboard",
+            "📋  Pipeline": "Pipeline", 
+            "▦  Kanban": "Kanban",
+            "🧪  Échantillons": "Samples",
+            "👤  Contacts": "Contacts",
+            "📰  Veille IA": "News",
+            "📥  Import / Export": "Excel",
+            "🔗  Webhooks": "Webhooks",
+            f"🔔  À Relancer ({alert_count})" if alert_count > 0 else "🔔  À Relancer": "Alertes",
+        }
         
-        for page_key, icon, label in nav_items:
-            is_active = st.session_state.selected_page == page_key
-            
-            # Utiliser une classe CSS différente selon l'état actif
-            if is_active:
-                st.markdown(f'<div class="nav-active">', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div class="nav-normal">', unsafe_allow_html=True)
-            
-            # Bouton Streamlit natif - plus réactif
-            if st.button(f"{icon}  {label}", key=f"nav_{page_key}", use_container_width=True):
-                st.session_state.selected_page = page_key
-                st.rerun()
-            
-            st.markdown('</div>', unsafe_allow_html=True)
+        # Trouver l'index actuel
+        current_index = 0
+        page_keys = list(pages.values())
+        if st.session_state.selected_page in page_keys:
+            current_index = page_keys.index(st.session_state.selected_page)
+        
+        selected_label = st.radio(
+            "Navigation",
+            options=list(pages.keys()),
+            index=current_index,
+            key="main_navigation",
+            label_visibility="collapsed"
+        )
+        
+        # Mettre à jour la page sélectionnée
+        new_page = pages[selected_label]
+        if new_page != st.session_state.selected_page:
+            st.session_state.selected_page = new_page
+            st.rerun()
+        
+        st.markdown("---")
         
         # ── DATA SECTION ──
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-        st.markdown("""
-            <p style="font-size: 11px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; 
-                      letter-spacing: 0.5px; padding: 0 8px; margin: 0 0 8px 0;">Données</p>
-        """, unsafe_allow_html=True)
-        
+        st.caption("DONNÉES")
         col_exp, col_imp = st.columns(2)
         with col_exp:
-            if st.button("📤 Export", key="export_data_btn", use_container_width=True):
+            if st.button("📤 Export", key="btn_export", use_container_width=True):
                 st.session_state.selected_page = "Excel"
                 st.rerun()
         with col_imp:
-            if st.button("📥 Import", key="import_data_btn", use_container_width=True):
+            if st.button("📥 Import", key="btn_import", use_container_width=True):
                 st.session_state.selected_page = "Excel"
                 st.rerun()
         
         # Footer
-        st.markdown("""
-            <div style="padding: 16px 8px; border-top: 1px solid #E5E7EB; margin-top: 24px;">
-                <p style="font-size: 12px; color: #9CA3AF; margin: 0;">👤 Utilisateur connecté</p>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown("---")
+        st.caption("👤 Utilisateur connecté")
         
         return st.session_state.selected_page
 
