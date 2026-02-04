@@ -1,6 +1,6 @@
 # =============================================================================
 # ING GROWTH AI — CRM Stratégique
-# Version 3.0 | UI/UX Optimisée | Pixel Perfect Design
+# Version 3.2 FINAL | UI/UX Optimisée | Tous bugs corrigés
 # =============================================================================
 
 import streamlit as st
@@ -19,6 +19,9 @@ from io import BytesIO
 # =============================================================================
 # SVG ICONS - DESIGN SYSTEM
 # =============================================================================
+
+# Favicon SVG
+FAVICON_SVG = """<svg width="32" height="32" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="56" height="56" rx="12" fill="#1E3F35"/><path d="M28 12c-3 7-9 11-16 11 7 3 13 9 16 16 3-7 9-13 16-16-7-3-13-6-16-11z" fill="white"/></svg>"""
 
 ICON_LOGO = """<svg width="40" height="40" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M28 4c-4 10-12 14-22 14 10 4 18 12 22 22 4-10 12-18 22-22-10-4-18-8-22-14z" fill="#1E3F35"/>
@@ -50,7 +53,7 @@ def get_icon(name, color="#6B7280"):
 
 st.set_page_config(
     page_title="ING Growth AI",
-    page_icon="🧬",
+    page_icon="data:image/svg+xml;utf8," + urllib.parse.quote(FAVICON_SVG),
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={"Get help": None, "Report a bug": None, "About": None},
@@ -509,15 +512,42 @@ CSS_THEME = """
         background: var(--bg-gray);
     }
 
-    /* Form Labels */
+    /* Form Labels - FIXED: visible et bien positionnés */
     .form-label {
-        font-size: 11px !important;
-        font-weight: 600 !important;
-        color: var(--text-muted) !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        color: #374151 !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.3px !important;
-        margin-bottom: 6px !important;
+        letter-spacing: 0.5px !important;
+        margin-bottom: 8px !important;
+        margin-top: 20px !important;
         display: block !important;
+        position: relative !important;
+        z-index: 10 !important;
+        background: transparent !important;
+        line-height: 1.4 !important;
+    }
+
+    .form-label-first {
+        margin-top: 0 !important;
+    }
+
+    /* Info box pour Salon/Source */
+    .info-box {
+        background: #F0FDF4 !important;
+        border: 1px solid #BBF7D0 !important;
+        border-radius: 10px !important;
+        padding: 14px 16px !important;
+        margin: 20px 0 8px 0 !important;
+    }
+
+    .info-box-label {
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        color: #166534 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        margin: 0 !important;
     }
 
     /* Form Inputs */
@@ -1175,21 +1205,10 @@ def render_sidebar():
         
         for key, icon, label in nav_items:
             is_active = st.session_state.selected_page == key
-            
-            # Style conditionnel pour l'élément actif
-            if is_active:
-                st.markdown(f"""
-                    <style>
-                        div[data-testid="stVerticalBlock"] button[kind="secondary"]:has([data-testid="stMarkdownContainer"]:contains("{label}")) {{
-                            background: #ECFDF5 !important;
-                            border-left: 3px solid #10B981 !important;
-                        }}
-                    </style>
-                """, unsafe_allow_html=True)
-            
             btn_style = "nav-btn-active" if is_active else "nav-btn"
+            
             st.markdown(f'<div class="{btn_style}">', unsafe_allow_html=True)
-            if st.button(f"{icon}  {label}", key=f"nav_{key}", use_container_width=True):
+            if st.button(f"{icon}  {label}", key=f"sidebar_nav_{key}", use_container_width=True):
                 st.session_state.selected_page = key
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
