@@ -564,15 +564,36 @@ CSS_THEME = """
     }
 
     /* ══════════════════════════════════════════════════════════
-       MODAL - FICHE PROJET
+       MODAL - FICHE PROJET (OVERLAY AVEC FOND FLOU)
     ══════════════════════════════════════════════════════════ */
-    div[data-testid="stDialog"] {
-        background: var(--bg-white) !important;
+    /* Fond flou derrière le modal */
+    div[data-testid="stDialog"]::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: -1;
     }
-
-    div[data-testid="stDialog"] > div {
-        padding: 0 !important;
-        max-width: 1000px !important;
+    
+    div[data-testid="stDialog"] > div:first-child {
+        background: rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+    }
+    
+    div[data-testid="stDialog"] > div > div {
+        background: var(--bg-white) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+        max-width: 900px !important;
+        max-height: 85vh !important;
+        overflow-y: auto !important;
+        margin: auto !important;
     }
 
     .modal-header {
@@ -617,15 +638,15 @@ CSS_THEME = """
         background: var(--bg-gray);
     }
 
-    /* Form Labels - FIXED: visible et bien positionnés */
+    /* Form Labels - FIXED: plus d'espace avec les champs */
     .form-label {
-        font-size: 12px !important;
+        font-size: 11px !important;
         font-weight: 700 !important;
         color: #374151 !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
-        margin-bottom: 8px !important;
-        margin-top: 20px !important;
+        margin-bottom: 10px !important;
+        margin-top: 0 !important;
         display: block !important;
         position: relative !important;
         z-index: 10 !important;
@@ -655,23 +676,41 @@ CSS_THEME = """
         margin: 0 !important;
     }
 
-    /* Form Inputs */
+    /* Form Inputs - avec plus d'espace */
+    .stTextInput > div,
+    .stTextArea > div,
+    .stSelectbox > div,
+    .stNumberInput > div {
+        margin-top: 4px !important;
+    }
+
     .stTextInput input,
     .stTextArea textarea,
-    .stSelectbox > div > div {
+    .stSelectbox > div > div,
+    .stNumberInput > div > div > input {
         border: 1px solid var(--border) !important;
         border-radius: 8px !important;
         font-size: 14px !important;
-        padding: 10px 12px !important;
+        padding: 12px 14px !important;
         background: var(--bg-white) !important;
         transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
     }
 
     .stTextInput input:focus,
-    .stTextArea textarea:focus {
+    .stTextArea textarea:focus,
+    .stSelectbox > div > div:focus-within {
         border-color: var(--primary) !important;
         box-shadow: 0 0 0 3px rgba(30,63,53,0.1) !important;
         outline: none !important;
+    }
+    
+    /* Selectbox dropdown visible */
+    .stSelectbox [data-baseweb="select"] {
+        background: white !important;
+    }
+    
+    .stSelectbox [data-baseweb="popover"] {
+        z-index: 9999 !important;
     }
 
     /* Tabs */
@@ -1006,26 +1045,26 @@ def show_prospect_modal(pid, data):
         st.markdown('<p class="form-label">SOCIÉTÉ / CLIENT</p>', unsafe_allow_html=True)
         name = st.text_input("company", value=data.get("company_name", ""), key=f"name_{pid}", label_visibility="collapsed", placeholder="Nom de la société")
         
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
         # Statut
         st.markdown('<p class="form-label">STATUT PIPELINE</p>', unsafe_allow_html=True)
-        current_status = data.get("status", "Prospection")
+        current_status = data.get("status") or "Prospection"
         stat_idx = STATUTS.index(current_status) if current_status in STATUTS else 0
-        stat = st.selectbox("status", STATUTS, index=stat_idx, key=f"stat_{pid}", label_visibility="collapsed")
+        stat = st.selectbox("Statut", STATUTS, index=stat_idx, key=f"stat_{pid}", label_visibility="collapsed")
         
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
         # Pays / Potentiel
         c1, c2 = st.columns(2)
         with c1:
             st.markdown('<p class="form-label">PAYS</p>', unsafe_allow_html=True)
-            pays = st.text_input("country", value=data.get("country", ""), key=f"pays_{pid}", label_visibility="collapsed", placeholder="France")
+            pays = st.text_input("country", value=data.get("country") or "", key=f"pays_{pid}", label_visibility="collapsed", placeholder="France")
         with c2:
             st.markdown('<p class="form-label">POTENTIEL (T)</p>', unsafe_allow_html=True)
             vol = st.number_input("vol", value=float(data.get("potential_volume") or 0), key=f"vol_{pid}", label_visibility="collapsed", min_value=0.0)
         
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
         # Dernier Salon / Source
         st.markdown("""
@@ -1069,27 +1108,29 @@ def show_prospect_modal(pid, data):
         
         # ── TAB 1: Contexte & Technique ──
         with tab1:
-            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
             
             t1c1, t1c2 = st.columns(2)
             with t1c1:
                 st.markdown('<p class="form-label">INGRÉDIENT INGOOD</p>', unsafe_allow_html=True)
-                prod_idx = PRODUITS.index(data.get("product_interest")) if data.get("product_interest") in PRODUITS else 0
-                prod = st.selectbox("prod", PRODUITS, index=prod_idx, key=f"prod_{pid}", label_visibility="collapsed")
+                current_prod = data.get("product_interest") or ""
+                prod_idx = PRODUITS.index(current_prod) if current_prod in PRODUITS else 0
+                prod = st.selectbox("Ingrédient", PRODUITS, index=prod_idx, key=f"prod_{pid}", label_visibility="collapsed")
             with t1c2:
                 st.markdown('<p class="form-label">APPLICATION FINALE</p>', unsafe_allow_html=True)
-                app_idx = APPLICATIONS.index(data.get("segment")) if data.get("segment") in APPLICATIONS else 0
-                app = st.selectbox("app", APPLICATIONS, index=app_idx, key=f"app_{pid}", label_visibility="collapsed")
+                current_app = data.get("segment") or ""
+                app_idx = APPLICATIONS.index(current_app) if current_app in APPLICATIONS else 0
+                app = st.selectbox("Application", APPLICATIONS, index=app_idx, key=f"app_{pid}", label_visibility="collapsed")
             
-            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
             
             st.markdown('<p class="form-label">PROBLÉMATIQUE / BESOIN (PAIN POINT)</p>', unsafe_allow_html=True)
-            pain = st.text_area("pain", value=data.get("notes", ""), height=90, key=f"pain_{pid}", label_visibility="collapsed", placeholder="Ex: Volatilité prix œuf, Texture sèche, Besoin Clean Label...")
+            pain = st.text_area("pain", value=data.get("notes") or "", height=90, key=f"pain_{pid}", label_visibility="collapsed", placeholder="Ex: Volatilité prix œuf, Texture sèche, Besoin Clean Label...")
             
-            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
             
             st.markdown('<p class="form-label">NOTES TECHNIQUES R&D</p>', unsafe_allow_html=True)
-            tech = st.text_area("tech", value=data.get("tech_notes", ""), height=90, key=f"tech_{pid}", label_visibility="collapsed", placeholder="pH cible, Température cuisson, Dosage recommandé...")
+            tech = st.text_area("tech", value=data.get("tech_notes") or "", height=90, key=f"tech_{pid}", label_visibility="collapsed", placeholder="pH cible, Température cuisson, Dosage recommandé...")
         
         # ── TAB 2: Suivi Échantillons ──
         with tab2:
