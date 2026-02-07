@@ -178,79 +178,46 @@ CSS_THEME = """
     }
 
     /* ══════════════════════════════════════════════════════════
-       SIDEBAR - RADIO NAVIGATION (STYLE CUSTOM)
+       SIDEBAR - NAVIGATION BUTTONS
     ══════════════════════════════════════════════════════════ */
-    section[data-testid="stSidebar"] .stRadio > div {
-        gap: 4px !important;
-    }
-    
-    section[data-testid="stSidebar"] .stRadio > div > label {
-        display: flex !important;
-        align-items: center !important;
-        padding: 14px 16px !important;
-        margin: 3px 0 !important;
-        border-radius: 8px !important;
-        cursor: pointer !important;
-        transition: all 0.1s ease !important;
+    section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+        width: 100% !important;
         background: transparent !important;
-        border-left: 3px solid transparent !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
         color: #4B5563 !important;
-        min-height: 48px !important;
+        border: none !important;
+        border-left: 3px solid transparent !important;
+        border-radius: 8px !important;
+        padding: 12px 16px !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        transition: all 0.15s ease !important;
+        margin: 2px 0 !important;
     }
     
-    section[data-testid="stSidebar"] .stRadio > div > label:hover {
+    section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
         background: #F3F4F6 !important;
-        color: var(--primary) !important;
+        color: #1E3F35 !important;
     }
     
-    section[data-testid="stSidebar"] .stRadio > div > label[data-checked="true"],
-    section[data-testid="stSidebar"] .stRadio > div > label:has(input:checked) {
-        background: #ECFDF5 !important;
-        color: var(--primary) !important;
-        font-weight: 600 !important;
-        border-left: 3px solid #10B981 !important;
-        border-radius: 0 8px 8px 0 !important;
-    }
-    
-    /* Cacher le cercle du radio */
-    section[data-testid="stSidebar"] .stRadio > div > label > div:first-child {
-        display: none !important;
-    }
-    
-    /* Style du texte du radio */
-    section[data-testid="stSidebar"] .stRadio > div > label > div:last-child {
-        margin-left: 0 !important;
-    }
-
-    /* ══════════════════════════════════════════════════════════
-       SIDEBAR - BOUTONS EXPORT/IMPORT
-    ══════════════════════════════════════════════════════════ */
-    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button {
+    /* Boutons Export/Import dans les colonnes */
+    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button[kind="secondary"] {
         background: white !important;
         border: 1px solid #E5E7EB !important;
+        border-left: 1px solid #E5E7EB !important;
         color: #6B7280 !important;
         font-size: 13px !important;
-        font-weight: 500 !important;
         padding: 10px 12px !important;
         border-radius: 8px !important;
-        transition: all 0.1s ease !important;
+        text-align: center !important;
+        justify-content: center !important;
     }
     
-    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button:hover {
+    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button[kind="secondary"]:hover {
         background: #F9FAFB !important;
-        border-color: var(--primary) !important;
-        color: var(--primary) !important;
-    }
-
-    /* ══════════════════════════════════════════════════════════
-       SIDEBAR - SEPARATEURS
-    ══════════════════════════════════════════════════════════ */
-    section[data-testid="stSidebar"] hr {
-        margin: 16px 0 !important;
-        border: none !important;
-        border-top: 1px solid #E5E7EB !important;
+        border-color: #1E3F35 !important;
+        color: #1E3F35 !important;
     }
 
     /* ── NAV ITEMS - FLOATING STYLE (ancien, gardé pour compatibilité) ── */
@@ -1084,6 +1051,7 @@ def show_prospect_modal(pid, data):
     with col_left:
         # Société - avec callback pour mise à jour réactive
         st.markdown('<p class="form-label">SOCIÉTÉ / CLIENT</p>', unsafe_allow_html=True)
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
         st.text_input(
             "Société",
             key=f"{prefix}name",
@@ -1091,26 +1059,25 @@ def show_prospect_modal(pid, data):
             placeholder="Nom de la société"
         )
         
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
         
-        # Statut
+        # Statut - Sans index, Streamlit utilise la valeur de session_state
         st.markdown('<p class="form-label">STATUT PIPELINE</p>', unsafe_allow_html=True)
-        current_status = st.session_state.get(f"{prefix}status", "Prospection")
-        stat_idx = STATUTS.index(current_status) if current_status in STATUTS else 0
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
         st.selectbox(
             "Statut",
             STATUTS,
-            index=stat_idx,
             key=f"{prefix}status",
             label_visibility="collapsed"
         )
         
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
         
         # Pays / Potentiel
         c1, c2 = st.columns(2)
         with c1:
             st.markdown('<p class="form-label">PAYS</p>', unsafe_allow_html=True)
+            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
             st.text_input(
                 "Pays",
                 key=f"{prefix}country",
@@ -1119,6 +1086,7 @@ def show_prospect_modal(pid, data):
             )
         with c2:
             st.markdown('<p class="form-label">POTENTIEL (T)</p>', unsafe_allow_html=True)
+            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
             st.number_input(
                 "Volume",
                 key=f"{prefix}volume",
@@ -1127,7 +1095,7 @@ def show_prospect_modal(pid, data):
                 step=1.0
             )
         
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
         
         # Dernier Salon / Source
         st.markdown("""
@@ -1178,52 +1146,50 @@ def show_prospect_modal(pid, data):
         
         # ── TAB 1: Contexte & Technique ──
         with tab1:
-            st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
             
             t1c1, t1c2 = st.columns(2)
             with t1c1:
                 st.markdown('<p class="form-label">INGRÉDIENT INGOOD</p>', unsafe_allow_html=True)
-                current_prod = st.session_state.get(f"{prefix}product", "")
-                prod_idx = PRODUITS.index(current_prod) if current_prod in PRODUITS else 0
+                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
                 st.selectbox(
                     "Ingrédient",
                     PRODUITS,
-                    index=prod_idx,
                     key=f"{prefix}product",
                     label_visibility="collapsed",
                     format_func=lambda x: x if x else "Sélectionner..."
                 )
             with t1c2:
                 st.markdown('<p class="form-label">APPLICATION FINALE</p>', unsafe_allow_html=True)
-                current_app = st.session_state.get(f"{prefix}segment", "")
-                app_idx = APPLICATIONS.index(current_app) if current_app in APPLICATIONS else 0
+                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
                 st.selectbox(
                     "Application",
                     APPLICATIONS,
-                    index=app_idx,
                     key=f"{prefix}segment",
                     label_visibility="collapsed",
                     format_func=lambda x: x if x else "Sélectionner..."
                 )
             
-            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
             
             st.markdown('<p class="form-label">PROBLÉMATIQUE / BESOIN (PAIN POINT)</p>', unsafe_allow_html=True)
+            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
             st.text_area(
                 "Notes",
                 key=f"{prefix}notes",
-                height=90,
+                height=100,
                 label_visibility="collapsed",
                 placeholder="Ex: Volatilité prix œuf, Texture sèche, Besoin Clean Label..."
             )
             
-            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
             
             st.markdown('<p class="form-label">NOTES TECHNIQUES R&D</p>', unsafe_allow_html=True)
+            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
             st.text_area(
                 "Tech Notes",
                 key=f"{prefix}tech_notes",
-                height=90,
+                height=100,
                 label_visibility="collapsed",
                 placeholder="pH cible, Température cuisson, Dosage recommandé..."
             )
@@ -1375,7 +1341,7 @@ def show_prospect_modal(pid, data):
                 st.rerun()
         
         with fc3:
-            if st.button("💾 Enregistrer", type="primary", key=f"save_{pid}", use_container_width=True):
+            if st.button("Enregistrer & Fermer", type="primary", key=f"save_{pid}", use_container_width=True):
                 try:
                     # Récupérer les valeurs depuis session_state
                     save_data = {
@@ -1401,8 +1367,21 @@ def show_prospect_modal(pid, data):
                     st.rerun()
                 except Exception as e:
                     st.error(f"Erreur: {str(e)}")
-# 7. SIDEBAR NAVIGATION - AVEC ST.RADIO (STABLE) + ICÔNES SVG
+# 7. SIDEBAR NAVIGATION - AVEC ICÔNES SVG
 # =============================================================================
+
+# Icônes SVG pour la sidebar
+SIDEBAR_ICONS = {
+    "dashboard": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="8" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/><rect x="13" y="14" width="8" height="7" rx="2"/></svg>""",
+    "pipeline": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 8h-3"/><path d="M3 21c3 0 7-1 7-8"/><circle cx="17.5" cy="15" r="2.5"/><path d="M17.5 17.5V22"/></svg>""",
+    "kanban": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/><path d="M16 3v18"/></svg>""",
+    "samples": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.5L5 21h14l-5-11.5V2h-4z"/><path d="M8.5 15h7"/></svg>""",
+    "contacts": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><circle cx="5" cy="19" r="2"/><line x1="7" y1="7" x2="10" y2="10"/><line x1="14" y1="14" x2="17" y2="17"/><line x1="17" y1="7" x2="14" y2="10"/><line x1="10" y1="14" x2="7" y2="17"/></svg>""",
+    "news": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7V5M12 19v-2M7 12H5M19 12h-2"/></svg>""",
+    "excel": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="m9 12 3 3-3 3"/></svg>""",
+    "webhooks": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="19" r="3"/><circle cx="18" cy="19" r="3"/><path d="M9 19h3.5a3.5 3.5 0 0 0 3.5-3.5V8.5A3.5 3.5 0 0 1 19.5 5H21"/><path d="M6 16v-3.5A3.5 3.5 0 0 1 9.5 9H15"/></svg>""",
+    "alerts": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>""",
+}
 
 def render_sidebar():
     with st.sidebar:
@@ -1429,7 +1408,7 @@ def render_sidebar():
             except Exception as e:
                 st.error(f"Erreur: {e}")
         
-        st.markdown("---")
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
         
         # ── NAVIGATION ──
         if 'selected_page' not in st.session_state:
@@ -1437,42 +1416,55 @@ def render_sidebar():
         
         alert_count = count_alerts()
         
-        # Icônes SVG affichées dans le menu (via CSS custom pour st.radio)
-        # On utilise des caractères Unicode spéciaux comme préfixe pour différencier
-        pages = {
-            "▣  Tableau de Bord": "Dashboard",
-            "☰  Pipeline": "Pipeline", 
-            "▦  Kanban": "Kanban",
-            "⚗  Échantillons": "Samples",
-            "◉  Contacts": "Contacts",
-            "◫  Veille IA": "News",
-            "⇅  Import / Export": "Excel",
-            "⚡ Webhooks": "Webhooks",
-            f"⚠  À Relancer ({alert_count})" if alert_count > 0 else "⚠  À Relancer": "Alertes",
-        }
+        # Items de navigation avec icônes SVG
+        nav_items = [
+            ("Dashboard", "dashboard", "Tableau de Bord"),
+            ("Pipeline", "pipeline", "Pipeline"),
+            ("Kanban", "kanban", "Kanban"),
+            ("Samples", "samples", "Échantillons"),
+            ("Contacts", "contacts", "Contacts"),
+            ("News", "news", "Veille IA"),
+            ("Excel", "excel", "Import / Export"),
+            ("Webhooks", "webhooks", "Webhooks"),
+            ("Alertes", "alerts", f"À Relancer ({alert_count})" if alert_count > 0 else "À Relancer"),
+        ]
         
-        # Trouver l'index actuel
-        current_index = 0
-        page_keys = list(pages.values())
-        if st.session_state.selected_page in page_keys:
-            current_index = page_keys.index(st.session_state.selected_page)
+        for page_key, icon_key, label in nav_items:
+            is_active = st.session_state.selected_page == page_key
+            icon_color = "#1E3F35" if is_active else "#6B7280"
+            bg_color = "#ECFDF5" if is_active else "transparent"
+            text_color = "#1E3F35" if is_active else "#4B5563"
+            font_weight = "600" if is_active else "500"
+            border_left = "3px solid #10B981" if is_active else "3px solid transparent"
+            border_radius = "0 8px 8px 0" if is_active else "8px"
+            
+            # Remplacer currentColor par la bonne couleur
+            icon_svg = SIDEBAR_ICONS.get(icon_key, "").replace("currentColor", icon_color)
+            
+            # Créer le bouton avec icône SVG
+            if st.button(
+                label,
+                key=f"nav_{page_key}",
+                use_container_width=True,
+                type="secondary"
+            ):
+                safe_del("active_prospect_id")
+                st.session_state.selected_page = page_key
+                st.rerun()
+            
+            # Injecter le style et l'icône via CSS/JS
+            st.markdown(f"""
+                <style>
+                    [data-testid="stSidebar"] button[key="nav_{page_key}"],
+                    [data-testid="stSidebar"] button:has(p:contains("{label}")) {{
+                        background: {bg_color} !important;
+                        border-left: {border_left} !important;
+                        border-radius: {border_radius} !important;
+                    }}
+                </style>
+            """, unsafe_allow_html=True)
         
-        selected_label = st.radio(
-            "Navigation",
-            options=list(pages.keys()),
-            index=current_index,
-            key="main_navigation",
-            label_visibility="collapsed"
-        )
-        
-        # Mettre à jour la page sélectionnée et nettoyer le state du modal
-        new_page = pages[selected_label]
-        if new_page != st.session_state.selected_page:
-            # Nettoyer le modal ouvert lors du changement de page
-            safe_del("active_prospect_id")
-            st.session_state.selected_page = new_page
-            st.rerun()
-        
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
         st.markdown("---")
         
         # ── DATA SECTION ──
