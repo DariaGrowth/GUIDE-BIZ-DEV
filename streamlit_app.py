@@ -553,14 +553,30 @@ CSS_THEME = """
         -webkit-backdrop-filter: blur(4px) !important;
     }
     
+    /* Modal plus large */
     div[data-testid="stDialog"] > div > div {
         background: var(--bg-white) !important;
         border-radius: 16px !important;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-        max-width: 900px !important;
-        max-height: 85vh !important;
+        max-width: 1100px !important;
+        width: 95vw !important;
+        max-height: 90vh !important;
         overflow-y: auto !important;
         margin: auto !important;
+        padding: 24px 32px !important;
+    }
+    
+    /* Bouton Supprimer en rouge */
+    div[data-testid="stDialog"] button[kind="secondary"]:first-of-type,
+    div[data-testid="stDialog"] .stButton:first-of-type button[kind="secondary"] {
+        background: #FEF2F2 !important;
+        color: #DC2626 !important;
+        border: 1px solid #FECACA !important;
+    }
+    
+    div[data-testid="stDialog"] button[kind="secondary"]:first-of-type:hover {
+        background: #FEE2E2 !important;
+        border-color: #DC2626 !important;
     }
 
     .modal-header {
@@ -968,42 +984,14 @@ def count_alerts():
         return 0
 
 # =============================================================================
-# 6. MODAL - FICHE PROJET (REFACTORISÉ AVEC SESSION STATE)
+# 6. MODAL - FICHE PROJET (CORRIGÉ)
 # =============================================================================
-
-def init_modal_state(pid, data):
-    """Initialise le session_state pour le modal si pas déjà fait"""
-    prefix = f"modal_{pid}_"
-    
-    # N'initialiser que si pas déjà fait
-    if f"{prefix}initialized" not in st.session_state:
-        st.session_state[f"{prefix}name"] = data.get("company_name") or ""
-        st.session_state[f"{prefix}status"] = data.get("status") or "Prospection"
-        st.session_state[f"{prefix}country"] = data.get("country") or ""
-        st.session_state[f"{prefix}volume"] = float(data.get("potential_volume") or 0)
-        st.session_state[f"{prefix}source"] = data.get("last_salon") or ""
-        st.session_state[f"{prefix}product"] = data.get("product_interest") or ""
-        st.session_state[f"{prefix}segment"] = data.get("segment") or ""
-        st.session_state[f"{prefix}notes"] = data.get("notes") or ""
-        st.session_state[f"{prefix}tech_notes"] = data.get("tech_notes") or ""
-        st.session_state[f"{prefix}initialized"] = True
-
-def clear_modal_state(pid):
-    """Nettoie le session_state du modal"""
-    prefix = f"modal_{pid}_"
-    keys_to_delete = [k for k in st.session_state.keys() if k.startswith(prefix)]
-    for k in keys_to_delete:
-        del st.session_state[k]
 
 @st.dialog("Fiche Projet", width="large")
 def show_prospect_modal(pid, data):
-    """Modal de fiche projet avec gestion d'état réactive"""
+    """Modal de fiche projet avec gestion d'état correcte"""
     pid = int(pid)
     is_new = data.get("company_name") == "Nouveau Prospect"
-    prefix = f"modal_{pid}_"
-    
-    # Initialiser le state
-    init_modal_state(pid, data)
     
     # Constants
     PRODUITS = ["", "LENGOOD® (Substitut Œuf)", "PEPTIPEA® (Protéine)", "NEWGOOD® (Nouveauté)"]
@@ -1011,130 +999,110 @@ def show_prospect_modal(pid, data):
     STATUTS = ["Prospection", "Qualification", "Échantillons en test", "Tests en cours", "Négociation", "Contrat", "Client Actif"]
     
     # ══════════════════════════════════════════════════════════
-    # HEADER - Réactif avec session_state
+    # HEADER
     # ══════════════════════════════════════════════════════════
-    h1, h2 = st.columns([3, 1])
-    with h1:
-        # Titre dynamique qui utilise le session_state
-        display_name = st.session_state.get(f"{prefix}name", "")
-        if not display_name or display_name == "Nouveau Prospect":
-            display_name = "Nouveau Projet"
-        
-        st.markdown(f"""
-            <div style="margin-bottom: 8px;">
-                <h2 style="font-size: 22px; font-weight: 700; color: #111827; margin: 0;">
-                    {display_name}
+    st.markdown(f"""
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+            <div>
+                <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin: 0;">
+                    {"Nouveau Projet" if is_new else data.get("company_name", "Projet")}
                 </h2>
-                <p style="font-size: 14px; color: #6B7280; margin: 4px 0 0;">
-                    Gestion et Suivi R&D
-                </p>
+                <p style="font-size: 14px; color: #6B7280; margin: 6px 0 0;">Gestion et Suivi R&D</p>
             </div>
-        """, unsafe_allow_html=True)
+        </div>
+    """, unsafe_allow_html=True)
     
-    with h2:
-        bc1, bc2 = st.columns(2)
-        with bc1:
-            st.button("Hunter AI", key=f"hunter_{pid}", use_container_width=True)
-        with bc2:
-            st.button("Brief R&D", key=f"brief_{pid}", use_container_width=True)
+    # Boutons d'action en haut
+    btn_col1, btn_col2, btn_col3 = st.columns([1, 1, 2])
+    with btn_col1:
+        st.button("🎯 Hunter AI", key=f"hunter_{pid}", use_container_width=True)
+    with btn_col2:
+        st.button("📋 Brief R&D", key=f"brief_{pid}", use_container_width=True)
     
-    st.markdown("<hr style='margin: 16px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin: 20px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
     
     # ══════════════════════════════════════════════════════════
     # BODY - TWO COLUMNS
     # ══════════════════════════════════════════════════════════
-    col_left, col_right = st.columns([2, 3], gap="large")
+    col_left, col_right = st.columns([1, 1.2], gap="large")
     
     # ─────────────────────────────────────────────────────────
-    # LEFT COLUMN - FORM FIELDS avec session_state
+    # LEFT COLUMN - FORM FIELDS
     # ─────────────────────────────────────────────────────────
     with col_left:
-        # Société - avec callback pour mise à jour réactive
-        st.markdown('<p class="form-label">SOCIÉTÉ / CLIENT</p>', unsafe_allow_html=True)
-        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-        st.text_input(
+        # Société
+        st.markdown("**SOCIÉTÉ / CLIENT**")
+        name = st.text_input(
             "Société",
-            key=f"{prefix}name",
+            value=data.get("company_name") or "",
+            key=f"inp_name_{pid}",
             label_visibility="collapsed",
             placeholder="Nom de la société"
         )
         
-        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
         
-        # Statut - Sans index, Streamlit utilise la valeur de session_state
-        st.markdown('<p class="form-label">STATUT PIPELINE</p>', unsafe_allow_html=True)
-        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-        st.selectbox(
+        # Statut - IMPORTANT: utiliser value au lieu de index pour éviter les conflits
+        st.markdown("**STATUT PIPELINE**")
+        current_status = data.get("status") or "Prospection"
+        stat_index = STATUTS.index(current_status) if current_status in STATUTS else 0
+        stat = st.selectbox(
             "Statut",
-            STATUTS,
-            key=f"{prefix}status",
+            options=STATUTS,
+            index=stat_index,
+            key=f"inp_stat_{pid}",
             label_visibility="collapsed"
         )
         
-        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
         
         # Pays / Potentiel
         c1, c2 = st.columns(2)
         with c1:
-            st.markdown('<p class="form-label">PAYS</p>', unsafe_allow_html=True)
-            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-            st.text_input(
+            st.markdown("**PAYS**")
+            pays = st.text_input(
                 "Pays",
-                key=f"{prefix}country",
+                value=data.get("country") or "",
+                key=f"inp_pays_{pid}",
                 label_visibility="collapsed",
                 placeholder="France"
             )
         with c2:
-            st.markdown('<p class="form-label">POTENTIEL (T)</p>', unsafe_allow_html=True)
-            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-            st.number_input(
+            st.markdown("**POTENTIEL (T)**")
+            vol = st.number_input(
                 "Volume",
-                key=f"{prefix}volume",
+                value=float(data.get("potential_volume") or 0),
+                key=f"inp_vol_{pid}",
                 label_visibility="collapsed",
                 min_value=0.0,
                 step=1.0
             )
         
-        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
         
         # Dernier Salon / Source
         st.markdown("""
-            <div style="background: #F0FDF4; padding: 14px 16px; border-radius: 10px; border: 1px solid #BBF7D0;">
-                <p style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">📍 DERNIER SALON / SOURCE</p>
+            <div style="background: #F0FDF4; padding: 12px 16px; border-radius: 8px; border: 1px solid #BBF7D0; margin-bottom: 10px;">
+                <span style="font-size: 12px; font-weight: 700; color: #166534;">📍 DERNIER SALON / SOURCE</span>
             </div>
         """, unsafe_allow_html=True)
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        st.text_input(
+        source = st.text_input(
             "Source",
-            key=f"{prefix}source",
+            value=data.get("last_salon") or "",
+            key=f"inp_source_{pid}",
             label_visibility="collapsed",
             placeholder="ex: CFIA 2026, LinkedIn, Prospection directe"
         )
         
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
         
         # LinkedIn Button
-        st.markdown('<p class="form-label">🔗 SOCIAL SELLING</p>', unsafe_allow_html=True)
-        company_name = st.session_state.get(f"{prefix}name", "")
+        st.markdown("**🔗 SOCIAL SELLING**")
+        company_name = name or data.get("company_name", "")
         if company_name and company_name != "Nouveau Prospect":
             linkedin_query = urllib.parse.quote(f'{company_name} "R&D" OR "Purchasing" OR "Achats"')
             linkedin_url = f"https://www.linkedin.com/search/results/people/?keywords={linkedin_query}"
-            st.markdown(f"""
-                <a href="{linkedin_url}" target="_blank" style="
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 8px;
-                    background: #0A66C2;
-                    color: white;
-                    padding: 10px 16px;
-                    border-radius: 8px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    text-decoration: none;
-                ">
-                    <span style="font-weight: 700;">in</span> Rechercher contacts R&D
-                </a>
-            """, unsafe_allow_html=True)
+            st.link_button("🔍 Rechercher contacts R&D", linkedin_url, use_container_width=True)
         else:
             st.caption("Renseignez le nom de la société pour activer")
     
@@ -1142,85 +1110,78 @@ def show_prospect_modal(pid, data):
     # RIGHT COLUMN - TABS
     # ─────────────────────────────────────────────────────────
     with col_right:
-        tab1, tab2, tab3 = st.tabs(["Contexte & Technique", "Suivi Échantillons", "Journal d'Activité"])
+        tab1, tab2, tab3 = st.tabs(["📝 Contexte & Technique", "🧪 Suivi Échantillons", "📅 Journal d'Activité"])
         
         # ── TAB 1: Contexte & Technique ──
         with tab1:
-            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
             
             t1c1, t1c2 = st.columns(2)
             with t1c1:
-                st.markdown('<p class="form-label">INGRÉDIENT INGOOD</p>', unsafe_allow_html=True)
-                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-                st.selectbox(
+                st.markdown("**INGRÉDIENT INGOOD**")
+                current_prod = data.get("product_interest") or ""
+                prod_index = PRODUITS.index(current_prod) if current_prod in PRODUITS else 0
+                prod = st.selectbox(
                     "Ingrédient",
-                    PRODUITS,
-                    key=f"{prefix}product",
+                    options=PRODUITS,
+                    index=prod_index,
+                    key=f"inp_prod_{pid}",
                     label_visibility="collapsed",
                     format_func=lambda x: x if x else "Sélectionner..."
                 )
             with t1c2:
-                st.markdown('<p class="form-label">APPLICATION FINALE</p>', unsafe_allow_html=True)
-                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-                st.selectbox(
+                st.markdown("**APPLICATION FINALE**")
+                current_app = data.get("segment") or ""
+                app_index = APPLICATIONS.index(current_app) if current_app in APPLICATIONS else 0
+                app = st.selectbox(
                     "Application",
-                    APPLICATIONS,
-                    key=f"{prefix}segment",
+                    options=APPLICATIONS,
+                    index=app_index,
+                    key=f"inp_app_{pid}",
                     label_visibility="collapsed",
                     format_func=lambda x: x if x else "Sélectionner..."
                 )
             
-            st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
             
-            st.markdown('<p class="form-label">PROBLÉMATIQUE / BESOIN (PAIN POINT)</p>', unsafe_allow_html=True)
-            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-            st.text_area(
+            st.markdown("**PROBLÉMATIQUE / BESOIN (PAIN POINT)**")
+            pain = st.text_area(
                 "Notes",
-                key=f"{prefix}notes",
+                value=data.get("notes") or "",
                 height=100,
+                key=f"inp_pain_{pid}",
                 label_visibility="collapsed",
                 placeholder="Ex: Volatilité prix œuf, Texture sèche, Besoin Clean Label..."
             )
             
-            st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
             
-            st.markdown('<p class="form-label">NOTES TECHNIQUES R&D</p>', unsafe_allow_html=True)
-            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-            st.text_area(
+            st.markdown("**NOTES TECHNIQUES R&D**")
+            tech = st.text_area(
                 "Tech Notes",
-                key=f"{prefix}tech_notes",
+                value=data.get("tech_notes") or "",
                 height=100,
+                key=f"inp_tech_{pid}",
                 label_visibility="collapsed",
                 placeholder="pH cible, Température cuisson, Dosage recommandé..."
             )
         
         # ── TAB 2: Suivi Échantillons ──
         with tab2:
-            st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
             
             samples_df = get_sub_data("samples", pid)
             
             if samples_df.empty:
-                st.markdown("""
-                    <div style="text-align: center; padding: 40px 20px; color: #9CA3AF;">
-                        <p style="font-size: 14px; margin: 0;">Aucun échantillon envoyé</p>
-                        <p style="font-size: 12px; margin: 8px 0 0;">Ajoutez un échantillon ci-dessous</p>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.info("Aucun échantillon envoyé. Ajoutez-en un ci-dessous.")
             else:
                 S_OPTS = ["En test", "Validé", "Rejeté", "Perdu"]
                 for _, r in samples_df.iterrows():
                     with st.container(border=True):
                         sc1, sc2, sc3 = st.columns([3, 1.5, 0.5])
                         with sc1:
-                            st.markdown(f"""
-                                <div>
-                                    <span style="font-weight: 600; color: #111827;">{clean_prod_name(r['product_name'])}</span>
-                                    <span style="color: #6B7280; font-size: 13px;"> · {r['reference']}</span>
-                                    <br>
-                                    <span style="font-size: 12px; color: #9CA3AF;">{r['date_sent'][:10]}</span>
-                                </div>
-                            """, unsafe_allow_html=True)
+                            st.markdown(f"**{clean_prod_name(r['product_name'])}** · {r['reference']}")
+                            st.caption(f"Envoyé le {r['date_sent'][:10]}")
                         with sc2:
                             s_idx = S_OPTS.index(r["status"]) if r["status"] in S_OPTS else 0
                             new_s = st.selectbox("s", S_OPTS, index=s_idx, key=f"ss_{r['id']}", label_visibility="collapsed")
@@ -1235,58 +1196,47 @@ def show_prospect_modal(pid, data):
                         if new_fb != (r.get("feedback") or ""):
                             get_supabase().table("samples").update({"feedback": new_fb}).eq("id", r["id"]).execute()
             
-            st.markdown("<hr style='margin: 20px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
+            st.markdown("---")
             
-            st.markdown(f'<p class="form-label">{get_icon("plus", "#374151", 14)} AJOUTER UN ÉCHANTILLON</p>', unsafe_allow_html=True)
-            asc1, asc2, asc3 = st.columns([2.5, 2, 1])
+            st.markdown("**➕ AJOUTER UN ÉCHANTILLON**")
+            asc1, asc2 = st.columns([2, 1])
             with asc1:
                 s_ref = st.text_input("ref", key=f"sr_{pid}", placeholder="Référence / Lot", label_visibility="collapsed")
             with asc2:
                 s_prod = st.selectbox("sprod", PRODUITS[1:], key=f"sp_{pid}", label_visibility="collapsed")
-            with asc3:
-                if st.button("Ajouter", type="primary", key=f"add_s_{pid}", use_container_width=True):
-                    if s_ref.strip():
-                        get_supabase().table("samples").insert({
-                            "prospect_id": pid,
-                            "reference": s_ref,
-                            "product_name": s_prod,
-                            "status": "En test",
-                            "date_sent": datetime.now().isoformat(),
-                        }).execute()
-                        st.rerun()
+            
+            if st.button("➕ Ajouter l'échantillon", type="primary", key=f"add_s_{pid}"):
+                if s_ref.strip():
+                    get_supabase().table("samples").insert({
+                        "prospect_id": pid,
+                        "reference": s_ref,
+                        "product_name": s_prod,
+                        "status": "En test",
+                        "date_sent": datetime.now().isoformat(),
+                    }).execute()
+                    st.rerun()
         
         # ── TAB 3: Journal d'Activité ──
         with tab3:
-            st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
             
             activities_df = get_sub_data("activities", pid)
             
             if activities_df.empty:
-                st.markdown("""
-                    <div style="text-align: center; padding: 40px 20px; color: #9CA3AF;">
-                        <p style="font-size: 14px; margin: 0;">Aucune activité enregistrée</p>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.info("Aucune activité enregistrée.")
             else:
                 for _, act in activities_df.head(5).iterrows():
-                    act_icon = get_icon("mail", "#6B7280", 16) if act["type"] == "Email" else get_icon("phone", "#6B7280", 16) if act["type"] == "Appel" else get_icon("calendar", "#6B7280", 16) if act["type"] == "RDV" else get_icon("note", "#6B7280", 16)
-                    st.markdown(f"""
-                        <div style="padding: 12px; background: #F9FAFB; border-radius: 8px; margin-bottom: 8px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                <span style="font-weight: 600; font-size: 13px; color: #374151; display: flex; align-items: center; gap: 6px;">{act_icon} {act['type']}</span>
-                                <span style="font-size: 11px; color: #9CA3AF; font-family: 'JetBrains Mono', monospace;">{act['date'][:10]}</span>
-                            </div>
-                            <p style="font-size: 13px; color: #6B7280; margin: 0;">{act['content'][:100]}{'...' if len(act['content']) > 100 else ''}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    with st.container(border=True):
+                        st.markdown(f"**{act['type']}** · {act['date'][:10]}")
+                        st.write(act['content'][:150] + ('...' if len(act['content']) > 150 else ''))
             
-            st.markdown("<hr style='margin: 20px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
+            st.markdown("---")
             
-            st.markdown(f'<p class="form-label">{get_icon("plus", "#374151", 14)} AJOUTER UNE ACTIVITÉ</p>', unsafe_allow_html=True)
+            st.markdown("**➕ AJOUTER UNE ACTIVITÉ**")
             act_type = st.selectbox("type", ["Email", "Appel", "RDV", "Note"], key=f"at_{pid}", label_visibility="collapsed")
             act_content = st.text_area("content", height=80, key=f"ac_{pid}", placeholder="Décrivez l'activité...", label_visibility="collapsed")
             
-            if st.button("Enregistrer l'activité", type="primary", key=f"save_act_{pid}"):
+            if st.button("➕ Enregistrer l'activité", type="primary", key=f"save_act_{pid}"):
                 if act_content.strip():
                     get_supabase().table("activities").insert({
                         "prospect_id": pid,
@@ -1307,53 +1257,51 @@ def show_prospect_modal(pid, data):
         st.error("⚠️ Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.")
         dc1, dc2, dc3 = st.columns([1, 1, 2])
         with dc1:
-            if st.button("🗑 Oui, supprimer", type="primary", key=f"confirm_yes_{pid}", use_container_width=True):
+            if st.button("Oui, supprimer", type="primary", key=f"confirm_yes_{pid}", use_container_width=True):
                 get_supabase().table("samples").delete().eq("prospect_id", pid).execute()
                 get_supabase().table("activities").delete().eq("prospect_id", pid).execute()
                 get_supabase().table("contacts").delete().eq("prospect_id", pid).execute()
                 get_supabase().table("prospects").delete().eq("id", pid).execute()
-                clear_modal_state(pid)
                 safe_del(f"confirm_delete_{pid}")
                 safe_del("active_prospect_id")
                 reset_pipeline()
                 st.rerun()
         with dc2:
-            if st.button("Annuler", key=f"confirm_no_{pid}", use_container_width=True):
+            if st.button("Non, annuler", key=f"confirm_no_{pid}", use_container_width=True):
                 safe_del(f"confirm_delete_{pid}")
                 st.rerun()
     else:
-        fc1, fc2, fc3 = st.columns([1, 1, 1.5])
+        # Boutons principaux
+        fc1, fc2, fc3, fc4 = st.columns([1, 1, 1, 1.5])
         
         with fc1:
-            # Delete button (danger) - uniquement pour projets existants
+            # Bouton Supprimer (rouge)
             if not is_new:
-                if st.button("🗑 Supprimer", key=f"del_{pid}", use_container_width=True, type="secondary"):
+                delete_clicked = st.button("🗑️ Supprimer", key=f"del_{pid}", use_container_width=True, type="secondary")
+                if delete_clicked:
                     st.session_state[f"confirm_delete_{pid}"] = True
                     st.rerun()
         
-        with fc2:
+        with fc3:
             if st.button("Annuler", key=f"cancel_{pid}", use_container_width=True):
                 if is_new:
-                    # Supprimer le prospect placeholder
                     get_supabase().table("prospects").delete().eq("id", pid).execute()
-                clear_modal_state(pid)
                 safe_del("active_prospect_id")
                 st.rerun()
         
-        with fc3:
+        with fc4:
             if st.button("Enregistrer & Fermer", type="primary", key=f"save_{pid}", use_container_width=True):
                 try:
-                    # Récupérer les valeurs depuis session_state
                     save_data = {
-                        "company_name": st.session_state.get(f"{prefix}name", ""),
-                        "status": st.session_state.get(f"{prefix}status", "Prospection"),
-                        "country": st.session_state.get(f"{prefix}country", ""),
-                        "potential_volume": st.session_state.get(f"{prefix}volume", 0),
-                        "last_salon": st.session_state.get(f"{prefix}source", ""),
-                        "product_interest": st.session_state.get(f"{prefix}product", ""),
-                        "segment": st.session_state.get(f"{prefix}segment", ""),
-                        "notes": st.session_state.get(f"{prefix}notes", ""),
-                        "tech_notes": st.session_state.get(f"{prefix}tech_notes", ""),
+                        "company_name": name,
+                        "status": stat,
+                        "country": pays,
+                        "potential_volume": vol,
+                        "last_salon": source,
+                        "product_interest": prod,
+                        "segment": app,
+                        "notes": pain,
+                        "tech_notes": tech,
                         "last_action_date": datetime.now().isoformat(),
                     }
                     
@@ -1361,7 +1309,6 @@ def show_prospect_modal(pid, data):
                     
                     st.success("✅ Projet enregistré")
                     time.sleep(0.5)
-                    clear_modal_state(pid)
                     safe_del("active_prospect_id")
                     reset_pipeline()
                     st.rerun()
