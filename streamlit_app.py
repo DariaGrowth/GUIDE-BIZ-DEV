@@ -1002,17 +1002,19 @@ def show_prospect_modal(pid, data):
     # CSS POUR ÉLARGIR LE MODAL ET AMÉLIORER L'ESPACEMENT
     # ══════════════════════════════════════════════════════════
     st.markdown("""
-        <style>
-            /* Modal plus large */
-            div[data-testid="stDialog"] > div > div {
-                max-width: 1200px !important;
-                width: 95vw !important;
-            }
-            
-            /* Espacement entre les labels et inputs */
-            .stTextInput, .stTextArea, .stSelectbox, .stNumberInput {
-                margin-bottom: 24px !important;
-            }
+    <style>
+        /* Modal plus large */
+        div[data-testid="stDialog"] > div > div {
+            max-width: 1200px !important;
+            width: 95vw !important;
+        }
+        
+        /* Espacement entre les labels et inputs - SANS AFFECTER LES SELECTBOX */
+        div[data-testid="stDialog"] .stTextInput,
+        div[data-testid="stDialog"] .stTextArea,
+        div[data-testid="stDialog"] .stNumberInput {
+            margin-bottom: 20px !important;
+        }
             
             /* Bouton Supprimer en ROUGE */
             button[key*="del_"]:not([type="primary"]) {
