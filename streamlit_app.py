@@ -1100,7 +1100,7 @@ def show_prospect_modal(pid, data):
     # ─────────────────────────────────────────────────────────
     with col_left:
         # Société
-         st.markdown('<p class="form-label">SOCIÉTÉ / CLIENT</p>', unsafe_allow_html=True)
+        st.markdown('<p class="form-label">SOCIÉTÉ / CLIENT</p>', unsafe_allow_html=True)
         name = st.text_input("company", value=st.session_state[f"modal_name_{pid}"], key=f"name_{pid}", label_visibility="collapsed", placeholder="Nom de la société")
         st.session_state[f"modal_name_{pid}"] = name
         
