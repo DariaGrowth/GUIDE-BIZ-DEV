@@ -992,6 +992,17 @@ def show_prospect_modal(pid, data):
     """Modal de fiche projet - VERSION CORRIGÉE"""
     pid = int(pid)
     is_new = data.get("company_name") == "Nouveau Prospect"
+    # Constants
+    STATUTS = ["Prospection", "Qualification", "Échantillons en test", "Tests en cours", "Négociation", "Contrat", "Client Actif"]
+    PRODUITS_DISPONIBLES = ["Sulfodyne", "Prostaphane", "Peptipea", "Isolats végétaux"]
+    
+    # Applications par ingrédient
+    APPLICATIONS_PAR_PRODUIT = {
+        "Sulfodyne": ["Nutracéutique (BADs)", "Functional Drinks", "Sport Nutrition", "Cosméto-nutri"],
+        "Prostaphane": ["Specialized Supplements Softgels", "Men's Health"],
+        "Peptipea": ["Protein Waters", "Juicy Powders", "Functional Gummies", "Energy Gels"],
+        "Isolats végétaux": ["Protein Bars"],
+    }
     # ═══ INITIALISATION SESSION STATE POUR PERSISTANCE ═══
     if f"modal_status_{pid}" not in st.session_state:
         st.session_state[f"modal_status_{pid}"] = data.get("status", "Prospection")
@@ -1017,7 +1028,6 @@ APPLICATIONS_PAR_PRODUIT = {
     "Peptipea": ["Protein Waters", "Juicy Powders", "Functional Gummies", "Energy Gels"],
     "Isolats végétaux": ["Protein Bars"],
 }
-    APPLICATIONS = ["", "Boulangerie / Pâtisserie", "Sauces", "Confiserie", "Plats cuisinés", "Boissons", "Autre"]
     STATUTS = ["Prospection", "Qualification", "Échantillons en test", "Tests en cours", "Négociation", "Contrat", "Client Actif"]
     
     # ══════════════════════════════════════════════════════════
