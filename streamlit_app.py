@@ -992,9 +992,31 @@ def show_prospect_modal(pid, data):
     """Modal de fiche projet - VERSION CORRIGÉE"""
     pid = int(pid)
     is_new = data.get("company_name") == "Nouveau Prospect"
+    # ═══ INITIALISATION SESSION STATE POUR PERSISTANCE ═══
+    if f"modal_status_{pid}" not in st.session_state:
+        st.session_state[f"modal_status_{pid}"] = data.get("status", "Prospection")
+    if f"modal_name_{pid}" not in st.session_state:
+        st.session_state[f"modal_name_{pid}"] = data.get("company_name", "")
+    if f"modal_country_{pid}" not in st.session_state:
+        st.session_state[f"modal_country_{pid}"] = data.get("country", "")
+    if f"modal_volume_{pid}" not in st.session_state:
+        st.session_state[f"modal_volume_{pid}"] = float(data.get("potential_volume") or 0)
+    if f"modal_source_{pid}" not in st.session_state:
+        st.session_state[f"modal_source_{pid}"] = data.get("last_salon", "")
+    if f"modal_notes_{pid}" not in st.session_state:
+        st.session_state[f"modal_notes_{pid}"] = data.get("notes", "")
+    if f"modal_tech_{pid}" not in st.session_state:
+        st.session_state[f"modal_tech_{pid}"] = data.get("tech_notes", "")
     
     # Constants
-    PRODUITS_DISPONIBLES = ["Sulfodyne", "Prostaphane", "Peptipea", "Isolats végétaux"]
+PRODUITS_DISPONIBLES = ["Sulfodyne", "Prostaphane", "Peptipea", "Isolats végétaux"]
+    # Applications par ingrédient
+APPLICATIONS_PAR_PRODUIT = {
+    "Sulfodyne": ["Nutracéutique (BADs)", "Functional Drinks", "Sport Nutrition", "Cosméto-nutri"],
+    "Prostaphane": ["Specialized Supplements Softgels", "Men's Health"],
+    "Peptipea": ["Protein Waters", "Juicy Powders", "Functional Gummies", "Energy Gels"],
+    "Isolats végétaux": ["Protein Bars"],
+}
     APPLICATIONS = ["", "Boulangerie / Pâtisserie", "Sauces", "Confiserie", "Plats cuisinés", "Boissons", "Autre"]
     STATUTS = ["Prospection", "Qualification", "Échantillons en test", "Tests en cours", "Négociation", "Contrat", "Client Actif"]
     
@@ -1066,14 +1088,15 @@ def show_prospect_modal(pid, data):
     # ─────────────────────────────────────────────────────────
     with col_left:
         # Société
-        st.markdown('<p class="form-label">SOCIÉTÉ / CLIENT</p>', unsafe_allow_html=True)
-        name = st.text_input("company", value=data.get("company_name", ""), key=f"name_{pid}", label_visibility="collapsed", placeholder="Nom de la société")
+         st.markdown('<p class="form-label">SOCIÉTÉ / CLIENT</p>', unsafe_allow_html=True)
+        name = st.text_input("company", value=st.session_state[f"modal_name_{pid}"], key=f"name_{pid}", label_visibility="collapsed", placeholder="Nom de la société")
+        st.session_state[f"modal_name_{pid}"] = name
         
         st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
         
         # Statut - FIX: Utiliser index basé sur la valeur actuelle
         st.markdown('<p class="form-label">STATUT PIPELINE</p>', unsafe_allow_html=True)
-        current_status = data.get("status", "Prospection")
+        current_status = st.session_state[f"modal_status_{pid}"]
         status_index = STATUTS.index(current_status) if current_status in STATUTS else 0
         stat = st.selectbox(
             "status",
@@ -1082,17 +1105,20 @@ def show_prospect_modal(pid, data):
             key=f"stat_{pid}",
             label_visibility="collapsed"
         )
+        st.session_state[f"modal_status_{pid}"] = stat
         
         st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
         
         # Pays / Potentiel
-        c1, c2 = st.columns(2, gap="medium")
+         c1, c2 = st.columns(2, gap="medium")
         with c1:
             st.markdown('<p class="form-label">PAYS</p>', unsafe_allow_html=True)
-            pays = st.text_input("country", value=data.get("country") or "", key=f"pays_{pid}", label_visibility="collapsed", placeholder="France")
+            pays = st.text_input("country", value=st.session_state[f"modal_country_{pid}"], key=f"pays_{pid}", label_visibility="collapsed", placeholder="France")
+            st.session_state[f"modal_country_{pid}"] = pays
         with c2:
             st.markdown('<p class="form-label">POTENTIEL (T)</p>', unsafe_allow_html=True)
-            vol = st.number_input("vol", value=float(data.get("potential_volume") or 0), key=f"vol_{pid}", label_visibility="collapsed", min_value=0.0)
+            vol = st.number_input("vol", value=st.session_state[f"modal_volume_{pid}"], key=f"vol_{pid}", label_visibility="collapsed", min_value=0.0)
+            st.session_state[f"modal_volume_{pid}"] = vol
         
         st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
         
@@ -1102,7 +1128,8 @@ def show_prospect_modal(pid, data):
                 <p style="font-size: 12px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">📍 DERNIER SALON / SOURCE</p>
             </div>
         """, unsafe_allow_html=True)
-        source = st.text_input("source", value=data.get("last_salon") or "", key=f"source_{pid}", label_visibility="collapsed", placeholder="ex: CFIA 2026, LinkedIn, Prospection directe")
+        source = st.text_input("source", value=st.session_state[f"modal_source_{pid}"], key=f"source_{pid}", label_visibility="collapsed", placeholder="ex: CFIA 2026, LinkedIn, Prospection directe")
+        st.session_state[f"modal_source_{pid}"] = source
         
         st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
         
@@ -1143,45 +1170,76 @@ def show_prospect_modal(pid, data):
             st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
             
             t1c1, t1c2 = st.columns(2, gap="medium")
+            
+            # ═══ INGRÉDIENTS (Multi-sélection) ═══
             with t1c1:
-                st.markdown('<p class="form-label">INGRÉDIENTS GD (Multi-sélection)</p>', unsafe_allow_html=True)
-                # Désérialiser les produits existants
-                current_products_str = data.get("product_interest") or ""
-                current_products_list = [p.strip() for p in current_products_str.split(",") if p.strip()] if current_products_str else []
-                # Filtrer pour ne garder que les produits valides
-                current_products_list = [p for p in current_products_list if p in PRODUITS_DISPONIBLES]
+                st.markdown('<p class="form-label">INGRÉDIENTS</p>', unsafe_allow_html=True)
+                
+                # Initialiser dans session_state si pas encore fait
+                if f"selected_products_{pid}" not in st.session_state:
+                    current_products_str = data.get("product_interest") or ""
+                    current_products_list = [p.strip() for p in current_products_str.split(",") if p.strip()] if current_products_str else []
+                    st.session_state[f"selected_products_{pid}"] = [p for p in current_products_list if p in PRODUITS_DISPONIBLES]
                 
                 prod = st.multiselect(
                     "prod",
                     options=PRODUITS_DISPONIBLES,
-                    default=current_products_list,
+                    default=st.session_state[f"selected_products_{pid}"],
                     key=f"prod_{pid}",
                     label_visibility="collapsed",
-                    placeholder="Sélectionner les ingrédients..."
+                    placeholder="Sélectionner..."
                 )
+                # Mettre à jour le session_state
+                st.session_state[f"selected_products_{pid}"] = prod
+            
+            # ═══ APPLICATION FINALE (dynamique selon ingrédients) ═══
             with t1c2:
                 st.markdown('<p class="form-label">APPLICATION FINALE</p>', unsafe_allow_html=True)
-                # FIX: Utiliser index basé sur la valeur actuelle
-                current_app = data.get("segment") or ""
-                app_index = APPLICATIONS.index(current_app) if current_app in APPLICATIONS else 0
-                app = st.selectbox(
-                    "app",
-                    options=APPLICATIONS,
-                    index=app_index,
-                    key=f"app_{pid}",
-                    label_visibility="collapsed",
-                    format_func=lambda x: x if x else "Sélectionner..."
-                )
+                
+                # Construire la liste des applications disponibles selon les produits sélectionnés
+                applications_disponibles = []
+                for p in prod:
+                    applications_disponibles.extend(APPLICATIONS_PAR_PRODUIT.get(p, []))
+                # Supprimer les doublons en gardant l'ordre
+                applications_disponibles = list(dict.fromkeys(applications_disponibles))
+                
+                # Initialiser dans session_state si pas encore fait
+                if f"selected_app_{pid}" not in st.session_state:
+                    st.session_state[f"selected_app_{pid}"] = data.get("segment") or ""
+                
+                # Vérifier si l'application actuelle est toujours valide
+                current_app = st.session_state[f"selected_app_{pid}"]
+                if current_app and current_app not in applications_disponibles:
+                    current_app = ""
+                    st.session_state[f"selected_app_{pid}"] = ""
+                
+                if applications_disponibles:
+                    app_options = [""] + applications_disponibles
+                    app_index = app_options.index(current_app) if current_app in app_options else 0
+                    app = st.selectbox(
+                        "app",
+                        options=app_options,
+                        index=app_index,
+                        key=f"app_{pid}",
+                        label_visibility="collapsed",
+                        format_func=lambda x: x if x else "Sélectionner une application..."
+                    )
+                    st.session_state[f"selected_app_{pid}"] = app
+                else:
+                    st.info("Sélectionnez d'abord un ingrédient")
+                    app = ""
             
             st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
             
-            st.markdown('<p class="form-label">PROBLÉMATIQUE / BESOIN (PAIN POINT)</p>', unsafe_allow_html=True)
-            pain = st.text_area("pain", value=data.get("notes") or "", height=110, key=f"pain_{pid}", label_visibility="collapsed", placeholder="Ex: Volatilité prix œuf, Texture sèche, Besoin Clean Label...")
+           st.markdown('<p class="form-label">PROBLÉMATIQUE / BESOIN (PAIN POINT)</p>', unsafe_allow_html=True)
+            pain = st.text_area("pain", value=st.session_state[f"modal_notes_{pid}"], height=110, key=f"pain_{pid}", label_visibility="collapsed", placeholder="Ex: Volatilité prix œuf, Texture sèche, Besoin Clean Label...")
+            st.session_state[f"modal_notes_{pid}"] = pain
             
             st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
             
             st.markdown('<p class="form-label">NOTES TECHNIQUES R&D</p>', unsafe_allow_html=True)
-            tech = st.text_area("tech", value=data.get("tech_notes") or "", height=110, key=f"tech_{pid}", label_visibility="collapsed", placeholder="pH cible, Température cuisson, Dosage recommandé...")
+            tech = st.text_area("tech", value=st.session_state[f"modal_tech_{pid}"], height=110, key=f"tech_{pid}", label_visibility="collapsed", placeholder="pH cible, Température cuisson, Dosage recommandé...")
+            st.session_state[f"modal_tech_{pid}"] = tech
         
         # ── TAB 2: Suivi Échantillons ──
         with tab2:
@@ -1286,71 +1344,88 @@ def show_prospect_modal(pid, data):
                     st.success("✅ Activité ajoutée")
                     st.rerun()
     
-    # ══════════════════════════════════════════════════════════
-    # FOOTER - BUTTONS AVEC BOUTON SUPPRIMER ROUGE
+ # ══════════════════════════════════════════════════════════
+    # FOOTER - ENREGISTRER ET ANNULER
     # ══════════════════════════════════════════════════════════
     st.markdown("<hr style='margin: 28px 0 20px; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
     
-    # Confirmation de suppression
-    if st.session_state.get(f"confirm_delete_{pid}", False):
-        st.error("⚠️ Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.")
-        dc1, dc2, dc3 = st.columns([1, 1, 2])
-        with dc1:
-            if st.button("Oui, supprimer", type="primary", key=f"confirm_yes_{pid}", use_container_width=True):
-                # Supprimer toutes les données liées
-                get_supabase().table("samples").delete().eq("prospect_id", pid).execute()
-                get_supabase().table("activities").delete().eq("prospect_id", pid).execute()
-                get_supabase().table("contacts").delete().eq("prospect_id", pid).execute()
+    fc1, fc2, fc3 = st.columns([2, 1, 1.5])
+    
+    with fc2:
+        if st.button("Annuler", key=f"cancel_{pid}", use_container_width=True, type="secondary"):
+            if is_new:
                 get_supabase().table("prospects").delete().eq("id", pid).execute()
-                safe_del(f"confirm_delete_{pid}")
+            # Nettoyer le session_state
+            for key in list(st.session_state.keys()):
+                if f"_{pid}" in key:
+                    del st.session_state[key]
+            safe_del("active_prospect_id")
+            st.rerun()
+    
+    with fc3:
+        if st.button("✓ Enregistrer", type="primary", key=f"save_{pid}", use_container_width=True):
+            try:
+                get_supabase().table("prospects").update({
+                    "company_name": name,
+                    "status": stat,
+                    "country": pays,
+                    "potential_volume": vol,
+                    "last_salon": source,
+                    "product_interest": ", ".join(prod) if prod else "",
+                    "segment": app,
+                    "notes": pain,
+                    "tech_notes": tech,
+                    "last_action_date": datetime.now().isoformat(),
+                }).eq("id", pid).execute()
+                
+                st.success("✅ Projet enregistré avec succès")
+                time.sleep(0.8)
+                # Nettoyer le session_state
+                for key in list(st.session_state.keys()):
+                    if f"_{pid}" in key:
+                        del st.session_state[key]
                 safe_del("active_prospect_id")
                 reset_pipeline()
                 st.rerun()
-        with dc2:
-            if st.button("Non, annuler", key=f"confirm_no_{pid}", use_container_width=True):
-                safe_del(f"confirm_delete_{pid}")
-                st.rerun()
-    else:
-        fc1, fc2, fc3, fc4 = st.columns([1.2, 2, 1, 1.5])
+            except Exception as e:
+                st.error(f"❌ Erreur lors de l'enregistrement : {str(e)}")
+    
+    # ══════════════════════════════════════════════════════════
+    # SECTION SUPPRESSION SÉCURISÉE (en bas)
+    # ══════════════════════════════════════════════════════════
+    if not is_new:
+        st.markdown("---")
+        st.markdown("<p style='font-size: 12px; color: #9CA3AF; margin-bottom: 12px;'>Zone de danger</p>", unsafe_allow_html=True)
         
-        with fc1:
-            # BOUTON SUPPRIMER EN ROUGE
-            if not is_new:
-                if st.button("🗑️ Supprimer", key=f"del_{pid}", use_container_width=True, type="secondary"):
-                    st.session_state[f"confirm_delete_{pid}"] = True
-                    st.rerun()
-        
-        with fc3:
-            if st.button("Annuler", key=f"cancel_{pid}", use_container_width=True, type="secondary"):
-                if is_new:
-                    # Si nouveau projet non sauvegardé, le supprimer
+        # État de confirmation
+        if st.session_state.get(f"confirm_delete_{pid}", False):
+            st.warning("⚠️ Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible et supprimera toutes les données associées (échantillons, activités, contacts).")
+            
+            dc1, dc2, dc3 = st.columns([1.5, 1.5, 2])
+            with dc1:
+                if st.button("🗑️ Confirmer la suppression", key=f"confirm_yes_{pid}", use_container_width=True, type="primary"):
+                    # Supprimer toutes les données liées
+                    get_supabase().table("samples").delete().eq("prospect_id", pid).execute()
+                    get_supabase().table("activities").delete().eq("prospect_id", pid).execute()
+                    get_supabase().table("contacts").delete().eq("prospect_id", pid).execute()
                     get_supabase().table("prospects").delete().eq("id", pid).execute()
-                safe_del("active_prospect_id")
-                st.rerun()
-        
-        with fc4:
-            if st.button("✓ Enregistrer", type="primary", key=f"save_{pid}", use_container_width=True):
-                try:
-                    get_supabase().table("prospects").update({
-                        "company_name": name,
-                        "status": stat,
-                        "country": pays,
-                        "potential_volume": vol,
-                        "last_salon": source,
-                        "product_interest": ", ".join(prod) if prod else "",
-                        "segment": app,
-                        "notes": pain,
-                        "tech_notes": tech,
-                        "last_action_date": datetime.now().isoformat(),
-                    }).eq("id", pid).execute()
                     
-                    st.success("✅ Projet enregistré avec succès")
-                    time.sleep(0.8)
+                    # Nettoyer le session_state
+                    for key in list(st.session_state.keys()):
+                        if f"_{pid}" in key:
+                            del st.session_state[key]
+                    safe_del(f"confirm_delete_{pid}")
                     safe_del("active_prospect_id")
                     reset_pipeline()
                     st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Erreur lors de l'enregistrement : {str(e)}")
+            with dc2:
+                if st.button("Annuler", key=f"confirm_no_{pid}", use_container_width=True, type="secondary"):
+                    safe_del(f"confirm_delete_{pid}")
+                    st.rerun()
+        else:
+            if st.button("Supprimer le projet", key=f"del_{pid}", type="secondary"):
+                st.session_state[f"confirm_delete_{pid}"] = True
+                st.rerun()
 # 7. SIDEBAR NAVIGATION - AVEC ICÔNES SVG
 # =============================================================================
 
