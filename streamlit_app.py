@@ -1121,8 +1121,8 @@ def show_prospect_modal(pid, data):
         
         st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
         
-        # Pays / Potentiel
-         c1, c2 = st.columns(2, gap="medium")
+         # Pays / Potentiel
+        c1, c2 = st.columns(2, gap="medium")
         with c1:
             st.markdown('<p class="form-label">PAYS</p>', unsafe_allow_html=True)
             pays = st.text_input("country", value=st.session_state[f"modal_country_{pid}"], key=f"pays_{pid}", label_visibility="collapsed", placeholder="France")
