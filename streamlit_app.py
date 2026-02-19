@@ -1019,15 +1019,17 @@ def show_prospect_modal(pid, data):
     if f"modal_tech_{pid}" not in st.session_state:
         st.session_state[f"modal_tech_{pid}"] = data.get("tech_notes", "")
     
-    # Constants
-PRODUITS_DISPONIBLES = ["Sulfodyne", "Prostaphane", "Peptipea", "Isolats végétaux"]
+   # Constants
+    PRODUITS_DISPONIBLES = ["Sulfodyne", "Prostaphane", "Peptipea", "Isolats végétaux"]
+    
     # Applications par ingrédient
-APPLICATIONS_PAR_PRODUIT = {
-    "Sulfodyne": ["Nutracéutique (BADs)", "Functional Drinks", "Sport Nutrition", "Cosméto-nutri"],
-    "Prostaphane": ["Specialized Supplements Softgels", "Men's Health"],
-    "Peptipea": ["Protein Waters", "Juicy Powders", "Functional Gummies", "Energy Gels"],
-    "Isolats végétaux": ["Protein Bars"],
-}
+    APPLICATIONS_PAR_PRODUIT = {
+        "Sulfodyne": ["Nutracéutique (BADs)", "Functional Drinks", "Sport Nutrition", "Cosméto-nutri"],
+        "Prostaphane": ["Specialized Supplements Softgels", "Men's Health"],
+        "Peptipea": ["Protein Waters", "Juicy Powders", "Functional Gummies", "Energy Gels"],
+        "Isolats végétaux": ["Protein Bars"],
+    }
+    
     STATUTS = ["Prospection", "Qualification", "Échantillons en test", "Tests en cours", "Négociation", "Contrat", "Client Actif"]
     
     # ══════════════════════════════════════════════════════════
