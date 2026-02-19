@@ -1,6 +1,6 @@
 # =============================================================================
 # ING GROWTH AI — CRM Stratégique
-# Version 3.3 | Corrections Selectbox + Multi-ingrédients + Layout compact
+# Version 4.0 FINAL | Fusion complète + Améliorations
 # =============================================================================
 
 import streamlit as st
@@ -17,7 +17,7 @@ import requests
 from io import BytesIO
 
 # =============================================================================
-# SVG ICONS - DESIGN SYSTEM
+# SVG ICONS
 # =============================================================================
 
 FAVICON_SVG = """<svg width="32" height="32" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="56" height="56" rx="12" fill="#1E3F35"/><path d="M28 12c-3 7-9 11-16 11 7 3 13 9 16 16 3-7 9-13 16-16-7-3-13-6-16-11z" fill="white"/></svg>"""
@@ -32,7 +32,7 @@ def get_icon(name, color="#6B7280", size=20):
         "dashboard": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
         "pipeline": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="7" cy="6" r="2" fill="{color}"/><circle cx="14" cy="12" r="2" fill="{color}"/><circle cx="10" cy="18" r="2" fill="{color}"/></svg>',
         "kanban": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg>',
-        "samples": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M9 3v6l-3 12h12l-3-12V3"/><path d="M8 3h8"/><path d="M7 15h10"/></svg>',
+        "flask": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M9 3v6l-3 12h12l-3-12V3"/><path d="M8 3h8"/><path d="M7 15h10"/></svg>',
         "contacts": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
         "news": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>',
         "export": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>',
@@ -40,14 +40,6 @@ def get_icon(name, color="#6B7280", size=20):
         "webhook": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 003 3h6"/></svg>',
         "alert": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
         "chevron": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>',
-        "plus": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
-        "delete": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>',
-        "flask": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M9 3v6l-3 12h12l-3-12V3"/><path d="M8 3h8"/><path d="M7 15h10"/></svg>',
-        "globe": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
-        "mail": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg>',
-        "phone": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>',
-        "calendar": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
-        "check": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>',
         "check_circle": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>',
         "warning": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
         "user": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
@@ -55,7 +47,7 @@ def get_icon(name, color="#6B7280", size=20):
     return icons.get(name, "")
 
 # =============================================================================
-# 1. CONFIGURATION & STYLES CSS
+# PAGE CONFIG
 # =============================================================================
 
 st.set_page_config(
@@ -66,10 +58,13 @@ st.set_page_config(
     menu_items={"Get help": None, "Report a bug": None, "About": None},
 )
 
+# =============================================================================
+# CSS THEME
+# =============================================================================
+
 CSS_THEME = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
     :root {
         --primary: #1E3F35;
         --primary-light: #2A5548;
@@ -81,46 +76,24 @@ CSS_THEME = """
         --bg-gray: #F9FAFB;
         --bg-hover: #F3F4F6;
         --border: #E5E7EB;
-        --border-light: #F3F4F6;
         --purple: #7C3AED;
-        --blue: #3B82F6;
-        --orange: #F59E0B;
         --red: #DC2626;
     }
-
     .stApp { background: var(--bg-gray) !important; font-family: 'DM Sans', sans-serif !important; }
     * { font-family: 'DM Sans', sans-serif !important; }
     [data-testid="stVerticalBlock"] { gap: 0 !important; }
     h1, h2, h3, h4, h5, h6 { font-family: 'DM Sans', sans-serif !important; color: var(--text-primary) !important; font-weight: 600 !important; }
-
-    /* SIDEBAR */
+    
     section[data-testid="stSidebar"] { background: var(--bg-white) !important; border-right: 1px solid var(--border) !important; }
     section[data-testid="stSidebar"] > div { padding: 24px 16px !important; background: transparent !important; }
     section[data-testid="stSidebar"] div[data-testid="stVerticalBlockBorderWrapper"] { background: transparent !important; border: none !important; box-shadow: none !important; }
-
-    section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
-        width: 100% !important; background: var(--primary) !important; color: white !important;
-        border: none !important; border-radius: 10px !important; padding: 14px 20px !important;
-        font-weight: 600 !important; font-size: 14px !important;
-    }
+    section[data-testid="stSidebar"] .stButton > button[kind="primary"] { width: 100% !important; background: var(--primary) !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 14px 20px !important; font-weight: 600 !important; font-size: 14px !important; }
     section[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover { background: var(--primary-light) !important; }
-
-    section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
-        width: 100% !important; background: transparent !important; color: #4B5563 !important;
-        border: none !important; border-left: 3px solid transparent !important; border-radius: 8px !important;
-        padding: 12px 16px !important; font-weight: 500 !important; font-size: 14px !important;
-        text-align: left !important; justify-content: flex-start !important; margin: 2px 0 !important;
-    }
+    section[data-testid="stSidebar"] .stButton > button[kind="secondary"] { width: 100% !important; background: transparent !important; color: #4B5563 !important; border: none !important; border-left: 3px solid transparent !important; border-radius: 8px !important; padding: 12px 16px !important; font-weight: 500 !important; font-size: 14px !important; text-align: left !important; justify-content: flex-start !important; margin: 2px 0 !important; }
     section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover { background: #F3F4F6 !important; color: #1E3F35 !important; }
+    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button[kind="secondary"] { background: white !important; border: 1px solid #E5E7EB !important; color: #6B7280 !important; font-size: 13px !important; padding: 10px 12px !important; border-radius: 8px !important; text-align: center !important; justify-content: center !important; }
 
-    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button[kind="secondary"] {
-        background: white !important; border: 1px solid #E5E7EB !important; color: #6B7280 !important;
-        font-size: 13px !important; padding: 10px 12px !important; border-radius: 8px !important;
-        text-align: center !important; justify-content: center !important;
-    }
-
-    /* STATUS BADGES */
-    .status-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .status-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
     .status-prospection { background: #DBEAFE; color: #1E40AF; }
     .status-qualification { background: #E0E7FF; color: #4338CA; }
     .status-echantillons { background: #FEF3C7; color: #92400E; }
@@ -129,52 +102,38 @@ CSS_THEME = """
     .status-contrat { background: #D1FAE5; color: #065F46; }
     .status-client { background: #ECFDF5; color: #047857; }
 
-    .sample-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: #EFF6FF; border-radius: 6px; font-size: 11px; font-weight: 500; color: #3B82F6; }
+    div[data-testid="stDialog"]::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); z-index: -1; }
+    div[data-testid="stDialog"] > div:first-child { background: rgba(0, 0, 0, 0.4) !important; backdrop-filter: blur(4px) !important; }
+    div[data-testid="stDialog"] > div > div { background: var(--bg-white) !important; border-radius: 16px !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important; max-width: 1300px !important; width: 96vw !important; max-height: 92vh !important; overflow-y: auto !important; margin: auto !important; padding: 32px 40px !important; }
 
-    /* MODAL - COMPACT */
-    div[data-testid="stDialog"]::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: -1; }
-    div[data-testid="stDialog"] > div:first-child { background: rgba(0,0,0,0.4) !important; backdrop-filter: blur(4px) !important; }
-    div[data-testid="stDialog"] > div > div {
-        background: var(--bg-white) !important; border-radius: 12px !important;
-        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25) !important;
-        max-width: 1000px !important; width: 92vw !important; max-height: 88vh !important;
-        overflow-y: auto !important; margin: auto !important; padding: 20px 24px !important;
-    }
+    .form-label { font-size: 11px !important; font-weight: 700 !important; color: #374151 !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; margin-bottom: 8px !important; display: block !important; }
+    .stTextInput input, .stTextArea textarea, .stSelectbox > div > div, .stNumberInput > div > div > input, .stMultiSelect > div > div { border: 1px solid var(--border) !important; border-radius: 8px !important; font-size: 14px !important; padding: 12px 14px !important; background: var(--bg-white) !important; }
+    .stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox > div > div:focus-within, .stMultiSelect > div > div:focus-within { border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(30,63,53,0.1) !important; }
 
-    /* Form Labels - COMPACT */
-    .form-label { font-size: 10px !important; font-weight: 700 !important; color: #374151 !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; margin-bottom: 6px !important; display: block !important; }
-
-    /* Form Inputs - COMPACT */
-    .stTextInput > div, .stTextArea > div, .stSelectbox > div, .stNumberInput > div, .stMultiSelect > div { margin-top: 2px !important; }
-    .stTextInput input, .stTextArea textarea, .stSelectbox > div > div, .stNumberInput > div > div > input, .stMultiSelect > div > div {
-        border: 1px solid var(--border) !important; border-radius: 6px !important; font-size: 13px !important; padding: 8px 10px !important; background: var(--bg-white) !important;
-    }
-    .stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox > div > div:focus-within, .stMultiSelect > div > div:focus-within {
-        border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(30,63,53,0.1) !important;
-    }
-
-    /* Tabs - COMPACT */
     .stTabs [data-baseweb="tab-list"] { gap: 0 !important; border-bottom: 1px solid var(--border) !important; }
-    .stTabs [data-baseweb="tab"] { font-size: 12px !important; font-weight: 500 !important; padding: 10px 16px !important; }
+    .stTabs [data-baseweb="tab"] { font-size: 13px !important; font-weight: 500 !important; padding: 12px 20px !important; }
     .stTabs [data-baseweb="tab"][aria-selected="true"] { color: var(--primary) !important; border-bottom-color: var(--primary) !important; font-weight: 600 !important; }
 
-    /* Pipeline */
     .col-product { color: var(--accent-green) !important; font-weight: 600 !important; font-size: 13px !important; }
     .col-salon { color: var(--purple) !important; font-weight: 500 !important; font-size: 13px !important; }
     .col-country { color: var(--text-secondary) !important; font-size: 13px !important; }
     .col-date { font-size: 13px !important; font-family: 'JetBrains Mono', monospace !important; }
 
-    /* Hide defaults */
+    [data-testid="stMetric"] { background: var(--bg-white) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; padding: 20px !important; }
+    [data-testid="stMetricValue"] { font-size: 28px !important; font-weight: 700 !important; }
+    [data-testid="stMetricLabel"] { font-size: 12px !important; font-weight: 600 !important; color: var(--text-muted) !important; text-transform: uppercase !important; }
+
     #MainMenu, footer, header { visibility: hidden; }
     .stDeployButton { display: none !important; }
     div[data-testid="stToolbar"] { display: none !important; }
     div[data-testid="stVerticalBlockBorderWrapper"] { border: none !important; background: transparent !important; }
 </style>
 """
+
 st.markdown(CSS_THEME, unsafe_allow_html=True)
 
 # =============================================================================
-# 2. AUTHENTIFICATION
+# AUTH
 # =============================================================================
 
 def check_auth():
@@ -199,7 +158,7 @@ def check_auth():
     return False
 
 # =============================================================================
-# 3. CONNEXIONS
+# CONNEXIONS
 # =============================================================================
 
 @st.cache_resource
@@ -210,7 +169,7 @@ def init_connections():
         genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
         return create_client(url, key)
     except Exception as e:
-        st.error(f"Erreur de connexion : {e}")
+        st.error(f"Erreur: {e}")
         return None
 
 def get_supabase():
@@ -219,7 +178,7 @@ def get_supabase():
     return st.session_state.supabase
 
 # =============================================================================
-# 4. HELPERS
+# HELPERS
 # =============================================================================
 
 if "pipeline_key" not in st.session_state:
@@ -243,13 +202,13 @@ def get_status_html(status):
     status_map = {
         "Prospection": ("status-prospection", "Prospection"),
         "Qualification": ("status-qualification", "Qualification"),
-        "Échantillons en test": ("status-echantillons", "Échantillons"),
+        "Echantillons en test": ("status-echantillons", "Echantillons"),
         "Tests en cours": ("status-tests", "Tests R&D"),
-        "Négociation": ("status-negociation", "Négociation"),
+        "Negociation": ("status-negociation", "Negociation"),
         "Contrat": ("status-contrat", "Contrat"),
         "Client Actif": ("status-client", "Client Actif"),
     }
-    cls, label = status_map.get(status, ("status-prospection", status or "—"))
+    cls, label = status_map.get(status, ("status-prospection", status or "-"))
     return f'<span class="status-badge {cls}">{label}</span>'
 
 def serialize_products(products_list):
@@ -265,11 +224,19 @@ def deserialize_products(products_str):
 def build_linkedin_url(company_name):
     if not company_name or company_name == "Nouveau Prospect":
         return None
-    keywords = f'{company_name} "Product Developer" OR "R&D" OR "Purchasing" OR "Achats"'
+    keywords = f'{company_name} AND ("Product Developer" OR "R&D" OR "Technologue")'
     return f"https://www.linkedin.com/search/results/people/?keywords={urllib.parse.quote(keywords)}"
 
 # =============================================================================
-# 5. DATA LAYER
+# CONSTANTS
+# =============================================================================
+
+PRODUITS_DISPONIBLES = ["Sulfodyne", "Prostaphane", "Peptipea", "Isolats vegetaux"]
+APPLICATIONS = ["", "Boulangerie / Patisserie", "Sauces", "Confiserie", "Plats cuisines", "Boissons", "Complements alimentaires", "Autre"]
+STATUTS = ["Prospection", "Qualification", "Echantillons en test", "Tests en cours", "Negociation", "Contrat", "Client Actif"]
+
+# =============================================================================
+# DATA LAYER
 # =============================================================================
 
 def get_prospects():
@@ -297,15 +264,7 @@ def count_alerts():
         return 0
 
 # =============================================================================
-# 6. CONSTANTS
-# =============================================================================
-
-PRODUITS_DISPONIBLES = ["Sulfodyne", "Prostaphane", "Peptipea", "Isolats végétaux"]
-APPLICATIONS = ["", "Boulangerie / Pâtisserie", "Sauces", "Confiserie", "Plats cuisinés", "Boissons", "Compléments alimentaires", "Autre"]
-STATUTS = ["Prospection", "Qualification", "Échantillons en test", "Tests en cours", "Négociation", "Contrat", "Client Actif"]
-
-# =============================================================================
-# 7. MODAL - FICHE PROJET
+# MODAL - FICHE PROJET
 # =============================================================================
 
 @st.dialog("Fiche Projet", width="large")
@@ -313,7 +272,7 @@ def show_prospect_modal(pid, data):
     pid = int(pid)
     is_new = data.get("company_name") == "Nouveau Prospect"
     
-    # Initialisation session state
+    # Session state init
     state_keys = {
         f"modal_name_{pid}": data.get("company_name", ""),
         f"modal_status_{pid}": data.get("status", "Prospection"),
@@ -330,109 +289,119 @@ def show_prospect_modal(pid, data):
             st.session_state[key] = default
     
     # HEADER
-    h1, h2 = st.columns([2.5, 1.5])
+    h1, h2 = st.columns([3, 1])
     with h1:
         display_name = st.session_state[f"modal_name_{pid}"] or "Nouveau Projet"
         if display_name == "Nouveau Prospect":
             display_name = "Nouveau Projet"
-        st.markdown(f"<div style='margin-bottom: 12px;'><h2 style='font-size: 22px; font-weight: 700; margin: 0;'>{display_name}</h2><p style='font-size: 13px; color: #6B7280; margin: 6px 0 0;'>Gestion et Suivi R&D</p></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='margin-bottom: 16px;'><h2 style='font-size: 26px; font-weight: 700; margin: 0;'>{display_name}</h2><p style='font-size: 14px; color: #6B7280; margin: 8px 0 0;'>Gestion et Suivi R&D</p></div>", unsafe_allow_html=True)
     with h2:
-        bc1, bc2 = st.columns(2, gap="small")
+        bc1, bc2 = st.columns(2)
         with bc1:
-            st.button("🔍 Hunter AI", key=f"hunter_{pid}", use_container_width=True, type="secondary")
+            st.button("Hunter AI", key=f"hunter_{pid}", use_container_width=True, type="secondary")
         with bc2:
-            st.button("📄 Brief R&D", key=f"brief_{pid}", use_container_width=True, type="secondary")
+            st.button("Brief R&D", key=f"brief_{pid}", use_container_width=True, type="secondary")
     
-    st.markdown("<hr style='margin: 16px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin: 20px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
     
-    # BODY
-    col_left, col_right = st.columns([1.8, 2.2], gap="medium")
+    # BODY - LAYOUT [1, 2]
+    col_left, col_right = st.columns([1, 2], gap="large")
     
     with col_left:
-        st.markdown('<p class="form-label">SOCIÉTÉ / CLIENT</p>', unsafe_allow_html=True)
-        st.text_input("company", value=st.session_state[f"modal_name_{pid}"], key=f"input_name_{pid}", label_visibility="collapsed", placeholder="Nom de la société", on_change=lambda: st.session_state.update({f"modal_name_{pid}": st.session_state[f"input_name_{pid}"]}))
+        st.markdown('<p class="form-label">SOCIETE / CLIENT</p>', unsafe_allow_html=True)
+        name_val = st.text_input("company", value=st.session_state[f"modal_name_{pid}"], key=f"input_name_{pid}", label_visibility="collapsed", placeholder="Nom de la societe")
+        st.session_state[f"modal_name_{pid}"] = name_val
         
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
         st.markdown('<p class="form-label">STATUT PIPELINE</p>', unsafe_allow_html=True)
         current_status = st.session_state[f"modal_status_{pid}"]
         status_index = STATUTS.index(current_status) if current_status in STATUTS else 0
-        st.selectbox("status", options=STATUTS, index=status_index, key=f"input_status_{pid}", label_visibility="collapsed", on_change=lambda: st.session_state.update({f"modal_status_{pid}": st.session_state[f"input_status_{pid}"]}))
+        status_val = st.selectbox("status", options=STATUTS, index=status_index, key=f"input_status_{pid}", label_visibility="collapsed")
+        st.session_state[f"modal_status_{pid}"] = status_val
         
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
-        c1, c2 = st.columns(2, gap="small")
+        c1, c2 = st.columns(2)
         with c1:
             st.markdown('<p class="form-label">PAYS</p>', unsafe_allow_html=True)
-            st.text_input("country", value=st.session_state[f"modal_country_{pid}"], key=f"input_country_{pid}", label_visibility="collapsed", placeholder="France", on_change=lambda: st.session_state.update({f"modal_country_{pid}": st.session_state[f"input_country_{pid}"]}))
+            country_val = st.text_input("country", value=st.session_state[f"modal_country_{pid}"], key=f"input_country_{pid}", label_visibility="collapsed", placeholder="France")
+            st.session_state[f"modal_country_{pid}"] = country_val
         with c2:
             st.markdown('<p class="form-label">POTENTIEL (T)</p>', unsafe_allow_html=True)
-            st.number_input("vol", value=st.session_state[f"modal_volume_{pid}"], key=f"input_volume_{pid}", label_visibility="collapsed", min_value=0.0, on_change=lambda: st.session_state.update({f"modal_volume_{pid}": st.session_state[f"input_volume_{pid}"]}))
+            volume_val = st.number_input("vol", value=st.session_state[f"modal_volume_{pid}"], key=f"input_volume_{pid}", label_visibility="collapsed", min_value=0.0)
+            st.session_state[f"modal_volume_{pid}"] = volume_val
         
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
-        st.markdown("<div style='background: #F0FDF4; padding: 12px 14px; border-radius: 8px; border: 1px solid #BBF7D0; margin-bottom: 10px;'><p style='font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; margin: 0;'>📍 DERNIER SALON / SOURCE</p></div>", unsafe_allow_html=True)
-        st.text_input("source", value=st.session_state[f"modal_source_{pid}"], key=f"input_source_{pid}", label_visibility="collapsed", placeholder="ex: CFIA 2026, LinkedIn", on_change=lambda: st.session_state.update({f"modal_source_{pid}": st.session_state[f"input_source_{pid}"]}))
+        st.markdown("<div style='background: #F0FDF4; padding: 14px 16px; border-radius: 10px; border: 1px solid #BBF7D0; margin-bottom: 12px;'><p style='font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase; margin: 0;'>DERNIER SALON / SOURCE</p></div>", unsafe_allow_html=True)
+        source_val = st.text_input("source", value=st.session_state[f"modal_source_{pid}"], key=f"input_source_{pid}", label_visibility="collapsed", placeholder="ex: CFIA 2026, LinkedIn")
+        st.session_state[f"modal_source_{pid}"] = source_val
         
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
-        st.markdown('<p class="form-label">🔗 SOCIAL SELLING</p>', unsafe_allow_html=True)
+        st.markdown('<p class="form-label">SOCIAL SELLING</p>', unsafe_allow_html=True)
         linkedin_url = build_linkedin_url(st.session_state[f"modal_name_{pid}"])
         if linkedin_url:
-            st.markdown(f"<a href='{linkedin_url}' target='_blank' style='display: inline-flex; align-items: center; gap: 8px; background: #0A66C2; color: white; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none;'><span style='font-weight: 700;'>in</span> Rechercher contacts R&D</a>", unsafe_allow_html=True)
+            st.markdown(f"<a href='{linkedin_url}' target='_blank' style='display: inline-flex; align-items: center; gap: 8px; background: #0A66C2; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none;'><span style='font-weight: 700; font-size: 16px;'>in</span> Rechercher contacts R&D</a>", unsafe_allow_html=True)
         else:
-            st.caption("Renseignez le nom de la société")
+            st.caption("Renseignez le nom de la societe pour activer")
     
+    # RIGHT COLUMN - TABS
     with col_right:
-        tab1, tab2, tab3 = st.tabs(["📋 Contexte & Technique", "🧪 Suivi Échantillons", "📓 Journal d'Activité"])
+        tab1, tab2, tab3 = st.tabs(["Contexte & Technique", "Suivi Echantillons", "Journal d'Activite"])
         
         with tab1:
-            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-            t1c1, t1c2 = st.columns(2, gap="small")
+            st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+            t1c1, t1c2 = st.columns(2)
             with t1c1:
-                st.markdown('<p class="form-label">INGRÉDIENTS GD (Multi-sélection)</p>', unsafe_allow_html=True)
-                st.multiselect("products", options=PRODUITS_DISPONIBLES, default=st.session_state[f"modal_products_{pid}"], key=f"input_products_{pid}", label_visibility="collapsed", placeholder="Sélectionner...", on_change=lambda: st.session_state.update({f"modal_products_{pid}": st.session_state[f"input_products_{pid}"]}))
+                st.markdown('<p class="form-label">INGREDIENTS GD (Multi-selection)</p>', unsafe_allow_html=True)
+                products_val = st.multiselect("products", options=PRODUITS_DISPONIBLES, default=st.session_state[f"modal_products_{pid}"], key=f"input_products_{pid}", label_visibility="collapsed", placeholder="Selectionner...")
+                st.session_state[f"modal_products_{pid}"] = products_val
             with t1c2:
                 st.markdown('<p class="form-label">APPLICATION FINALE</p>', unsafe_allow_html=True)
                 current_app = st.session_state[f"modal_segment_{pid}"]
                 app_index = APPLICATIONS.index(current_app) if current_app in APPLICATIONS else 0
-                st.selectbox("app", options=APPLICATIONS, index=app_index, key=f"input_segment_{pid}", label_visibility="collapsed", format_func=lambda x: x if x else "Sélectionner...", on_change=lambda: st.session_state.update({f"modal_segment_{pid}": st.session_state[f"input_segment_{pid}"]}))
+                segment_val = st.selectbox("app", options=APPLICATIONS, index=app_index, key=f"input_segment_{pid}", label_visibility="collapsed", format_func=lambda x: x if x else "Selectionner...")
+                st.session_state[f"modal_segment_{pid}"] = segment_val
             
-            st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
-            st.markdown('<p class="form-label">PROBLÉMATIQUE / BESOIN (PAIN POINT)</p>', unsafe_allow_html=True)
-            st.text_area("pain", value=st.session_state[f"modal_notes_{pid}"], height=90, key=f"input_notes_{pid}", label_visibility="collapsed", placeholder="Ex: Volatilité prix œuf, Texture sèche, Besoin Clean Label...", on_change=lambda: st.session_state.update({f"modal_notes_{pid}": st.session_state[f"input_notes_{pid}"]}))
+            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+            st.markdown('<p class="form-label">PROBLEMATIQUE / BESOIN (PAIN POINT)</p>', unsafe_allow_html=True)
+            notes_val = st.text_area("pain", value=st.session_state[f"modal_notes_{pid}"], height=120, key=f"input_notes_{pid}", label_visibility="collapsed", placeholder="Ex: Volatilite prix oeuf, Texture seche, Besoin Clean Label...")
+            st.session_state[f"modal_notes_{pid}"] = notes_val
             
-            st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
             st.markdown('<p class="form-label">NOTES TECHNIQUES R&D</p>', unsafe_allow_html=True)
-            st.text_area("tech", value=st.session_state[f"modal_tech_{pid}"], height=90, key=f"input_tech_{pid}", label_visibility="collapsed", placeholder="pH cible, Température cuisson, Dosage recommandé...", on_change=lambda: st.session_state.update({f"modal_tech_{pid}": st.session_state[f"input_tech_{pid}"]}))
+            tech_val = st.text_area("tech", value=st.session_state[f"modal_tech_{pid}"], height=120, key=f"input_tech_{pid}", label_visibility="collapsed", placeholder="pH cible, Temperature cuisson, Dosage recommande...")
+            st.session_state[f"modal_tech_{pid}"] = tech_val
         
         with tab2:
-            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
             samples_df = get_sub_data("samples", pid)
             if samples_df.empty:
-                st.markdown("<div style='text-align: center; padding: 32px; color: #9CA3AF;'><p>Aucun échantillon</p></div>", unsafe_allow_html=True)
+                st.markdown("<div style='text-align: center; padding: 40px 20px; color: #9CA3AF;'><p style='font-size: 14px;'>Aucun echantillon envoye</p></div>", unsafe_allow_html=True)
             else:
-                S_OPTS = ["En test", "Validé", "Rejeté", "Perdu"]
+                S_OPTS = ["En test", "Valide", "Rejete", "Perdu"]
                 for _, r in samples_df.iterrows():
                     with st.container(border=True):
-                        sc1, sc2, sc3 = st.columns([3, 1.5, 0.5])
+                        sc1, sc2, sc3 = st.columns([3, 1.5, 0.8])
                         with sc1:
-                            st.markdown(f"<div><span style='font-weight: 600;'>{clean_prod_name(r['product_name'])}</span> · {r['reference']}<br><span style='font-size: 12px; color: #9CA3AF;'>{r['date_sent'][:10]}</span></div>", unsafe_allow_html=True)
+                            st.markdown(f"<div><span style='font-weight: 600;'>{clean_prod_name(r['product_name'])}</span> - {r['reference']}<br><span style='font-size: 12px; color: #9CA3AF;'>{r['date_sent'][:10]}</span></div>", unsafe_allow_html=True)
                         with sc2:
                             s_idx = S_OPTS.index(r["status"]) if r["status"] in S_OPTS else 0
                             new_s = st.selectbox("s", S_OPTS, index=s_idx, key=f"ss_{r['id']}", label_visibility="collapsed")
                             if new_s != r["status"]:
                                 get_supabase().table("samples").update({"status": new_s}).eq("id", r["id"]).execute()
                         with sc3:
-                            if st.button("🗑", key=f"ds_{r['id']}"):
+                            if st.button("Supprimer", key=f"ds_{r['id']}", type="secondary"):
                                 get_supabase().table("samples").delete().eq("id", r["id"]).execute()
                                 st.rerun()
             
-            st.markdown("<hr style='margin: 16px 0;'>", unsafe_allow_html=True)
-            st.markdown('<p class="form-label">➕ AJOUTER UN ÉCHANTILLON</p>', unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 20px 0;'>", unsafe_allow_html=True)
+            st.markdown('<p class="form-label">AJOUTER UN ECHANTILLON</p>', unsafe_allow_html=True)
             asc1, asc2, asc3 = st.columns([2, 1.5, 1])
             with asc1:
-                s_ref = st.text_input("ref", key=f"sr_{pid}", placeholder="Référence", label_visibility="collapsed")
+                s_ref = st.text_input("ref", key=f"sr_{pid}", placeholder="Reference / Lot", label_visibility="collapsed")
             with asc2:
                 s_prod = st.selectbox("sprod", PRODUITS_DISPONIBLES, key=f"sp_{pid}", label_visibility="collapsed")
             with asc3:
@@ -442,31 +411,32 @@ def show_prospect_modal(pid, data):
                         st.rerun()
         
         with tab3:
-            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
             activities_df = get_sub_data("activities", pid)
             if activities_df.empty:
-                st.markdown("<div style='text-align: center; padding: 32px; color: #9CA3AF;'><p>Aucune activité</p></div>", unsafe_allow_html=True)
+                st.markdown("<div style='text-align: center; padding: 40px 20px; color: #9CA3AF;'><p style='font-size: 14px;'>Aucune activite enregistree</p></div>", unsafe_allow_html=True)
             else:
                 for _, act in activities_df.head(5).iterrows():
-                    icon = "📧" if act["type"] == "Email" else "📞" if act["type"] == "Appel" else "📅" if act["type"] == "RDV" else "📝"
-                    st.markdown(f"<div style='padding: 12px; background: #F9FAFB; border-radius: 8px; margin-bottom: 8px;'><div style='display: flex; justify-content: space-between;'><span style='font-weight: 600; font-size: 13px;'>{icon} {act['type']}</span><span style='font-size: 11px; color: #9CA3AF;'>{act['date'][:10]}</span></div><p style='font-size: 13px; color: #6B7280; margin: 4px 0 0;'>{act['content'][:100]}{'...' if len(act['content']) > 100 else ''}</p></div>", unsafe_allow_html=True)
+                    atype = act['type']
+                    aicon = "[Email]" if atype == "Email" else "[Appel]" if atype == "Appel" else "[RDV]" if atype == "RDV" else "[Note]"
+                    st.markdown(f"<div style='padding: 14px; background: #F9FAFB; border-radius: 8px; margin-bottom: 10px;'><div style='display: flex; justify-content: space-between;'><span style='font-weight: 600; font-size: 14px;'>{aicon} {atype}</span><span style='font-size: 12px; color: #9CA3AF;'>{act['date'][:10]}</span></div><p style='font-size: 14px; color: #6B7280; margin: 6px 0 0;'>{act['content'][:120]}{'...' if len(act['content']) > 120 else ''}</p></div>", unsafe_allow_html=True)
             
-            st.markdown("<hr style='margin: 16px 0;'>", unsafe_allow_html=True)
-            st.markdown('<p class="form-label">➕ AJOUTER UNE ACTIVITÉ</p>', unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 20px 0;'>", unsafe_allow_html=True)
+            st.markdown('<p class="form-label">AJOUTER UNE ACTIVITE</p>', unsafe_allow_html=True)
             act_type = st.selectbox("type", ["Email", "Appel", "RDV", "Note"], key=f"at_{pid}", label_visibility="collapsed")
-            act_content = st.text_area("content", height=70, key=f"ac_{pid}", placeholder="Décrivez l'activité...", label_visibility="collapsed")
-            if st.button("Enregistrer l'activité", type="primary", key=f"save_act_{pid}"):
+            act_content = st.text_area("content", height=100, key=f"ac_{pid}", placeholder="Decrivez l'activite...", label_visibility="collapsed")
+            if st.button("Enregistrer l'activite", type="primary", key=f"save_act_{pid}"):
                 if act_content.strip():
                     get_supabase().table("activities").insert({"prospect_id": pid, "type": act_type, "content": act_content, "date": datetime.now().isoformat()}).execute()
-                    st.success("✅ Activité ajoutée")
+                    st.success("Activite ajoutee")
                     st.rerun()
     
-    # FOOTER
-    st.markdown("<hr style='margin: 20px 0 14px;'>", unsafe_allow_html=True)
+    # FOOTER - SUPPRESSION SECURISEE
+    st.markdown("<hr style='margin: 24px 0 16px;'>", unsafe_allow_html=True)
     
     if st.session_state.get(f"confirm_delete_{pid}", False):
-        st.error("⚠️ Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.")
-        dc1, dc2, dc3 = st.columns([1.2, 1.2, 2])
+        st.warning("Voulez-vous vraiment supprimer ce projet? Cette action est irreversible.")
+        dc1, dc2, dc3 = st.columns([1.5, 1.5, 2])
         with dc1:
             if st.button("Confirmer la suppression", key=f"confirm_yes_{pid}", use_container_width=True, type="primary"):
                 get_supabase().table("samples").delete().eq("prospect_id", pid).execute()
@@ -481,13 +451,13 @@ def show_prospect_modal(pid, data):
                 reset_pipeline()
                 st.rerun()
         with dc2:
-            if st.button("Annuler", key=f"confirm_no_{pid}", use_container_width=True):
+            if st.button("Annuler", key=f"confirm_no_{pid}", use_container_width=True, type="secondary"):
                 safe_del(f"confirm_delete_{pid}")
                 st.rerun()
     else:
-        fc1, fc2, fc3, fc4 = st.columns([1.2, 2, 1, 1.5])
+        fc1, fc2, fc3, fc4 = st.columns([1.5, 2, 1.2, 1.8])
         with fc1:
-            if not is_new and st.button("🗑️ Supprimer", key=f"del_{pid}", use_container_width=True, type="secondary"):
+            if not is_new and st.button("Supprimer le projet", key=f"del_{pid}", use_container_width=True, type="secondary"):
                 st.session_state[f"confirm_delete_{pid}"] = True
                 st.rerun()
         with fc3:
@@ -500,7 +470,7 @@ def show_prospect_modal(pid, data):
                         safe_del(k)
                 st.rerun()
         with fc4:
-            if st.button("✓ Enregistrer", type="primary", key=f"save_{pid}", use_container_width=True):
+            if st.button("Enregistrer", type="primary", key=f"save_{pid}", use_container_width=True):
                 try:
                     products_str = serialize_products(st.session_state.get(f"modal_products_{pid}", []))
                     save_data = {
@@ -516,7 +486,7 @@ def show_prospect_modal(pid, data):
                         "last_action_date": datetime.now().isoformat(),
                     }
                     get_supabase().table("prospects").update(save_data).eq("id", pid).execute()
-                    st.success("✅ Projet enregistré")
+                    st.success("Projet enregistre")
                     time.sleep(0.8)
                     safe_del("active_prospect_id")
                     for k in list(st.session_state.keys()):
@@ -525,17 +495,17 @@ def show_prospect_modal(pid, data):
                     reset_pipeline()
                     st.rerun()
                 except Exception as e:
-                    st.error(f"❌ Erreur: {str(e)}")
+                    st.error(f"Erreur: {str(e)}")
 
 # =============================================================================
-# 8. SIDEBAR NAVIGATION
+# SIDEBAR
 # =============================================================================
 
 def render_sidebar():
     with st.sidebar:
-        st.markdown(f"<div style='text-align: center; padding: 16px 0 20px;'>{ICON_LOGO}<div style='font-weight: 700; font-size: 18px; color: #111827; margin-top: 12px;'>ING Growth</div><div style='font-size: 11px; color: #9CA3AF; text-transform: uppercase;'>AI Platform</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center; padding: 16px 0 24px;'>{ICON_LOGO}<div style='font-weight: 700; font-size: 20px; color: #111827; margin-top: 12px;'>ING Growth</div><div style='font-size: 11px; color: #9CA3AF; text-transform: uppercase;'>AI Platform</div></div>", unsafe_allow_html=True)
         
-        if st.button("✦  Nouveau Projet", key="btn_new_project", use_container_width=True, type="primary"):
+        if st.button("Nouveau Projet", key="btn_new_project", use_container_width=True, type="primary"):
             try:
                 res = get_supabase().table("prospects").insert({"company_name": "Nouveau Prospect", "status": "Prospection", "last_action_date": datetime.now().isoformat()}).execute()
                 if res.data:
@@ -544,17 +514,22 @@ def render_sidebar():
             except Exception as e:
                 st.error(f"Erreur: {e}")
         
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
         if 'selected_page' not in st.session_state:
             st.session_state.selected_page = 'Pipeline'
         
         alert_count = count_alerts()
         nav_items = [
-            ("Dashboard", "Tableau de Bord"), ("Pipeline", "Pipeline"), ("Kanban", "Kanban"),
-            ("Samples", "Échantillons"), ("Contacts", "Contacts"), ("News", "Veille IA"),
-            ("Excel", "Import / Export"), ("Webhooks", "Webhooks"),
-            ("Alertes", f"À Relancer ({alert_count})" if alert_count > 0 else "À Relancer"),
+            ("Dashboard", "Tableau de Bord"),
+            ("Pipeline", "Pipeline"),
+            ("Kanban", "Kanban"),
+            ("Samples", "Echantillons"),
+            ("Contacts", "Contacts"),
+            ("News", "Veille IA"),
+            ("Excel", "Import / Export"),
+            ("Webhooks", "Webhooks"),
+            ("Alertes", f"A Relancer ({alert_count})" if alert_count > 0 else "A Relancer"),
         ]
         
         for page_key, label in nav_items:
@@ -563,9 +538,9 @@ def render_sidebar():
                 st.session_state.selected_page = page_key
                 st.rerun()
         
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         st.markdown("---")
-        st.caption("DONNÉES")
+        st.caption("DONNEES")
         col_exp, col_imp = st.columns(2)
         with col_exp:
             if st.button("Export", key="btn_export", use_container_width=True, type="secondary"):
@@ -577,15 +552,85 @@ def render_sidebar():
                 st.rerun()
         
         st.markdown("---")
-        st.markdown(f"<div style='display: flex; align-items: center; gap: 8px;'>{get_icon('user', '#9CA3AF', 16)}<span style='font-size: 12px; color: #9CA3AF;'>Utilisateur connecté</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='display: flex; align-items: center; gap: 8px;'>{get_icon('user', '#9CA3AF', 16)}<span style='font-size: 12px; color: #9CA3AF;'>Utilisateur connecte</span></div>", unsafe_allow_html=True)
         return st.session_state.selected_page
 
 # =============================================================================
-# 9. PAGES
+# PAGE DASHBOARD
+# =============================================================================
+
+def page_dashboard():
+    st.markdown(f"<div style='margin-bottom: 24px;'><h1 style='font-size: 26px; font-weight: 700; margin: 0;'>{get_icon('dashboard', '#1E3F35', 28)} Tableau de Bord</h1><p style='font-size: 14px; color: #6B7280; margin: 4px 0 0;'>Vue d'ensemble de votre activite commerciale</p></div>", unsafe_allow_html=True)
+    
+    df = get_prospects()
+    if df.empty:
+        st.info("Aucune donnee disponible")
+        return
+    
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Projets actifs", len(df))
+    m2.metric("Potentiel total", f"{int(df['potential_volume'].sum())} T")
+    signed = len(df[df["status"].isin(["Contrat", "Client Actif"])])
+    m3.metric("Taux conversion", f"{int(signed / max(len(df), 1) * 100)}%")
+    m4.metric("En R&D", len(df[df["status"].isin(["Echantillons en test", "Tests en cours"])]))
+    
+    st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    
+    # Graphique Produits avec EXPLODE
+    with c1:
+        st.markdown("### Mix Ingredients")
+        products_series = df["product_interest"].dropna()
+        products_series = products_series[products_series != ""]
+        if not products_series.empty:
+            exploded = products_series.str.split(", ").explode()
+            exploded = exploded.str.strip()
+            exploded = exploded[exploded.isin(PRODUITS_DISPONIBLES)]
+            if not exploded.empty:
+                product_counts = exploded.value_counts().reset_index()
+                product_counts.columns = ["Ingredient", "Nombre"]
+                fig = px.pie(product_counts, values="Nombre", names="Ingredient", hole=0.45, color_discrete_sequence=px.colors.sequential.Greens_r)
+                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_family="DM Sans", showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=-0.2))
+                fig.update_traces(textposition='inside', textinfo='percent+label')
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Aucun ingredient strategique")
+        else:
+            st.info("Aucun produit renseigne")
+    
+    # Graphique Statuts
+    with c2:
+        st.markdown("### Pipeline par Statut")
+        bar_df = df.groupby("status").size().reset_index(name="count")
+        if not bar_df.empty:
+            bar_df["status"] = pd.Categorical(bar_df["status"], categories=STATUTS, ordered=True)
+            bar_df = bar_df.sort_values("status")
+            fig = px.bar(bar_df, x="status", y="count", color_discrete_sequence=px.colors.sequential.Greens_r)
+            fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_family="DM Sans", xaxis_title="", yaxis_title="Nombre de projets", showlegend=False)
+            fig.update_xaxes(tickangle=45)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Aucune donnee")
+    
+    # Graphique Potentiel
+    st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
+    st.markdown("### Potentiel (T) par Statut")
+    potential_df = df.groupby("status")["potential_volume"].sum().reset_index()
+    potential_df.columns = ["Statut", "Potentiel"]
+    potential_df["Statut"] = pd.Categorical(potential_df["Statut"], categories=STATUTS, ordered=True)
+    potential_df = potential_df.sort_values("Statut")
+    if not potential_df.empty and potential_df["Potentiel"].sum() > 0:
+        fig = px.bar(potential_df, x="Statut", y="Potentiel", color_discrete_sequence=px.colors.sequential.Greens_r)
+        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_family="DM Sans", xaxis_title="", yaxis_title="Potentiel (Tonnes)")
+        fig.update_xaxes(tickangle=45)
+        st.plotly_chart(fig, use_container_width=True)
+
+# =============================================================================
+# PAGE PIPELINE
 # =============================================================================
 
 def page_pipeline():
-    st.markdown(f"<div style='margin-bottom: 24px;'><h1 style='font-size: 24px; font-weight: 700; margin: 0;'>{get_icon('pipeline', '#1E3F35', 28)} Pipeline Food & Ingrédients</h1><p style='font-size: 14px; color: #6B7280; margin: 4px 0 0;'>Vue complète de vos projets</p></div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='margin-bottom: 24px;'><h1 style='font-size: 26px; font-weight: 700; margin: 0;'>{get_icon('pipeline', '#1E3F35', 28)} Pipeline Food & Ingredients</h1><p style='font-size: 14px; color: #6B7280; margin: 4px 0 0;'>Vue complete de vos projets en cours</p></div>", unsafe_allow_html=True)
     
     df_raw = get_prospects()
     if df_raw.empty:
@@ -598,9 +643,13 @@ def page_pipeline():
     with f2:
         s_filter = st.selectbox("stat", ["Tous Statuts"] + STATUTS, key="sf", label_visibility="collapsed")
     with f3:
-        sal_filter = st.selectbox("salon", ["Tous Salons"] + sorted(df_raw["last_salon"].dropna().unique().tolist()), key="salf", label_visibility="collapsed")
+        salons = ["Tous Salons"] + sorted([s for s in df_raw["last_salon"].dropna().unique().tolist() if s])
+        sal_filter = st.selectbox("salon", salons, key="salf", label_visibility="collapsed")
     with f4:
-        c_filter = st.selectbox("country", ["Tous Pays"] + sorted(df_raw["country"].dropna().unique().tolist()), key="cf", label_visibility="collapsed")
+        countries = ["Tous Pays"] + sorted([c for c in df_raw["country"].dropna().unique().tolist() if c])
+        c_filter = st.selectbox("country", countries, key="cf", label_visibility="collapsed")
+    
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
     
     df = df_raw.copy()
     if p_filter != "Tous Produits":
@@ -612,94 +661,95 @@ def page_pipeline():
     if c_filter != "Tous Pays":
         df = df[df["country"] == c_filter]
     
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-    
     for _, row in df.iterrows():
-        cols = st.columns([2, 1, 1.2, 1.2, 1, 1.2, 0.5])
+        cols = st.columns([2.5, 1, 1.5, 1.5, 1, 1.5, 0.5])
         with cols[0]:
             if st.button(row["company_name"].upper(), key=f"row_{row['id']}", use_container_width=True):
                 st.session_state["active_prospect_id"] = row["id"]
                 st.rerun()
         with cols[1]:
-            st.markdown(f'<span class="col-country">{row.get("country") or "—"}</span>', unsafe_allow_html=True)
+            st.markdown(f'<span class="col-country">{row.get("country") or "-"}</span>', unsafe_allow_html=True)
         with cols[2]:
             products = row.get("product_interest", "") or ""
-            st.markdown(f'<span class="col-product">{products[:25]}{"..." if len(products) > 25 else ""}</span>', unsafe_allow_html=True)
+            display_prod = products[:30] + "..." if len(products) > 30 else (products or "-")
+            st.markdown(f'<span class="col-product">{display_prod}</span>', unsafe_allow_html=True)
         with cols[3]:
             st.markdown(get_status_html(row.get("status")), unsafe_allow_html=True)
         with cols[4]:
-            date_str = "—"
+            date_str = "-"
+            date_color = "#6B7280"
             if row.get("last_action_date"):
                 try:
-                    date_str = datetime.strptime(row["last_action_date"][:10], "%Y-%m-%d").strftime("%d %b")
+                    dt = datetime.strptime(row["last_action_date"][:10], "%Y-%m-%d")
+                    days_ago = (datetime.now() - dt).days
+                    date_str = dt.strftime("%d %b %y")
+                    date_color = "#DC2626" if days_ago > 45 else "#F59E0B" if days_ago > 30 else "#6B7280"
                 except:
                     pass
-            st.markdown(f'<span class="col-date">{date_str}</span>', unsafe_allow_html=True)
+            st.markdown(f'<span class="col-date" style="color: {date_color};">{date_str}</span>', unsafe_allow_html=True)
         with cols[5]:
-            st.markdown(f'<span class="col-salon">{row.get("last_salon") or "—"}</span>', unsafe_allow_html=True)
+            st.markdown(f'<span class="col-salon">{row.get("last_salon") or "-"}</span>', unsafe_allow_html=True)
         with cols[6]:
             st.markdown(f'{get_icon("chevron", "#9CA3AF", 16)}', unsafe_allow_html=True)
 
-def page_dashboard():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700;">{get_icon("dashboard", "#1E3F35", 28)} Tableau de Bord</h1>', unsafe_allow_html=True)
-    df = get_prospects()
-    if df.empty:
-        st.info("Aucune donnée")
-        return
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Projets actifs", len(df))
-    m2.metric("Potentiel total", f"{int(df['potential_volume'].sum())} T")
-    signed = len(df[df["status"].isin(["Contrat", "Client Actif"])])
-    m3.metric("Taux conversion", f"{int(signed / max(len(df), 1) * 100)}%")
-    m4.metric("En R&D", len(df[df["status"].isin(["Échantillons en test", "Tests en cours"])]))
-    c1, c2 = st.columns(2)
-    with c1:
-        pie_df = df[df["product_interest"].notna() & (df["product_interest"] != "")]
-        if not pie_df.empty:
-            fig = px.pie(pie_df, names="product_interest", hole=0.45, title="Mix Produits")
-            st.plotly_chart(fig, use_container_width=True)
-    with c2:
-        bar_df = df.groupby("status").size().reset_index(name="count")
-        if not bar_df.empty:
-            fig = px.bar(bar_df, x="status", y="count", title="Par Statut")
-            st.plotly_chart(fig, use_container_width=True)
+# =============================================================================
+# PAGE KANBAN
+# =============================================================================
 
 def page_kanban():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700;">{get_icon("kanban", "#1E3F35", 28)} Kanban Board</h1>', unsafe_allow_html=True)
+    st.markdown(f"<div style='margin-bottom: 24px;'><h1 style='font-size: 26px; font-weight: 700; margin: 0;'>{get_icon('kanban', '#1E3F35', 28)} Kanban Board</h1></div>", unsafe_allow_html=True)
     df = get_prospects()
     if df.empty:
         st.info("Aucun prospect")
         return
+    
+    COLORS = {"Prospection": "#3B82F6", "Qualification": "#6366F1", "Echantillons en test": "#F59E0B", "Tests en cours": "#EA580C", "Negociation": "#8B5CF6", "Contrat": "#10B981", "Client Actif": "#059669"}
     cols = st.columns(len(STATUTS))
     for i, stage in enumerate(STATUTS):
         with cols[i]:
             count = len(df[df["status"] == stage])
-            st.markdown(f"<div style='border-bottom: 3px solid #1E3F35; padding-bottom: 8px; margin-bottom: 12px;'><p style='font-size: 11px; font-weight: 700; text-transform: uppercase; margin: 0;'>{stage}</p><p style='font-size: 11px; color: #9CA3AF; margin: 4px 0 0;'>{count}</p></div>", unsafe_allow_html=True)
+            color = COLORS.get(stage, "#6B7280")
+            st.markdown(f"<div style='border-bottom: 3px solid {color}; padding-bottom: 8px; margin-bottom: 12px;'><p style='font-size: 10px; font-weight: 700; color: {color}; text-transform: uppercase; margin: 0;'>{stage}</p><p style='font-size: 11px; color: #9CA3AF; margin: 4px 0 0;'>{count}</p></div>", unsafe_allow_html=True)
             for _, row in df[df["status"] == stage].iterrows():
                 with st.container(border=True):
-                    st.markdown(f"**{row['company_name'][:15]}**")
-                    if st.button("Ouvrir", key=f"o_{row['id']}", use_container_width=True):
-                        st.session_state["active_prospect_id"] = row["id"]
-                        st.rerun()
+                    st.markdown(f"**{row['company_name'][:18]}**")
+                    st.caption(f"{row.get('country', 'N/A')} - {int(row.get('potential_volume', 0))} T")
+                    bc1, bc2, bc3 = st.columns([1, 2, 1])
+                    with bc1:
+                        if i > 0 and st.button("<", key=f"p_{row['id']}"):
+                            get_supabase().table("prospects").update({"status": STATUTS[i-1]}).eq("id", row["id"]).execute()
+                            st.rerun()
+                    with bc2:
+                        if st.button("Ouvrir", key=f"o_{row['id']}", use_container_width=True):
+                            st.session_state["active_prospect_id"] = row["id"]
+                            st.rerun()
+                    with bc3:
+                        if i < len(STATUTS)-1 and st.button(">", key=f"n_{row['id']}"):
+                            get_supabase().table("prospects").update({"status": STATUTS[i+1]}).eq("id", row["id"]).execute()
+                            st.rerun()
+
+# =============================================================================
+# AUTRES PAGES
+# =============================================================================
 
 def page_samples():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700;">{get_icon("flask", "#1E3F35", 28)} Échantillons</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 26px; font-weight: 700;">{get_icon("flask", "#1E3F35", 28)} Echantillons</h1>', unsafe_allow_html=True)
     try:
         samp = pd.DataFrame(get_supabase().table("samples").select("*, prospects(company_name)").execute().data)
         if not samp.empty:
-            samp["Client"] = samp["prospects"].apply(lambda x: x["company_name"] if x else "—")
+            samp["Client"] = samp["prospects"].apply(lambda x: x["company_name"] if x else "-")
             st.dataframe(samp[["date_sent", "product_name", "reference", "status", "Client", "feedback"]], use_container_width=True)
         else:
-            st.info("Aucun échantillon")
+            st.info("Aucun echantillon")
     except:
-        st.info("Aucun échantillon")
+        st.info("Aucun echantillon")
 
 def page_contacts():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700;">{get_icon("contacts", "#1E3F35", 28)} Contacts</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 26px; font-weight: 700;">{get_icon("contacts", "#1E3F35", 28)} Contacts</h1>', unsafe_allow_html=True)
     try:
         cons = pd.DataFrame(get_supabase().table("contacts").select("*, prospects(company_name)").execute().data)
         if not cons.empty:
-            cons["Entreprise"] = cons["prospects"].apply(lambda x: x["company_name"] if x else "—")
+            cons["Entreprise"] = cons["prospects"].apply(lambda x: x["company_name"] if x else "-")
             st.dataframe(cons[["name", "role", "email", "phone", "Entreprise"]], use_container_width=True)
         else:
             st.info("Aucun contact")
@@ -707,38 +757,38 @@ def page_contacts():
         st.info("Aucun contact")
 
 def page_news():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700;">{get_icon("news", "#1E3F35", 28)} Veille IA</h1>', unsafe_allow_html=True)
-    st.info("Veille stratégique - Configuration requise")
+    st.markdown(f'<h1 style="font-size: 26px; font-weight: 700;">{get_icon("news", "#1E3F35", 28)} Veille IA</h1>', unsafe_allow_html=True)
+    st.info("Veille strategique via Perplexity AI - Configuration requise")
 
 def page_excel():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700;">{get_icon("export", "#1E3F35", 28)} Import / Export</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 26px; font-weight: 700;">{get_icon("export", "#1E3F35", 28)} Import / Export</h1>', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
         with st.container(border=True):
-            st.markdown("**Export**")
+            st.markdown(f'<p style="font-weight: 600;">{get_icon("export", "#1E3F35", 18)} Export</p>', unsafe_allow_html=True)
             df = get_prospects()
             if not df.empty:
                 buffer = BytesIO()
                 df.to_excel(buffer, index=False, engine="openpyxl")
                 buffer.seek(0)
-                st.download_button("Télécharger Excel", buffer, f"prospects_{datetime.now().strftime('%Y%m%d')}.xlsx", type="primary", use_container_width=True)
+                st.download_button("Telecharger Excel", buffer, f"prospects_{datetime.now().strftime('%Y%m%d')}.xlsx", type="primary", use_container_width=True)
             else:
-                st.info("Aucune donnée")
+                st.info("Aucune donnee")
     with c2:
         with st.container(border=True):
-            st.markdown("**Import**")
+            st.markdown(f'<p style="font-weight: 600;">{get_icon("import", "#1E3F35", 18)} Import</p>', unsafe_allow_html=True)
             uploaded = st.file_uploader("Fichier Excel", type=["xlsx"], label_visibility="collapsed")
             if uploaded and st.button("Importer", type="primary"):
-                st.success("Import réussi")
+                st.success("Import reussi")
 
 def page_webhooks():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700;">{get_icon("webhook", "#1E3F35", 28)} Webhooks</h1>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 26px; font-weight: 700;">{get_icon("webhook", "#1E3F35", 28)} Webhooks</h1>', unsafe_allow_html=True)
     st.code("https://your-app.streamlit.io/api/webhook/leads")
     st.info("Configurez ce webhook dans Make.com")
 
 def page_alertes():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700;">{get_icon("alert", "#1E3F35", 28)} Alertes</h1>', unsafe_allow_html=True)
-    st.markdown(f'<p style="font-weight: 600;">{get_icon("warning", "#F59E0B", 18)} Clients sans contact (45+ jours)</p>', unsafe_allow_html=True)
+    st.markdown(f'<h1 style="font-size: 26px; font-weight: 700;">{get_icon("alert", "#1E3F35", 28)} Alertes</h1>', unsafe_allow_html=True)
+    st.markdown(f'<p style="font-weight: 600; margin-top: 16px;">{get_icon("warning", "#F59E0B", 18)} Clients sans contact (45+ jours)</p>', unsafe_allow_html=True)
     try:
         threshold = (datetime.now() - timedelta(days=45)).isoformat()
         alerts = pd.DataFrame(get_supabase().table("prospects").select("*").eq("status", "Client Actif").lte("last_action_date", threshold).execute().data)
@@ -750,19 +800,19 @@ def page_alertes():
                         st.session_state["active_prospect_id"] = a["id"]
                         st.rerun()
         else:
-            st.success("✅ Tous les clients sont à jour")
+            st.markdown(f'<p style="color: #10B981;">{get_icon("check_circle", "#10B981", 18)} Tous les clients sont a jour</p>', unsafe_allow_html=True)
     except:
         st.info("Aucune alerte")
 
 # =============================================================================
-# 10. MAIN
+# MAIN
 # =============================================================================
 
 def main():
     if not check_auth():
         return
     if not get_supabase():
-        st.error("Connexion base de données échouée")
+        st.error("Connexion base de donnees echouee")
         st.stop()
     
     selected_page = render_sidebar()
@@ -774,11 +824,7 @@ def main():
         except:
             safe_del("active_prospect_id")
     
-    pages = {
-        "Dashboard": page_dashboard, "Pipeline": page_pipeline, "Kanban": page_kanban,
-        "Samples": page_samples, "Contacts": page_contacts, "News": page_news,
-        "Excel": page_excel, "Webhooks": page_webhooks, "Alertes": page_alertes,
-    }
+    pages = {"Dashboard": page_dashboard, "Pipeline": page_pipeline, "Kanban": page_kanban, "Samples": page_samples, "Contacts": page_contacts, "News": page_news, "Excel": page_excel, "Webhooks": page_webhooks, "Alertes": page_alertes}
     pages.get(selected_page, page_pipeline)()
 
 if __name__ == "__main__":
