@@ -973,7 +973,7 @@ if uploaded:
 
 # Preview table
 st.markdown("<div style='height:32px;'></div>", unsafe_allow_html=True)
-    if not df.empty:
+if not df.empty:
         st.markdown("""
             <p style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#1A1F1C;margin-bottom:12px;">
                 Aperçu de la base complète
