@@ -1243,7 +1243,7 @@ def show_prospect_modal(pid, data):
             
             st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
             
-           st.markdown('<p class="form-label">PROBLÉMATIQUE / BESOIN (PAIN POINT)</p>', unsafe_allow_html=True)
+            st.markdown('<p class="form-label">PROBLÉMATIQUE / BESOIN (PAIN POINT)</p>', unsafe_allow_html=True)
             pain = st.text_area("pain", value=st.session_state[f"modal_notes_{pid}"], height=110, key=f"pain_{pid}", label_visibility="collapsed", placeholder="Ex: Volatilité prix œuf, Texture sèche, Besoin Clean Label...")
             st.session_state[f"modal_notes_{pid}"] = pain
             
