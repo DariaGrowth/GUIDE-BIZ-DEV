@@ -623,7 +623,6 @@ def page_excel():
                     import_df = import_df.loc[:, ~import_df.columns.duplicated()]
                     import_df = import_df.dropna(how="all")
 
-                    # Sauvegarder dans session_state pour survivre au rerun
                     st.session_state["import_df"] = import_df
                     st.success(f"✓ Fichier lu : **{len(import_df)} lignes**")
                     st.markdown("**Colonnes :** " + ", ".join(import_df.columns.tolist()))
@@ -633,7 +632,6 @@ def page_excel():
                     st.error(f"Erreur lecture fichier : {e}")
                     st.info("Vérifiez que le fichier est au format .xlsx")
 
-            # Bouton HORS du bloc if uploaded — persiste grâce au session_state
             if "import_df" in st.session_state:
                 if st.button("✓ Importer dans la base", type="primary", use_container_width=True, key="do_import"):
                     import_df = st.session_state["import_df"]
@@ -645,10 +643,14 @@ def page_excel():
                                 err += 1
                                 continue
                             pri = str(r.get("priority", "Low")).strip()
-                            if pri.lower() in ("middle", "medium", "moyen"): pri = "Middle"
-                            elif pri.lower() in ("high", "haute", "haut"):   pri = "High"
-                            elif pri.lower() in ("low", "bas", "faible"):    pri = "Low"
-                            if pri not in PRIORITY_OPTS: pri = "Low"
+                            if pri.lower() in ("middle", "medium", "moyen"):
+                                pri = "Middle"
+                            elif pri.lower() in ("high", "haute", "haut"):
+                                pri = "High"
+                            elif pri.lower() in ("low", "bas", "faible"):
+                                pri = "Low"
+                            if pri not in PRIORITY_OPTS:
+                                pri = "Low"
                             payload = {
                                 "company":        company_val,
                                 "priority":       pri,
@@ -663,17 +665,13 @@ def page_excel():
                             payload = {k: ("" if str(v).lower() in ("nan","none","nat") else v) for k, v in payload.items()}
                             db().table("sulfodyne_prospects").insert(payload).execute()
                             ok += 1
-                       except Exception:
+                        except Exception:
                             err += 1
                     refresh()
                     del st.session_state["import_df"]
                     st.success(f"✓ {ok} prospects importés · {err} lignes ignorées")
                     time.sleep(1)
                     st.rerun()
-
-            except Exception as e:
-                st.error(f"Erreur lecture fichier : {e}")
-                st.info("Vérifiez que le fichier est au format .xlsx")
 
     st.markdown("<div style='height:32px;'></div>", unsafe_allow_html=True)
     if not df.empty:
@@ -687,7 +685,6 @@ def page_excel():
             use_container_width=True,
             height=320
         )
-
 # =============================================================================
 # MAIN
 # =============================================================================
