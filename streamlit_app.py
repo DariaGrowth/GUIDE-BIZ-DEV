@@ -68,57 +68,65 @@ CSS = """
     [data-testid="stVerticalBlock"] { gap: 0 !important; }
     button:focus, button:focus-visible { outline: none !important; box-shadow: none !important; }
 
-    /* ── SIDEBAR ── */
+ /* ── SIDEBAR ── */
     section[data-testid="stSidebar"] {
         background: var(--forest) !important;
         border-right: none !important;
-        min-width: 220px !important;
-        max-width: 220px !important;
+        min-width: 240px !important;
+        max-width: 240px !important;
     }
-    section[data-testid="stSidebar"] > div { padding: 28px 16px !important; }
-    section[data-testid="stSidebar"] * { color: rgba(255,255,255,0.85) !important; }
+    section[data-testid="stSidebar"] > div {
+        padding: 28px 20px !important;
+    }
+    section[data-testid="stSidebar"] * {
+        color: rgba(255,255,255,0.85) !important;
+    }
     section[data-testid="stSidebar"] div[data-testid="stVerticalBlockBorderWrapper"],
     section[data-testid="stSidebar"] .stButton {
-        background: transparent !important; border: none !important; box-shadow: none !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }
-
-    /* Sidebar primary button */
+    /* Nouveau Prospect button */
     section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
         width: 100% !important;
-        background: rgba(255,255,255,0.12) !important;
+        background: #10B981 !important;
         color: white !important;
-        border: 1px solid rgba(255,255,255,0.2) !important;
+        border: none !important;
         border-radius: 10px !important;
-        padding: 13px 16px !important;
+        padding: 14px 16px !important;
         font-family: 'Syne', sans-serif !important;
         font-weight: 700 !important;
-        font-size: 13px !important;
+        font-size: 14px !important;
         letter-spacing: 0.3px !important;
+        box-shadow: 0 4px 12px rgba(16,185,129,0.3) !important;
         transition: all 0.15s ease !important;
     }
     section[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
-        background: rgba(255,255,255,0.2) !important;
-        border-color: rgba(255,255,255,0.35) !important;
+        background: #059669 !important;
+        box-shadow: 0 6px 16px rgba(16,185,129,0.4) !important;
+        transform: translateY(-1px) !important;
     }
-
-    /* Sidebar secondary nav buttons */
+    /* Nav buttons */
     section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
         width: 100% !important;
         background: transparent !important;
-        color: rgba(255,255,255,0.65) !important;
+        color: rgba(255,255,255,0.6) !important;
         border: none !important;
-        border-radius: 8px !important;
-        padding: 11px 14px !important;
-        font-size: 13.5px !important;
+        border-left: 3px solid transparent !important;
+        border-radius: 0 8px 8px 0 !important;
+        padding: 12px 16px !important;
+        font-size: 14px !important;
         font-weight: 500 !important;
         text-align: left !important;
         justify-content: flex-start !important;
         transition: all 0.15s ease !important;
-        margin: 1px 0 !important;
+        margin: 2px 0 !important;
     }
     section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
         background: rgba(255,255,255,0.1) !important;
         color: white !important;
+        border-left: 3px solid rgba(16,185,129,0.5) !important;
     }
 
     /* ── MAIN CONTENT ── */
