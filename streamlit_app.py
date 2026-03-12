@@ -563,12 +563,11 @@ pages = [
             ("Import/Export",""),
         ]
 
-for label, icon in pages:
-    is_active = st.session_state.nav_page == label
-    btn_style = "primary" if is_active else "secondary"
-    if st.button(f"{label}", key=f"nav_{label}", use_container_width=True, type="secondary"):
-        st.session_state.nav_page = label
-        st.rerun()
+    for label, icon in pages:
+        is_active = st.session_state.nav_page == label
+        if st.button(f"{label}", key=f"nav_{label}", use_container_width=True, type="secondary"):
+            st.session_state.nav_page = label
+            st.rerun()
 
         # Active state styling hack
         st.markdown(f"""
@@ -580,19 +579,20 @@ for label, icon in pages:
             </style>
         """, unsafe_allow_html=True)
 
-        st.markdown("<div style='flex:1; min-height:60px;'></div>", unsafe_allow_html=True)
-        st.markdown("---")
-        df = load_prospects()
-        total = len(df)
-        high  = len(df[df["priority"]=="High"]) if not df.empty and "priority" in df.columns else 0
-        st.markdown(f"""
-            <div style="font-size:12px; color:rgba(255,255,255,0.4); line-height:1.8;">
-                <div>{total} prospect{'s' if total!=1 else ''}</div>
-                <div style="color:#EF4444;">{high} High priority</div>
-            </div>
-        """, unsafe_allow_html=True)
+    st.markdown("<div style='flex:1; min-height:60px;'></div>", unsafe_allow_html=True)
+    st.markdown("---")
+    df = load_prospects()
+    total = len(df)
+    high = len(df[df["priority"]=="High"]) if not df.empty and "priority" in df.columns else 0
+    
+    st.markdown(f"""
+        <div style="font-size:12px; color:rgba(255,255,255,0.4); line-height:1.8;">
+            <div>{total} prospect{'s' if total!=1 else ''}</div>
+            <div style="color:#EF4444;">{high} High priority</div>
+        </div>
+    """, unsafe_allow_html=True)
 
-return st.session_state.nav_page
+        return st.session_state.nav_page
 
 # =============================================================================
 # PAGE: PROSPECTS
