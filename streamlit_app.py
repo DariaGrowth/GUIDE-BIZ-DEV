@@ -969,7 +969,7 @@ if uploaded:
                         st.rerun()
                 except Exception as e:
                     st.error(f"Erreur : {e}")
-        st.info("Vérifiez que le fichier est bien au format .xlsx (pas .xls ou .csv)")
+    st.info("Vérifiez que le fichier est bien au format .xlsx (pas .xls ou .csv)")
 
     # Preview table
     st.markdown("<div style='height:32px;'></div>", unsafe_allow_html=True)
