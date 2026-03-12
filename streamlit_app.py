@@ -599,7 +599,7 @@ def page_excel():
                     header_row = 0
                     for i, row in import_df.iterrows():
                         row_vals = [str(v).lower().strip() for v in row.values]
-                        if any(v in ("company","société","societe") for v in row_vals):
+                        if any(v in ("company", "société", "societe") for v in row_vals):
                             header_row = i
                             break
                     import_df = pd.read_excel(uploaded, engine="openpyxl", header=header_row)
@@ -614,7 +614,7 @@ def page_excel():
                     new_cols = []
                     for c in import_df.columns:
                         clean = str(c).strip().lower().replace(" ", "_")
-                        clean = clean.replace("é","e").replace("è","e").replace("ê","e")
+                        clean = clean.replace("é", "e").replace("è", "e").replace("ê", "e")
                         clean = col_map.get(clean, clean)
                         new_cols.append(clean)
                     import_df.columns = new_cols
@@ -623,7 +623,11 @@ def page_excel():
                     import_df = import_df.loc[:, ~import_df.columns.duplicated()]
                     import_df = import_df.dropna(how="all")
 
-                    st.session_state["import_df"] = import_df.to_dict("records")
+                    # Sauvegarder comme liste de dicts — survit au rerun
+                    st.session_state["import_df"]    = import_df.to_dict("records")
+                    st.session_state["import_cols"]  = import_df.columns.tolist()
+                    st.session_state["import_count"] = len(import_df)
+
                     st.success(f"✓ Fichier lu : **{len(import_df)} lignes**")
                     st.markdown("**Colonnes :** " + ", ".join(import_df.columns.tolist()))
                     st.dataframe(import_df.head(5), use_container_width=True)
@@ -632,17 +636,26 @@ def page_excel():
                     st.error(f"Erreur lecture fichier : {e}")
                     st.info("Vérifiez que le fichier est au format .xlsx")
 
+            # Bouton HORS du bloc uploaded — persiste grâce au session_state
             if "import_df" in st.session_state:
+                n = st.session_state.get("import_count", 0)
+                st.markdown(
+                    f"<p style='font-size:13px;color:#1E3F35;margin:8px 0 4px;'>✓ {n} lignes prêtes à importer</p>",
+                    unsafe_allow_html=True
+                )
                 if st.button("✓ Importer dans la base", type="primary", use_container_width=True, key="do_import"):
                     records = st.session_state["import_df"]
                     ok = err = 0
-                    for r in records:
+                    first_error = None
+                    progress = st.progress(0)
+                    total = len(records)
+                    for idx, r in enumerate(records):
                         try:
-                            company_val = str(r.get("company", "")).upper().strip()
+                            company_val = str(r.get("company", "") or "").upper().strip()
                             if not company_val or company_val in ("NAN", "NONE", ""):
                                 err += 1
                                 continue
-                            pri = str(r.get("priority", "Low")).strip()
+                            pri = str(r.get("priority", "Low") or "Low").strip()
                             if pri.lower() in ("middle", "medium", "moyen"):
                                 pri = "Middle"
                             elif pri.lower() in ("high", "haute", "haut"):
@@ -662,29 +675,45 @@ def page_excel():
                                 "created_at":     datetime.now().isoformat(),
                                 "updated_at":     datetime.now().isoformat(),
                             }
-                            payload = {k: ("" if str(v).lower() in ("nan","none","nat") else v) for k, v in payload.items()}
+                            payload = {
+                                k: ("" if str(v).lower() in ("nan", "none", "nat") else v)
+                                for k, v in payload.items()
+                            }
                             db().table("sulfodyne_prospects").insert(payload).execute()
                             ok += 1
-                        except Exception:
+                        except Exception as row_e:
                             err += 1
+                            if first_error is None:
+                                first_error = str(row_e)
+                        progress.progress((idx + 1) / total)
+
                     refresh()
                     del st.session_state["import_df"]
-                    st.success(f"✓ {ok} prospects importés · {err} lignes ignorées")
-                    time.sleep(1)
+                    safe_del("import_cols")
+                    safe_del("import_count")
+
+                    if ok > 0:
+                        st.success(f"✅ {ok} prospects importés · {err} lignes ignorées")
+                    else:
+                        st.error(f"❌ Import échoué — 0 prospects ajoutés, {err} erreurs")
+                        if first_error:
+                            st.code(f"Première erreur : {first_error}")
+                    time.sleep(2)
                     st.rerun()
 
     st.markdown("<div style='height:32px;'></div>", unsafe_allow_html=True)
     if not df.empty:
         st.markdown('<p style="font-family:Syne,sans-serif;font-size:15px;font-weight:700;color:#1A1F1C;margin-bottom:12px;">Aperçu de la base complète</p>', unsafe_allow_html=True)
-        preview_cols = ["company","priority","product","decision_maker","email","website"]
+        preview_cols = ["company", "priority", "product", "decision_maker", "email", "website"]
         st.dataframe(
             df[[c for c in preview_cols if c in df.columns]].rename(columns={
-                "company":"Société","priority":"Priorité","product":"Produit",
-                "decision_maker":"Decision Maker","email":"Email","website":"Website"
+                "company": "Société", "priority": "Priorité", "product": "Produit",
+                "decision_maker": "Decision Maker", "email": "Email", "website": "Website"
             }),
             use_container_width=True,
             height=320
         )
+
 # =============================================================================
 # MAIN
 # =============================================================================
