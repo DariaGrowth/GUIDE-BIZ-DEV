@@ -1,6 +1,6 @@
 # =============================================================================
-# ING GROWTH AI — CRM Stratégique
-# Version 3.2 FINAL | UI/UX Optimisée | Tous bugs corrigés
+# INGOOD BY OLGA — Sulfodyne Prospect Tracker
+# Version 1.0 | Business Development Tool
 # =============================================================================
 
 import streamlit as st
@@ -8,1926 +8,1020 @@ import pandas as pd
 import numpy as np
 from supabase import create_client
 import google.generativeai as genai
-import plotly.express as px
-from datetime import datetime, timedelta
-import time
-import json
+from datetime import datetime
 import urllib.parse
-import requests
 from io import BytesIO
+import time
 
 # =============================================================================
-# SVG ICONS - DESIGN SYSTEM
+# PAGE CONFIG
 # =============================================================================
 
-# Favicon SVG
 FAVICON_SVG = """<svg width="32" height="32" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="56" height="56" rx="12" fill="#1E3F35"/><path d="M28 12c-3 7-9 11-16 11 7 3 13 9 16 16 3-7 9-13 16-16-7-3-13-6-16-11z" fill="white"/></svg>"""
 
-ICON_LOGO = """<svg width="40" height="40" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M28 4c-4 10-12 14-22 14 10 4 18 12 22 22 4-10 12-18 22-22-10-4-18-8-22-14z" fill="#1E3F35"/>
-    <path d="M28 14c-2 6-8 10-14 10 6 2 12 8 14 14 2-6 8-10 14-10-6-2-12-4-14-14z" fill="white" fill-opacity="0.3"/>
-</svg>"""
-
-# Navigation Icons (20x20, stroke-based)
-def get_icon(name, color="#6B7280", size=20):
-    icons = {
-        # Navigation
-        "dashboard": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
-        "pipeline": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="7" cy="6" r="2" fill="{color}"/><circle cx="14" cy="12" r="2" fill="{color}"/><circle cx="10" cy="18" r="2" fill="{color}"/></svg>',
-        "kanban": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg>',
-        "samples": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M9 3v6l-3 12h12l-3-12V3"/><path d="M8 3h8"/><path d="M7 15h10"/></svg>',
-        "contacts": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
-        "news": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>',
-        "export": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>',
-        "import": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M12 15V3m0 12l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>',
-        "webhook": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a3 3 0 003 3h6"/></svg>',
-        "alert": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
-        
-        # Actions
-        "chevron": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>',
-        "chevron_left": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>',
-        "plus": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
-        "delete": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>',
-        "save": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>',
-        "edit": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
-        "close": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
-        
-        # Business
-        "flask": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M9 3v6l-3 12h12l-3-12V3"/><path d="M8 3h8"/><path d="M7 15h10"/></svg>',
-        "target": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
-        "briefcase": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>',
-        "building": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01"/></svg>',
-        "globe": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
-        "star": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>',
-        
-        # Communication
-        "mail": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg>',
-        "phone": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>',
-        "calendar": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
-        "message": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
-        "note": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>',
-        
-        # Status
-        "check": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>',
-        "check_circle": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>',
-        "warning": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-        "info": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
-        
-        # Social
-        "linkedin": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="{color}"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 6a2 2 0 100-4 2 2 0 000 4z"/></svg>',
-        "user": f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>',
-    }
-    return icons.get(name, "")
-
-# =============================================================================
-# 1. CONFIGURATION & STYLES CSS
-# =============================================================================
-
 st.set_page_config(
-    page_title="ING Growth AI",
-    page_icon="data:image/svg+xml;utf8," + urllib.parse.quote(FAVICON_SVG),
+    page_title="Sulfodyne Tracker · Ingood",
+    page_icon="🌿",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={"Get help": None, "Report a bug": None, "About": None},
 )
 
-# CSS OPTIMISÉ - PIXEL PERFECT
-CSS_THEME = """
+# =============================================================================
+# DESIGN SYSTEM
+# =============================================================================
+
+CSS = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 
     :root {
-        --primary: #1E3F35;
-        --primary-light: #2A5548;
-        --accent-green: #10B981;
-        --accent-neon: #00FF41;
-        --text-primary: #111827;
-        --text-secondary: #6B7280;
-        --text-muted: #9CA3AF;
-        --bg-white: #FFFFFF;
-        --bg-gray: #F9FAFB;
-        --bg-hover: #F3F4F6;
-        --border: #E5E7EB;
-        --border-light: #F3F4F6;
-        --purple: #7C3AED;
-        --blue: #3B82F6;
-        --orange: #F59E0B;
-        --red: #DC2626;
+        --forest:    #1E3F35;
+        --forest-2:  #2A5548;
+        --moss:      #10B981;
+        --lime:      #84CC16;
+        --cream:     #FAFAF7;
+        --white:     #FFFFFF;
+        --border:    #E8EAE6;
+        --border-2:  #D1D5CC;
+        --text:      #1A1F1C;
+        --text-2:    #4A5450;
+        --text-3:    #8A9490;
+        --high:      #DC2626;
+        --mid:       #F59E0B;
+        --low:       #6B7280;
+        --high-bg:   #FEF2F2;
+        --mid-bg:    #FFFBEB;
+        --low-bg:    #F9FAFB;
     }
 
-    /* ══════════════════════════════════════════════════════════
-       BASE RESET
-    ══════════════════════════════════════════════════════════ */
+    /* ── BASE ── */
     .stApp {
-        background: var(--bg-gray) !important;
-        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
-    }
-    
-    * { font-family: 'DM Sans', sans-serif !important; }
-    
-    [data-testid="stVerticalBlock"] { gap: 0 !important; }
-    
-    h1, h2, h3, h4, h5, h6 {
+        background: var(--cream) !important;
         font-family: 'DM Sans', sans-serif !important;
-        color: var(--text-primary) !important;
-        font-weight: 600 !important;
     }
+    * { font-family: 'DM Sans', sans-serif !important; box-sizing: border-box !important; }
+    h1, h2, h3 { font-family: 'Syne', sans-serif !important; }
+    #MainMenu, footer, header { visibility: hidden; }
+    .stDeployButton, div[data-testid="stToolbar"] { display: none !important; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { border: none !important; background: transparent !important; padding: 0 !important; }
+    [data-testid="stVerticalBlock"] { gap: 0 !important; }
+    button:focus, button:focus-visible { outline: none !important; box-shadow: none !important; }
 
-    /* ══════════════════════════════════════════════════════════
-       SIDEBAR - CLEAN FLOATING DESIGN
-    ══════════════════════════════════════════════════════════ */
+    /* ── SIDEBAR ── */
     section[data-testid="stSidebar"] {
-        background: var(--bg-white) !important;
-        border-right: 1px solid var(--border) !important;
-        padding: 0 !important;
+        background: var(--forest) !important;
+        border-right: none !important;
+        min-width: 220px !important;
+        max-width: 220px !important;
     }
-    
-    section[data-testid="stSidebar"] > div {
-        padding: 24px 16px !important;
-        background: transparent !important;
-    }
-
-    /* Remove ALL green backgrounds and borders from sidebar */
+    section[data-testid="stSidebar"] > div { padding: 28px 16px !important; }
+    section[data-testid="stSidebar"] * { color: rgba(255,255,255,0.85) !important; }
     section[data-testid="stSidebar"] div[data-testid="stVerticalBlockBorderWrapper"],
-    section[data-testid="stSidebar"] .stButton,
-    section[data-testid="stSidebar"] [data-testid="column"] {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
+    section[data-testid="stSidebar"] .stButton {
+        background: transparent !important; border: none !important; box-shadow: none !important;
     }
 
-    /* ══════════════════════════════════════════════════════════
-       SIDEBAR - BOUTON NOUVEAU PROJET (VERT)
-    ══════════════════════════════════════════════════════════ */
+    /* Sidebar primary button */
     section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
         width: 100% !important;
-        background: var(--primary) !important;
+        background: rgba(255,255,255,0.12) !important;
         color: white !important;
-        border: none !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
         border-radius: 10px !important;
-        padding: 14px 20px !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
+        padding: 13px 16px !important;
+        font-family: 'Syne', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        letter-spacing: 0.3px !important;
         transition: all 0.15s ease !important;
-        box-shadow: 0 2px 4px rgba(30,63,53,0.1) !important;
     }
-    
     section[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
-        background: var(--primary-light) !important;
-        box-shadow: 0 4px 12px rgba(30,63,53,0.2) !important;
+        background: rgba(255,255,255,0.2) !important;
+        border-color: rgba(255,255,255,0.35) !important;
     }
 
-    /* ══════════════════════════════════════════════════════════
-       SIDEBAR - NAVIGATION BUTTONS
-    ══════════════════════════════════════════════════════════ */
+    /* Sidebar secondary nav buttons */
     section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
         width: 100% !important;
         background: transparent !important;
-        color: #4B5563 !important;
+        color: rgba(255,255,255,0.65) !important;
         border: none !important;
-        border-left: 3px solid transparent !important;
         border-radius: 8px !important;
-        padding: 12px 16px !important;
+        padding: 11px 14px !important;
+        font-size: 13.5px !important;
         font-weight: 500 !important;
-        font-size: 14px !important;
         text-align: left !important;
         justify-content: flex-start !important;
         transition: all 0.15s ease !important;
-        margin: 2px 0 !important;
+        margin: 1px 0 !important;
     }
-    
     section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
-        background: #F3F4F6 !important;
-        color: #1E3F35 !important;
-    }
-    
-    /* Boutons Export/Import dans les colonnes */
-    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button[kind="secondary"] {
-        background: white !important;
-        border: 1px solid #E5E7EB !important;
-        border-left: 1px solid #E5E7EB !important;
-        color: #6B7280 !important;
-        font-size: 13px !important;
-        padding: 10px 12px !important;
-        border-radius: 8px !important;
-        text-align: center !important;
-        justify-content: center !important;
-    }
-    
-    section[data-testid="stSidebar"] [data-testid="column"] .stButton > button[kind="secondary"]:hover {
-        background: #F9FAFB !important;
-        border-color: #1E3F35 !important;
-        color: #1E3F35 !important;
+        background: rgba(255,255,255,0.1) !important;
+        color: white !important;
     }
 
-    /* ── NAV ITEMS - FLOATING STYLE (ancien, gardé pour compatibilité) ── */
-    .nav-item {
-        display: flex !important;
-        align-items: center !important;
-        gap: 12px !important;
-        padding: 10px 12px !important;
-        margin: 2px 0 !important;
-        border-radius: 8px !important;
-        cursor: pointer !important;
-        transition: all 0.15s ease !important;
-        background: transparent !important;
-        border: none !important;
-        position: relative !important;
+    /* ── MAIN CONTENT ── */
+    .block-container { padding: 32px 40px 40px 40px !important; max-width: 1400px !important; }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+        margin-bottom: 28px;
     }
-    
-    .nav-item:hover {
-        background: var(--bg-hover) !important;
+    .page-title {
+        font-family: 'Syne', sans-serif !important;
+        font-size: 26px !important;
+        font-weight: 800 !important;
+        color: var(--text) !important;
+        margin: 0 0 4px 0 !important;
+        letter-spacing: -0.3px !important;
     }
-    
-    .nav-item:hover .nav-icon svg,
-    .nav-item:hover .nav-text {
-        color: var(--primary) !important;
-        stroke: var(--primary) !important;
-    }
-    
-    .nav-item.active {
-        background: #ECFDF5 !important;
-    }
-    
-    .nav-item.active::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 3px;
-        height: 20px;
-        background: var(--accent-green);
-        border-radius: 0 2px 2px 0;
-    }
-    
-    .nav-item.active .nav-icon svg,
-    .nav-item.active .nav-text {
-        color: var(--primary) !important;
-        stroke: var(--primary) !important;
-    }
-    
-    .nav-text {
+    .page-subtitle {
         font-size: 14px !important;
-        font-weight: 500 !important;
-        color: var(--text-secondary) !important;
-        transition: color 0.15s ease !important;
-    }
-    
-    .nav-icon {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: 20px !important;
-        height: 20px !important;
-    }
-
-    /* Sidebar section titles */
-    .sidebar-section-title {
-        font-size: 11px !important;
-        font-weight: 600 !important;
-        color: var(--text-muted) !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-        padding: 16px 12px 8px !important;
+        color: var(--text-3) !important;
         margin: 0 !important;
     }
 
-    /* Sidebar buttons (Export/Import) */
-    .sidebar-action-btn button {
-        background: var(--bg-white) !important;
-        color: var(--text-secondary) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 6px !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        padding: 8px 12px !important;
-        transition: all 0.15s ease !important;
-    }
-    
-    .sidebar-action-btn button:hover {
-        background: var(--bg-hover) !important;
-        border-color: var(--primary) !important;
-        color: var(--primary) !important;
-    }
-
-    /* ── NAV BUTTONS (Streamlit compatible) ── */
-    .nav-btn button {
-        background: transparent !important;
-        border: none !important;
-        color: var(--text-secondary) !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        padding: 10px 12px !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
-        border-radius: 8px !important;
-        transition: all 0.15s ease !important;
-        width: 100% !important;
-        border-left: 3px solid transparent !important;
-    }
-    
-    .nav-btn button:hover {
-        background: var(--bg-hover) !important;
-        color: var(--primary) !important;
-    }
-    
-    .nav-btn-active button {
-        background: #ECFDF5 !important;
-        color: var(--primary) !important;
-        font-weight: 600 !important;
-        border: none !important;
-        border-left: 3px solid var(--accent-green) !important;
-        border-radius: 0 8px 8px 0 !important;
-    }
-
-    /* ══════════════════════════════════════════════════════════
-       PIPELINE - TABLE DESIGN
-    ══════════════════════════════════════════════════════════ */
-    .pipeline-container {
-        background: var(--bg-white);
-        border-radius: 12px;
+    /* ── PROSPECT TABLE ── */
+    .table-wrap {
+        background: var(--white);
         border: 1px solid var(--border);
+        border-radius: 14px;
         overflow: hidden;
     }
-
-    .pipeline-header {
-        padding: 20px 24px;
-        border-bottom: 1px solid var(--border);
+    .table-top {
         display: flex;
         justify-content: space-between;
         align-items: center;
-    }
-
-    .pipeline-title {
-        font-size: 20px !important;
-        font-weight: 700 !important;
-        color: var(--text-primary) !important;
-        margin: 0 !important;
-    }
-
-    .filter-bar {
-        display: flex;
-        gap: 12px;
-        padding: 16px 24px;
-        background: var(--bg-gray);
+        padding: 18px 24px;
         border-bottom: 1px solid var(--border);
     }
-
-    .filter-select {
-        background: var(--bg-white) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 6px !important;
-        padding: 8px 12px !important;
-        font-size: 13px !important;
-        color: var(--text-secondary) !important;
-    }
-
-    /* Table Headers */
-    .table-header {
-        display: grid;
-        grid-template-columns: 2fr 1fr 1.2fr 1.2fr 1fr 1.2fr 0.8fr 50px;
-        padding: 12px 24px;
-        background: var(--bg-gray);
-        border-bottom: 1px solid var(--border);
-    }
-
-    .table-header-cell {
-        font-size: 11px !important;
-        font-weight: 600 !important;
-        color: var(--text-muted) !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-    }
-
-    /* Table Rows */
-    .table-row {
-        display: grid;
-        grid-template-columns: 2fr 1fr 1.2fr 1.2fr 1fr 1.2fr 0.8fr 50px;
-        padding: 16px 24px;
-        border-bottom: 1px solid var(--border-light);
-        align-items: center;
-        transition: background 0.15s ease;
-    }
-
-    .table-row:hover {
-        background: var(--bg-hover);
-    }
-
-    .table-row:last-child {
-        border-bottom: none;
-    }
-
-    /* Company name - UPPERCASE BOLD */
-    .company-name {
-        font-weight: 700 !important;
-        font-size: 14px !important;
-        color: var(--text-primary) !important;
-        text-transform: uppercase !important;
-        cursor: pointer;
-        transition: color 0.15s ease;
-    }
-
-    .company-name:hover {
-        color: var(--primary) !important;
-    }
-
-    /* Column colors */
-    .col-product {
-        color: var(--accent-green) !important;
-        font-weight: 600 !important;
-        font-size: 13px !important;
-    }
-
-    .col-salon {
-        color: var(--purple) !important;
-        font-weight: 500 !important;
-        font-size: 13px !important;
-    }
-
-    .col-country {
-        color: var(--text-secondary) !important;
-        font-size: 13px !important;
-    }
-
-    .col-date {
-        font-size: 13px !important;
-        font-family: 'JetBrains Mono', monospace !important;
-    }
-
-    /* Chevron */
-    .row-chevron {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        opacity: 0.4;
-        transition: opacity 0.15s ease;
-    }
-
-    .table-row:hover .row-chevron {
-        opacity: 1;
-    }
-
-    /* ══════════════════════════════════════════════════════════
-       STATUS BADGES - PASTEL PILLS
-    ══════════════════════════════════════════════════════════ */
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .status-prospection {
-        background: #DBEAFE;
-        color: #1E40AF;
-    }
-
-    .status-qualification {
-        background: #E0E7FF;
-        color: #4338CA;
-    }
-
-    .status-echantillons {
-        background: #FEF3C7;
-        color: #92400E;
-    }
-
-    .status-tests {
-        background: #FFEDD5;
-        color: #C2410C;
-    }
-
-    .status-negociation {
-        background: #F3E8FF;
-        color: #7C3AED;
-    }
-
-    .status-contrat {
-        background: #D1FAE5;
-        color: #065F46;
-    }
-
-    .status-client {
-        background: #ECFDF5;
-        color: #047857;
-    }
-
-    /* Sample badge */
-    .sample-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 8px;
-        background: #EFF6FF;
-        border-radius: 6px;
-        font-size: 11px;
+    .table-count {
+        font-size: 13px;
+        color: var(--text-3);
         font-weight: 500;
-        color: #3B82F6;
     }
 
-    /* ══════════════════════════════════════════════════════════
-       MODAL - FICHE PROJET (OVERLAY AVEC FOND FLOU)
-    ══════════════════════════════════════════════════════════ */
-    /* Fond flou derrière le modal */
-    div[data-testid="stDialog"]::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-        z-index: -1;
-    }
-    
-    div[data-testid="stDialog"] > div:first-child {
-        background: rgba(0, 0, 0, 0.4) !important;
-        backdrop-filter: blur(4px) !important;
-        -webkit-backdrop-filter: blur(4px) !important;
-    }
-    
-    /* Modal plus large */
-    div[data-testid="stDialog"] > div > div {
-        background: var(--bg-white) !important;
-        border-radius: 16px !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-        max-width: 1100px !important;
-        width: 95vw !important;
-        max-height: 90vh !important;
-        overflow-y: auto !important;
-        margin: auto !important;
-        padding: 24px 32px !important;
-    }
-    
-    /* Bouton Supprimer en rouge */
-    div[data-testid="stDialog"] button[kind="secondary"]:first-of-type,
-    div[data-testid="stDialog"] .stButton:first-of-type button[kind="secondary"] {
-        background: #FEF2F2 !important;
-        color: #DC2626 !important;
-        border: 1px solid #FECACA !important;
-    }
-    
-    div[data-testid="stDialog"] button[kind="secondary"]:first-of-type:hover {
-        background: #FEE2E2 !important;
-        border-color: #DC2626 !important;
-    }
-
-    .modal-header {
-        padding: 24px 32px;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-    }
-
-    .modal-title {
-        font-size: 22px !important;
-        font-weight: 700 !important;
-        color: var(--text-primary) !important;
-        margin: 0 0 4px 0 !important;
-    }
-
-    .modal-subtitle {
-        font-size: 14px !important;
-        color: var(--text-secondary) !important;
-        margin: 0 !important;
-    }
-
-    .modal-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .modal-body {
-        padding: 24px 32px;
+    /* Table header row */
+    .th-row {
         display: grid;
-        grid-template-columns: 1fr 1.5fr;
-        gap: 32px;
+        grid-template-columns: 2fr 0.7fr 1fr 1.4fr 1.2fr 1.3fr 1fr 60px;
+        padding: 10px 24px;
+        background: #F6F7F5;
+        border-bottom: 1px solid var(--border);
+        gap: 12px;
+    }
+    .th-cell {
+        font-size: 10.5px !important;
+        font-weight: 700 !important;
+        color: var(--text-3) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.6px !important;
     }
 
-    .modal-footer {
-        padding: 16px 32px;
-        border-top: 1px solid var(--border);
-        display: flex;
-        justify-content: space-between;
+    /* Table data rows */
+    .td-row {
+        display: grid;
+        grid-template-columns: 2fr 0.7fr 1fr 1.4fr 1.2fr 1.3fr 1fr 60px;
+        padding: 14px 24px;
+        border-bottom: 1px solid #F0F1EF;
         align-items: center;
-        background: var(--bg-gray);
+        gap: 12px;
+        transition: background 0.12s ease;
+    }
+    .td-row:hover { background: #FAFBF9; }
+    .td-row:last-child { border-bottom: none; }
+
+    .td-company {
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        color: var(--text) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.2px !important;
+    }
+    .td-text {
+        font-size: 13px !important;
+        color: var(--text-2) !important;
+    }
+    .td-link {
+        font-size: 12px !important;
+        color: var(--forest) !important;
+        text-decoration: none !important;
+        font-weight: 500 !important;
+    }
+    .td-link:hover { text-decoration: underline !important; }
+    .td-mono {
+        font-family: 'DM Mono', monospace !important;
+        font-size: 12px !important;
+        color: var(--text-2) !important;
+    }
+    .td-analyse {
+        font-size: 12px !important;
+        color: var(--text-2) !important;
+        line-height: 1.4 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
     }
 
-    /* Form Labels - FIXED: plus d'espace avec les champs */
+    /* Priority badges */
+    .badge-high { display: inline-flex; align-items: center; gap: 5px; background: var(--high-bg); color: var(--high); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.3px; }
+    .badge-mid  { display: inline-flex; align-items: center; gap: 5px; background: var(--mid-bg);  color: #92400E; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.3px; }
+    .badge-low  { display: inline-flex; align-items: center; gap: 5px; background: var(--low-bg);  color: var(--low); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.3px; }
+
+    /* ── MODAL / DIALOG ── */
+    div[data-testid="stDialog"] > div > div {
+        background: var(--white) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 25px 60px -12px rgba(0,0,0,0.22) !important;
+        max-width: 780px !important;
+        width: 92vw !important;
+        padding: 32px !important;
+    }
+    div[data-testid="stDialog"] > div:first-child {
+        background: rgba(0,0,0,0.35) !important;
+        backdrop-filter: blur(5px) !important;
+    }
+
+    /* ── FORM ── */
     .form-label {
+        font-family: 'Syne', sans-serif !important;
         font-size: 11px !important;
         font-weight: 700 !important;
-        color: #374151 !important;
+        color: var(--text-2) !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-        margin-bottom: 10px !important;
-        margin-top: 0 !important;
+        letter-spacing: 0.6px !important;
+        margin: 0 0 6px 0 !important;
         display: block !important;
-        position: relative !important;
-        z-index: 10 !important;
-        background: transparent !important;
-        line-height: 1.4 !important;
     }
-
-    .form-label-first {
-        margin-top: 0 !important;
-    }
-
-    /* Info box pour Salon/Source */
-    .info-box {
-        background: #F0FDF4 !important;
-        border: 1px solid #BBF7D0 !important;
-        border-radius: 10px !important;
-        padding: 14px 16px !important;
-        margin: 20px 0 8px 0 !important;
-    }
-
-    .info-box-label {
-        font-size: 12px !important;
-        font-weight: 700 !important;
-        color: #166534 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-        margin: 0 !important;
-    }
-
-    /* Form Inputs - avec plus d'espace */
-    .stTextInput > div,
-    .stTextArea > div,
-    .stSelectbox > div,
-    .stNumberInput > div {
-        margin-top: 4px !important;
-    }
-
-    .stTextInput input,
-    .stTextArea textarea,
-    .stSelectbox > div > div,
-    .stNumberInput > div > div > input {
-        border: 1px solid var(--border) !important;
+    .stTextInput input, .stTextArea textarea, .stSelectbox > div > div {
+        border: 1.5px solid var(--border) !important;
         border-radius: 8px !important;
         font-size: 14px !important;
-        padding: 12px 14px !important;
-        background: var(--bg-white) !important;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+        padding: 11px 13px !important;
+        background: var(--white) !important;
+        transition: border-color 0.15s ease !important;
+    }
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        border-color: var(--forest) !important;
+        box-shadow: 0 0 0 3px rgba(30,63,53,0.08) !important;
     }
 
-    .stTextInput input:focus,
-    .stTextArea textarea:focus,
-    .stSelectbox > div > div:focus-within {
-        border-color: var(--primary) !important;
-        box-shadow: 0 0 0 3px rgba(30,63,53,0.1) !important;
-        outline: none !important;
+    /* ── METRICS ── */
+    [data-testid="stMetric"] {
+        background: var(--white) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        padding: 20px 24px !important;
     }
-    
-    /* Selectbox dropdown visible */
-    .stSelectbox [data-baseweb="select"] {
-        background: white !important;
-    }
-    
-    .stSelectbox [data-baseweb="popover"] {
-        z-index: 9999 !important;
-    }
+    [data-testid="stMetricValue"] { font-family: 'Syne', sans-serif !important; font-size: 30px !important; font-weight: 800 !important; color: var(--text) !important; }
+    [data-testid="stMetricLabel"] { font-size: 11px !important; font-weight: 700 !important; color: var(--text-3) !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; }
 
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 0 !important;
-        border-bottom: 1px solid var(--border) !important;
-        background: transparent !important;
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        color: var(--text-secondary) !important;
-        padding: 12px 20px !important;
-        border-bottom: 2px solid transparent !important;
-        background: transparent !important;
-    }
-
-    .stTabs [data-baseweb="tab"][aria-selected="true"] {
-        color: var(--primary) !important;
-        border-bottom-color: var(--primary) !important;
-        font-weight: 600 !important;
-    }
-
-    .stTabs [data-baseweb="tab"]:hover {
-        color: var(--text-primary) !important;
-        background: var(--bg-hover) !important;
-    }
-
-    /* ══════════════════════════════════════════════════════════
-       BUTTONS
-    ══════════════════════════════════════════════════════════ */
-    .btn-primary {
-        background: var(--primary) !important;
+    /* ── BUTTONS (main content) ── */
+    .stButton > button[kind="primary"] {
+        background: var(--forest) !important;
         color: white !important;
         border: none !important;
         border-radius: 8px !important;
-        padding: 10px 20px !important;
         font-weight: 600 !important;
         font-size: 14px !important;
-        transition: all 0.15s ease !important;
+        padding: 11px 22px !important;
+        transition: background 0.15s ease !important;
     }
-
-    .btn-primary:hover {
-        background: var(--primary-light) !important;
-        transform: translateY(-1px) !important;
+    .stButton > button[kind="primary"]:hover {
+        background: var(--forest-2) !important;
     }
-
-    .btn-secondary {
-        background: var(--bg-white) !important;
-        color: var(--text-secondary) !important;
-        border: 1px solid var(--border) !important;
+    .stButton > button[kind="secondary"] {
+        background: var(--white) !important;
+        color: var(--text-2) !important;
+        border: 1.5px solid var(--border) !important;
         border-radius: 8px !important;
-        padding: 10px 20px !important;
         font-weight: 500 !important;
         font-size: 14px !important;
+        padding: 11px 22px !important;
         transition: all 0.15s ease !important;
     }
-
-    .btn-secondary:hover {
-        background: var(--bg-hover) !important;
-        border-color: var(--text-muted) !important;
+    .stButton > button[kind="secondary"]:hover {
+        border-color: var(--forest) !important;
+        color: var(--forest) !important;
+        background: #F0F9F5 !important;
     }
 
-    .btn-danger {
-        background: #FEF2F2 !important;
-        color: var(--red) !important;
-        border: 1px solid #FECACA !important;
-        border-radius: 8px !important;
-        padding: 10px 20px !important;
-        font-weight: 500 !important;
-        font-size: 14px !important;
-        transition: all 0.15s ease !important;
+    /* ── SEARCH / FILTER ── */
+    .stTextInput input[placeholder*="Rechercher"],
+    .stTextInput input[placeholder*="Search"] {
+        background: #F6F7F5 !important;
+        border-color: transparent !important;
     }
 
-    .btn-danger:hover {
-        background: #FEE2E2 !important;
-        border-color: var(--red) !important;
-    }
-
-    /* Bouton Supprimer dans le modal */
-    div[data-testid="stDialog"] .stButton > button:has-text("Supprimer"),
-    div[data-testid="stDialog"] button[kind="secondary"]:first-of-type {
-        background: #FEF2F2 !important;
-        color: #DC2626 !important;
-        border: 1px solid #FECACA !important;
-    }
-    
-    div[data-testid="stDialog"] button[kind="secondary"]:first-of-type:hover {
-        background: #FEE2E2 !important;
-        border-color: #DC2626 !important;
-    }
-
-    .btn-action {
-        background: #F0FDF4 !important;
-        color: var(--accent-green) !important;
-        border: 1px solid #BBF7D0 !important;
-        border-radius: 6px !important;
-        padding: 6px 12px !important;
-        font-weight: 500 !important;
-        font-size: 12px !important;
-    }
-
-    /* ══════════════════════════════════════════════════════════
-       METRICS & CARDS
-    ══════════════════════════════════════════════════════════ */
-    [data-testid="stMetric"] {
-        background: var(--bg-white) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 12px !important;
-        padding: 20px !important;
-    }
-
-    [data-testid="stMetricValue"] {
-        font-size: 28px !important;
-        font-weight: 700 !important;
-        color: var(--text-primary) !important;
-    }
-
-    [data-testid="stMetricLabel"] {
-        font-size: 12px !important;
-        font-weight: 600 !important;
-        color: var(--text-muted) !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-    }
-
-    /* Cards */
-    .card {
-        background: var(--bg-white);
+    /* ── NEWS CARDS ── */
+    .news-card {
+        background: var(--white);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 20px;
-    }
-
-    .card-title {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--text-primary);
+        padding: 20px 22px;
         margin-bottom: 12px;
+        transition: box-shadow 0.15s ease;
+    }
+    .news-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+    .news-tag {
+        display: inline-block;
+        background: #ECFDF5;
+        color: #065F46;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 3px 9px;
+        border-radius: 20px;
+        margin-bottom: 10px;
+    }
+    .news-title {
+        font-family: 'Syne', sans-serif !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        color: var(--text) !important;
+        margin: 0 0 8px 0 !important;
+        line-height: 1.4 !important;
+    }
+    .news-body {
+        font-size: 13px !important;
+        color: var(--text-2) !important;
+        line-height: 1.6 !important;
+        margin: 0 !important;
+    }
+    .news-meta {
+        font-size: 11px !important;
+        color: var(--text-3) !important;
+        margin-top: 10px !important;
+        font-family: 'DM Mono', monospace !important;
     }
 
-    /* ══════════════════════════════════════════════════════════
-       HIDE STREAMLIT DEFAULTS
-    ══════════════════════════════════════════════════════════ */
-    #MainMenu, footer, header { visibility: hidden; }
-    
-    .stDeployButton { display: none !important; }
-    
-    div[data-testid="stToolbar"] { display: none !important; }
-
-    /* Remove default button outlines */
-    button:focus, button:focus-visible {
-        outline: none !important;
-        box-shadow: none !important;
+    /* ── EMPTY STATE ── */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-3);
     }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-2); margin-bottom: 6px; }
+    .empty-sub { font-size: 13px; color: var(--text-3); }
 
-    /* Streamlit container borders - remove */
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        border: none !important;
-        background: transparent !important;
-        padding: 0 !important;
-    }
+    /* ── DIVIDERS ── */
+    hr { border: none !important; border-top: 1px solid var(--border) !important; margin: 24px 0 !important; }
+
+    /* ── TABS ── */
+    .stTabs [data-baseweb="tab-list"] { gap: 0 !important; border-bottom: 1px solid var(--border) !important; background: transparent !important; }
+    .stTabs [data-baseweb="tab"] { font-size: 13px !important; font-weight: 500 !important; color: var(--text-3) !important; padding: 12px 20px !important; border-bottom: 2px solid transparent !important; background: transparent !important; }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] { color: var(--forest) !important; border-bottom-color: var(--forest) !important; font-weight: 700 !important; }
+    .stTabs [data-baseweb="tab"]:hover { background: #F0F9F5 !important; color: var(--forest) !important; }
 </style>
 """
-
-st.markdown(CSS_THEME, unsafe_allow_html=True)
-
-# =============================================================================
-# 2. AUTHENTIFICATION
-# =============================================================================
-
-def check_auth():
-    access_token = st.secrets.get("ACCESS_TOKEN", "")
-    access_password = st.secrets.get("ACCESS_PASSWORD", "")
-
-    if "token" in st.query_params:
-        if st.query_params["token"] == access_token:
-            st.session_state["authenticated"] = True
-            return True
-
-    if st.session_state.get("authenticated", False):
-        return True
-
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
-        st.markdown(
-            f"<div style='text-align: center; padding: 40px; background: white; border-radius: 16px; border: 1px solid #E5E7EB;'>"
-            f"<div style='margin-bottom: 16px;'>{ICON_LOGO}</div>"
-            f"<h2 style='margin: 0 0 4px; font-size: 24px; font-weight: 700; color: #111827;'>ING Growth AI</h2>"
-            f"<p style='margin: 0 0 24px; font-size: 14px; color: #6B7280;'>Plateforme Business Development</p>"
-            f"</div>",
-            unsafe_allow_html=True
-        )
-        pwd = st.text_input("", type="password", placeholder="Entrez votre mot de passe", label_visibility="collapsed")
-        if st.button("Se connecter", use_container_width=True, type="primary"):
-            if pwd == access_password:
-                st.session_state["authenticated"] = True
-                st.rerun()
-            else:
-                st.error("Mot de passe incorrect")
-    return False
+st.markdown(CSS, unsafe_allow_html=True)
 
 # =============================================================================
-# 3. CONNEXIONS
+# CONNEXIONS
 # =============================================================================
 
 @st.cache_resource
 def init_connections():
     try:
-        url = st.secrets["SUPABASE_URL"]
-        key = st.secrets["SUPABASE_KEY"]
+        url  = st.secrets["SUPABASE_URL"]
+        key  = st.secrets["SUPABASE_KEY"]
         genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
         return create_client(url, key)
     except Exception as e:
-        st.error(f"Erreur de connexion : {e}")
+        st.error(f"Connexion échouée : {e}")
         return None
 
-def get_supabase():
-    if 'supabase' not in st.session_state:
+def db():
+    if "supabase" not in st.session_state:
         st.session_state.supabase = init_connections()
     return st.session_state.supabase
 
 # =============================================================================
-# 4. HELPERS
+# HELPERS
 # =============================================================================
 
-if "pipeline_key" not in st.session_state:
-    st.session_state["pipeline_key"] = 0
+PRIORITY_OPTS = ["High", "Middle", "Low"]
 
-def reset_pipeline():
-    st.session_state["pipeline_key"] += 1
+def priority_badge(p):
+    if p == "High":   return '<span class="badge-high">● High</span>'
+    if p == "Middle": return '<span class="badge-mid">● Middle</span>'
+    return '<span class="badge-low">● Low</span>'
+
+def safe_del(k):
+    if k in st.session_state: del st.session_state[k]
+
+def refresh():
     st.cache_data.clear()
-    safe_del("active_prospect_id")
-
-def safe_del(key):
-    if key in st.session_state:
-        del st.session_state[key]
-
-def clean_prod_name(name):
-    if not name or name == "-" or str(name) == "nan":
-        return "-"
-    return str(name).split(" (")[0].strip()
-
-def get_status_html(status):
-    """Retourne le HTML du badge de statut avec couleurs pastel"""
-    status_map = {
-        "Prospection": ("status-prospection", "Prospection"),
-        "Qualification": ("status-qualification", "Qualification"),
-        "Échantillons en test": ("status-echantillons", "Échantillons"),
-        "Tests en cours": ("status-tests", "Tests R&D"),
-        "Négociation": ("status-negociation", "Négociation"),
-        "Contrat": ("status-contrat", "Contrat"),
-        "Client Actif": ("status-client", "Client Actif"),
-    }
-    cls, label = status_map.get(status, ("status-prospection", status or "—"))
-    return f'<span class="status-badge {cls}">{label}</span>'
 
 # =============================================================================
-# 5. DATA LAYER
+# DATA LAYER
 # =============================================================================
 
-def get_prospects():
+@st.cache_data(ttl=30)
+def load_prospects():
     try:
-        res = get_supabase().table("prospects").select("*").order("last_action_date", desc=True).execute()
-        return pd.DataFrame(res.data)
-    except Exception:
-        return pd.DataFrame()
-
-def get_sub_data(table, prospect_id):
-    try:
-        data = get_supabase().table(table).select("*").eq("prospect_id", prospect_id).order("id", desc=True).execute().data
-        return pd.DataFrame(data)
-    except Exception:
-        return pd.DataFrame()
-
-def count_alerts():
-    try:
-        forty_five = (datetime.now() - timedelta(days=45)).isoformat()
-        r1 = get_supabase().table("prospects").select("id", count="exact").eq("status", "Client Actif").lte("last_action_date", forty_five).execute()
-        
-        fifteen = (datetime.now() - timedelta(days=15)).isoformat()
-        r2 = get_supabase().table("samples").select("id", count="exact").is_("feedback", "null").lte("date_sent", fifteen).execute()
-        
-        return (r1.count or 0) + (r2.count or 0)
+        res = db().table("sulfodyne_prospects").select("*").order("created_at", desc=True).execute()
+        return pd.DataFrame(res.data) if res.data else pd.DataFrame()
     except:
-        return 0
+        return pd.DataFrame()
+
+def upsert_prospect(data: dict, pid=None):
+    data["updated_at"] = datetime.now().isoformat()
+    if pid:
+        db().table("sulfodyne_prospects").update(data).eq("id", pid).execute()
+    else:
+        data["created_at"] = datetime.now().isoformat()
+        db().table("sulfodyne_prospects").insert(data).execute()
+    refresh()
+
+def delete_prospect(pid):
+    db().table("sulfodyne_prospects").delete().eq("id", pid).execute()
+    refresh()
 
 # =============================================================================
-# 6. MODAL - FICHE PROJET (INTERFACE ORIGINALE + FIX SELECTBOX)
+# MODAL — ADD / EDIT
 # =============================================================================
 
-@st.dialog("Fiche Projet", width="large")
-def show_prospect_modal(pid, data):
-    """Modal de fiche projet - VERSION CORRIGÉE"""
-    pid = int(pid)
-    is_new = data.get("company_name") == "Nouveau Prospect"
-    # Constants
-    STATUTS = ["Prospection", "Qualification", "Échantillons en test", "Tests en cours", "Négociation", "Contrat", "Client Actif"]
-    PRODUITS_DISPONIBLES = ["Sulfodyne", "Prostaphane", "Peptipea", "Isolats végétaux"]
-    
-    # Applications par ingrédient
-    APPLICATIONS_PAR_PRODUIT = {
-        "Sulfodyne": ["Nutracéutique (BADs)", "Functional Drinks", "Sport Nutrition", "Cosméto-nutri"],
-        "Prostaphane": ["Specialized Supplements Softgels", "Men's Health"],
-        "Peptipea": ["Protein Waters", "Juicy Powders", "Functional Gummies", "Energy Gels"],
-        "Isolats végétaux": ["Protein Bars"],
-    }
-    # ═══ INITIALISATION SESSION STATE POUR PERSISTANCE ═══
-    if f"modal_status_{pid}" not in st.session_state:
-        st.session_state[f"modal_status_{pid}"] = data.get("status", "Prospection")
-    if f"modal_name_{pid}" not in st.session_state:
-        st.session_state[f"modal_name_{pid}"] = data.get("company_name", "")
-    if f"modal_country_{pid}" not in st.session_state:
-        st.session_state[f"modal_country_{pid}"] = data.get("country", "")
-    if f"modal_volume_{pid}" not in st.session_state:
-        st.session_state[f"modal_volume_{pid}"] = float(data.get("potential_volume") or 0)
-    if f"modal_source_{pid}" not in st.session_state:
-        st.session_state[f"modal_source_{pid}"] = data.get("last_salon", "")
-    if f"modal_notes_{pid}" not in st.session_state:
-        st.session_state[f"modal_notes_{pid}"] = data.get("notes", "")
-    if f"modal_tech_{pid}" not in st.session_state:
-        st.session_state[f"modal_tech_{pid}"] = data.get("tech_notes", "")
-    
-   # Constants
-    PRODUITS_DISPONIBLES = ["Sulfodyne", "Prostaphane", "Peptipea", "Isolats végétaux"]
-    
-    # Applications par ingrédient
-    APPLICATIONS_PAR_PRODUIT = {
-        "Sulfodyne": ["Nutracéutique (BADs)", "Functional Drinks", "Sport Nutrition", "Cosméto-nutri"],
-        "Prostaphane": ["Specialized Supplements Softgels", "Men's Health"],
-        "Peptipea": ["Protein Waters", "Juicy Powders", "Functional Gummies", "Energy Gels"],
-        "Isolats végétaux": ["Protein Bars"],
-    }
-    
-    STATUTS = ["Prospection", "Qualification", "Échantillons en test", "Tests en cours", "Négociation", "Contrat", "Client Actif"]
-    
-    # ══════════════════════════════════════════════════════════
-    # CSS POUR ÉLARGIR LE MODAL ET AMÉLIORER L'ESPACEMENT
-    # ══════════════════════════════════════════════════════════
-    st.markdown("""
-    <style>
-        /* Modal plus large */
-        div[data-testid="stDialog"] > div > div {
-            max-width: 1200px !important;
-            width: 95vw !important;
-        }
-        
-        /* Espacement entre les labels et inputs - SANS AFFECTER LES SELECTBOX */
-        div[data-testid="stDialog"] .stTextInput,
-        div[data-testid="stDialog"] .stTextArea,
-        div[data-testid="stDialog"] .stNumberInput {
-            margin-bottom: 20px !important;
-        }
-            
-            /* Bouton Supprimer en ROUGE */
-            button[key*="del_"]:not([type="primary"]) {
-                background: #FEF2F2 !important;
-                color: #DC2626 !important;
-                border: 1px solid #FECACA !important;
-            }
-            
-            button[key*="del_"]:not([type="primary"]):hover {
-                background: #FEE2E2 !important;
-                border-color: #DC2626 !important;
-            }
-        </style>
+@st.dialog("Fiche Prospect", width="large")
+def prospect_modal(pid=None, initial_data=None):
+    d = initial_data or {}
+    is_edit = pid is not None
+
+    st.markdown(f"""
+        <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#1A1F1C;margin:0 0 4px;">
+            {'✎  Modifier le prospect' if is_edit else '✦  Nouveau Prospect'}
+        </h2>
+        <p style="font-size:13px;color:#8A9490;margin:0 0 24px;">
+            {'Mettez à jour les informations.' if is_edit else 'Renseignez les informations du prospect.'}
+        </p>
     """, unsafe_allow_html=True)
-    
-    # ══════════════════════════════════════════════════════════
-    # HEADER AVEC PLUS D'ESPACE
-    # ══════════════════════════════════════════════════════════
-    h1, h2 = st.columns([2.5, 1.5])
-    with h1:
-        st.markdown(f"""
-            <div style="margin-bottom: 16px;">
-                <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin: 0;">
-                    {"Nouveau Projet" if is_new else data.get("company_name", "")}
-                </h2>
-                <p style="font-size: 14px; color: #6B7280; margin: 8px 0 0;">
-                    Gestion et Suivi R&D
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with h2:
-        # Action buttons sur UNE SEULE ligne avec gap
-        bc1, bc2 = st.columns(2, gap="medium")
-        with bc1:
-            st.button("🔍 Hunter AI", key=f"hunter_{pid}", use_container_width=True, type="secondary")
-        with bc2:
-            st.button("📄 Brief R&D", key=f"brief_{pid}", use_container_width=True, type="secondary")
-    
-    st.markdown("<hr style='margin: 24px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
-    
-    # ══════════════════════════════════════════════════════════
-    # BODY - TWO COLUMNS AVEC PLUS D'ESPACE
-    # ══════════════════════════════════════════════════════════
-    col_left, col_right = st.columns([1.8, 2.2], gap="large")
-    
-    # ─────────────────────────────────────────────────────────
-    # LEFT COLUMN - FORM FIELDS
-    # ─────────────────────────────────────────────────────────
-    with col_left:
-        # Société
-        st.markdown('<p class="form-label">SOCIÉTÉ / CLIENT</p>', unsafe_allow_html=True)
-        name = st.text_input("company", value=st.session_state[f"modal_name_{pid}"], key=f"name_{pid}", label_visibility="collapsed", placeholder="Nom de la société")
-        st.session_state[f"modal_name_{pid}"] = name
-        
-        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-        
-        # Statut - FIX: Utiliser index basé sur la valeur actuelle
-        st.markdown('<p class="form-label">STATUT PIPELINE</p>', unsafe_allow_html=True)
-        current_status = st.session_state[f"modal_status_{pid}"]
-        status_index = STATUTS.index(current_status) if current_status in STATUTS else 0
-        stat = st.selectbox(
-            "status",
-            options=STATUTS,
-            index=status_index,
-            key=f"stat_{pid}",
-            label_visibility="collapsed"
-        )
-        st.session_state[f"modal_status_{pid}"] = stat
-        
-        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-        
-         # Pays / Potentiel
-        c1, c2 = st.columns(2, gap="medium")
-        with c1:
-            st.markdown('<p class="form-label">PAYS</p>', unsafe_allow_html=True)
-            pays = st.text_input("country", value=st.session_state[f"modal_country_{pid}"], key=f"pays_{pid}", label_visibility="collapsed", placeholder="France")
-            st.session_state[f"modal_country_{pid}"] = pays
-        with c2:
-            st.markdown('<p class="form-label">POTENTIEL (T)</p>', unsafe_allow_html=True)
-            vol = st.number_input("vol", value=st.session_state[f"modal_volume_{pid}"], key=f"vol_{pid}", label_visibility="collapsed", min_value=0.0)
-            st.session_state[f"modal_volume_{pid}"] = vol
-        
-        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-        
-        # Dernier Salon / Source
-        st.markdown("""
-            <div style="background: #F0FDF4; padding: 16px 18px; border-radius: 10px; border: 1px solid #BBF7D0; margin-bottom: 14px;">
-                <p style="font-size: 12px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">📍 DERNIER SALON / SOURCE</p>
-            </div>
-        """, unsafe_allow_html=True)
-        source = st.text_input("source", value=st.session_state[f"modal_source_{pid}"], key=f"source_{pid}", label_visibility="collapsed", placeholder="ex: CFIA 2026, LinkedIn, Prospection directe")
-        st.session_state[f"modal_source_{pid}"] = source
-        
-        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
-        
-        # LinkedIn Button
-        st.markdown('<p class="form-label">🔗 SOCIAL SELLING</p>', unsafe_allow_html=True)
-        company_name = name if name else data.get("company_name", "")
-        if company_name and company_name != "Nouveau Prospect":
-            linkedin_query = urllib.parse.quote(f'{company_name} "R&D" OR "Purchasing" OR "Achats"')
-            linkedin_url = f"https://www.linkedin.com/search/results/people/?keywords={linkedin_query}"
-            st.markdown(f"""
-                <a href="{linkedin_url}" target="_blank" style="
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 8px;
-                    background: #0A66C2;
-                    color: white;
-                    padding: 11px 18px;
-                    border-radius: 8px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    text-decoration: none;
-                    transition: background 0.15s ease;
-                ">
-                    <span style="font-weight: 700; font-size: 16px;">in</span> Rechercher contacts R&D
-                </a>
-            """, unsafe_allow_html=True)
-        else:
-            st.caption("Renseignez le nom de la société pour activer")
-    
-    # ─────────────────────────────────────────────────────────
-    # RIGHT COLUMN - TABS
-    # ─────────────────────────────────────────────────────────
-    with col_right:
-        tab1, tab2, tab3 = st.tabs(["📋 Contexte & Technique", "🧪 Suivi Échantillons", "📓 Journal d'Activité"])
-        
-        # ── TAB 1: Contexte & Technique ──
-        with tab1:
-            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-            
-            t1c1, t1c2 = st.columns(2, gap="medium")
-            
-            # ═══ INGRÉDIENTS (Multi-sélection) ═══
-            with t1c1:
-                st.markdown('<p class="form-label">INGRÉDIENTS</p>', unsafe_allow_html=True)
-                
-                # Initialiser dans session_state si pas encore fait
-                if f"selected_products_{pid}" not in st.session_state:
-                    current_products_str = data.get("product_interest") or ""
-                    current_products_list = [p.strip() for p in current_products_str.split(",") if p.strip()] if current_products_str else []
-                    st.session_state[f"selected_products_{pid}"] = [p for p in current_products_list if p in PRODUITS_DISPONIBLES]
-                
-                prod = st.multiselect(
-                    "prod",
-                    options=PRODUITS_DISPONIBLES,
-                    default=st.session_state[f"selected_products_{pid}"],
-                    key=f"prod_{pid}",
-                    label_visibility="collapsed",
-                    placeholder="Sélectionner..."
-                )
-                # Mettre à jour le session_state
-                st.session_state[f"selected_products_{pid}"] = prod
-            
-            # ═══ APPLICATION FINALE (dynamique selon ingrédients) ═══
-            with t1c2:
-                st.markdown('<p class="form-label">APPLICATION FINALE</p>', unsafe_allow_html=True)
-                
-                # Construire la liste des applications disponibles selon les produits sélectionnés
-                applications_disponibles = []
-                for p in prod:
-                    applications_disponibles.extend(APPLICATIONS_PAR_PRODUIT.get(p, []))
-                # Supprimer les doublons en gardant l'ordre
-                applications_disponibles = list(dict.fromkeys(applications_disponibles))
-                
-                # Initialiser dans session_state si pas encore fait
-                if f"selected_app_{pid}" not in st.session_state:
-                    st.session_state[f"selected_app_{pid}"] = data.get("segment") or ""
-                
-                # Vérifier si l'application actuelle est toujours valide
-                current_app = st.session_state[f"selected_app_{pid}"]
-                if current_app and current_app not in applications_disponibles:
-                    current_app = ""
-                    st.session_state[f"selected_app_{pid}"] = ""
-                
-                if applications_disponibles:
-                    app_options = [""] + applications_disponibles
-                    app_index = app_options.index(current_app) if current_app in app_options else 0
-                    app = st.selectbox(
-                        "app",
-                        options=app_options,
-                        index=app_index,
-                        key=f"app_{pid}",
-                        label_visibility="collapsed",
-                        format_func=lambda x: x if x else "Sélectionner une application..."
-                    )
-                    st.session_state[f"selected_app_{pid}"] = app
-                else:
-                    st.info("Sélectionnez d'abord un ingrédient")
-                    app = ""
-            
-            st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
-            
-            st.markdown('<p class="form-label">PROBLÉMATIQUE / BESOIN (PAIN POINT)</p>', unsafe_allow_html=True)
-            pain = st.text_area("pain", value=st.session_state[f"modal_notes_{pid}"], height=110, key=f"pain_{pid}", label_visibility="collapsed", placeholder="Ex: Volatilité prix œuf, Texture sèche, Besoin Clean Label...")
-            st.session_state[f"modal_notes_{pid}"] = pain
-            
-            st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
-            
-            st.markdown('<p class="form-label">NOTES TECHNIQUES R&D</p>', unsafe_allow_html=True)
-            tech = st.text_area("tech", value=st.session_state[f"modal_tech_{pid}"], height=110, key=f"tech_{pid}", label_visibility="collapsed", placeholder="pH cible, Température cuisson, Dosage recommandé...")
-            st.session_state[f"modal_tech_{pid}"] = tech
-        
-        # ── TAB 2: Suivi Échantillons ──
-        with tab2:
-            st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-            
-            samples_df = get_sub_data("samples", pid)
-            
-            if samples_df.empty:
-                st.markdown("""
-                    <div style="text-align: center; padding: 48px 20px; color: #9CA3AF;">
-                        <p style="font-size: 14px; margin: 0;">Aucun échantillon envoyé</p>
-                        <p style="font-size: 12px; margin: 8px 0 0;">Ajoutez un échantillon ci-dessous</p>
-                    </div>
-                """, unsafe_allow_html=True)
-            else:
-                S_OPTS = ["En test", "Validé", "Rejeté", "Perdu"]
-                for _, r in samples_df.iterrows():
-                    with st.container(border=True):
-                        sc1, sc2, sc3 = st.columns([3, 1.5, 0.5])
-                        with sc1:
-                            st.markdown(f"""
-                                <div>
-                                    <span style="font-weight: 600; color: #111827;">{clean_prod_name(r['product_name'])}</span>
-                                    <span style="color: #6B7280; font-size: 13px;"> · {r['reference']}</span>
-                                    <br>
-                                    <span style="font-size: 12px; color: #9CA3AF;">{r['date_sent'][:10]}</span>
-                                </div>
-                            """, unsafe_allow_html=True)
-                        with sc2:
-                            s_idx = S_OPTS.index(r["status"]) if r["status"] in S_OPTS else 0
-                            new_s = st.selectbox("s", S_OPTS, index=s_idx, key=f"ss_{r['id']}", label_visibility="collapsed")
-                            if new_s != r["status"]:
-                                get_supabase().table("samples").update({"status": new_s}).eq("id", r["id"]).execute()
-                        with sc3:
-                            if st.button("🗑", key=f"ds_{r['id']}"):
-                                get_supabase().table("samples").delete().eq("id", r["id"]).execute()
-                                st.rerun()
-                        
-                        new_fb = st.text_input("Feedback", value=r.get("feedback") or "", key=f"fb_{r['id']}", placeholder="Retour technique...", label_visibility="collapsed")
-                        if new_fb != (r.get("feedback") or ""):
-                            get_supabase().table("samples").update({"feedback": new_fb}).eq("id", r["id"]).execute()
-            
-            st.markdown("<hr style='margin: 24px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
-            
-            st.markdown('<p class="form-label">➕ AJOUTER UN ÉCHANTILLON</p>', unsafe_allow_html=True)
-            asc1, asc2, asc3 = st.columns([2, 1.5, 1])
-            with asc1:
-                s_ref = st.text_input("ref", key=f"sr_{pid}", placeholder="Référence / Lot", label_visibility="collapsed")
-            with asc2:
-                s_prod = st.selectbox("sprod", PRODUITS_DISPONIBLES, key=f"sp_{pid}", label_visibility="collapsed")
-            with asc3:
-                if st.button("Ajouter", type="primary", key=f"add_s_{pid}", use_container_width=True):
-                    if s_ref.strip():
-                        get_supabase().table("samples").insert({
-                            "prospect_id": pid,
-                            "reference": s_ref,
-                            "product_name": s_prod,
-                            "status": "En test",
-                            "date_sent": datetime.now().isoformat(),
-                        }).execute()
-                        st.rerun()
-        
-        # ── TAB 3: Journal d'Activité ──
-        with tab3:
-            st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-            
-            activities_df = get_sub_data("activities", pid)
-            
-            if activities_df.empty:
-                st.markdown("""
-                    <div style="text-align: center; padding: 48px 20px; color: #9CA3AF;">
-                        <p style="font-size: 14px; margin: 0;">Aucune activité enregistrée</p>
-                    </div>
-                """, unsafe_allow_html=True)
-            else:
-                for _, act in activities_df.head(5).iterrows():
-                    icon = "📧" if act["type"] == "Email" else "📞" if act["type"] == "Appel" else "📅" if act["type"] == "RDV" else "📝"
-                    st.markdown(f"""
-                        <div style="padding: 14px; background: #F9FAFB; border-radius: 8px; margin-bottom: 10px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                <span style="font-weight: 600; font-size: 13px; color: #374151;">{icon} {act['type']}</span>
-                                <span style="font-size: 11px; color: #9CA3AF; font-family: 'JetBrains Mono', monospace;">{act['date'][:10]}</span>
-                            </div>
-                            <p style="font-size: 13px; color: #6B7280; margin: 0;">{act['content'][:100]}{'...' if len(act['content']) > 100 else ''}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-            
-            st.markdown("<hr style='margin: 24px 0; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
-            
-            st.markdown('<p class="form-label">➕ AJOUTER UNE ACTIVITÉ</p>', unsafe_allow_html=True)
-            act_type = st.selectbox("type", ["Email", "Appel", "RDV", "Note"], key=f"at_{pid}", label_visibility="collapsed")
-            act_content = st.text_area("content", height=90, key=f"ac_{pid}", placeholder="Décrivez l'activité...", label_visibility="collapsed")
-            
-            if st.button("Enregistrer l'activité", type="primary", key=f"save_act_{pid}"):
-                if act_content.strip():
-                    get_supabase().table("activities").insert({
-                        "prospect_id": pid,
-                        "type": act_type,
-                        "content": act_content,
-                        "date": datetime.now().isoformat(),
-                    }).execute()
-                    st.success("✅ Activité ajoutée")
-                    st.rerun()
-    
- # ══════════════════════════════════════════════════════════
-    # FOOTER - ENREGISTRER ET ANNULER
-    # ══════════════════════════════════════════════════════════
-    st.markdown("<hr style='margin: 28px 0 20px; border: none; border-top: 1px solid #E5E7EB;'>", unsafe_allow_html=True)
-    
-    fc1, fc2, fc3 = st.columns([2, 1, 1.5])
-    
+
+    r1c1, r1c2 = st.columns([2, 1], gap="medium")
+    with r1c1:
+        st.markdown('<span class="form-label">SOCIÉTÉ *</span>', unsafe_allow_html=True)
+        company = st.text_input("company", value=d.get("company",""), label_visibility="collapsed", placeholder="ex: Laboratoire XYZ")
+    with r1c2:
+        st.markdown('<span class="form-label">PRIORITÉ</span>', unsafe_allow_html=True)
+        pri_idx = PRIORITY_OPTS.index(d.get("priority","High")) if d.get("priority") in PRIORITY_OPTS else 0
+        priority = st.selectbox("priority", PRIORITY_OPTS, index=pri_idx, label_visibility="collapsed")
+
+    st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+
+    r2c1, r2c2 = st.columns(2, gap="medium")
+    with r2c1:
+        st.markdown('<span class="form-label">PRODUIT / CATÉGORIE</span>', unsafe_allow_html=True)
+        product = st.text_input("product", value=d.get("product",""), label_visibility="collapsed", placeholder="ex: Complément alimentaire, BAD...")
+    with r2c2:
+        st.markdown('<span class="form-label">DECISION MAKER</span>', unsafe_allow_html=True)
+        dm = st.text_input("dm", value=d.get("decision_maker",""), label_visibility="collapsed", placeholder="Nom, Titre")
+
+    st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+
+    r3c1, r3c2 = st.columns(2, gap="medium")
+    with r3c1:
+        st.markdown('<span class="form-label">EMAIL</span>', unsafe_allow_html=True)
+        email = st.text_input("email", value=d.get("email",""), label_visibility="collapsed", placeholder="contact@company.com")
+    with r3c2:
+        st.markdown('<span class="form-label">WEBSITE</span>', unsafe_allow_html=True)
+        website = st.text_input("website", value=d.get("website",""), label_visibility="collapsed", placeholder="https://...")
+
+    st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+
+    st.markdown('<span class="form-label">ANALYSE / NOTES</span>', unsafe_allow_html=True)
+    analyse = st.text_area("analyse", value=d.get("analyse",""), height=100, label_visibility="collapsed",
+                           placeholder="Contexte, opportunité, pain points, historique des échanges...")
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    fc1, fc2, fc3 = st.columns([2, 1, 1])
     with fc2:
-        if st.button("Annuler", key=f"cancel_{pid}", use_container_width=True, type="secondary"):
-            if is_new:
-                get_supabase().table("prospects").delete().eq("id", pid).execute()
-            # Nettoyer le session_state
-            for key in list(st.session_state.keys()):
-                if f"_{pid}" in key:
-                    del st.session_state[key]
-            safe_del("active_prospect_id")
+        if st.button("Annuler", key="modal_cancel", use_container_width=True, type="secondary"):
             st.rerun()
-    
     with fc3:
-        if st.button("✓ Enregistrer", type="primary", key=f"save_{pid}", use_container_width=True):
-            try:
-                get_supabase().table("prospects").update({
-                    "company_name": name,
-                    "status": stat,
-                    "country": pays,
-                    "potential_volume": vol,
-                    "last_salon": source,
-                    "product_interest": ", ".join(prod) if prod else "",
-                    "segment": app,
-                    "notes": pain,
-                    "tech_notes": tech,
-                    "last_action_date": datetime.now().isoformat(),
-                }).eq("id", pid).execute()
-                
-                st.success("✅ Projet enregistré avec succès")
-                time.sleep(0.8)
-                # Nettoyer le session_state
-                for key in list(st.session_state.keys()):
-                    if f"_{pid}" in key:
-                        del st.session_state[key]
-                safe_del("active_prospect_id")
-                reset_pipeline()
+        if st.button("✓ Enregistrer", key="modal_save", use_container_width=True, type="primary"):
+            if not company.strip():
+                st.error("Le nom de la société est obligatoire")
+            else:
+                payload = {
+                    "company": company.strip().upper(),
+                    "priority": priority,
+                    "product": product,
+                    "decision_maker": dm,
+                    "email": email,
+                    "website": website,
+                    "analyse": analyse,
+                }
+                upsert_prospect(payload, pid)
+                st.success("✓ Enregistré !")
+                time.sleep(0.5)
+                safe_del("edit_pid")
                 st.rerun()
-            except Exception as e:
-                st.error(f"❌ Erreur lors de l'enregistrement : {str(e)}")
-    
-    # ══════════════════════════════════════════════════════════
-    # SECTION SUPPRESSION SÉCURISÉE (en bas)
-    # ══════════════════════════════════════════════════════════
-    if not is_new:
+
+    # Delete zone (edit only)
+    if is_edit:
         st.markdown("---")
-        st.markdown("<p style='font-size: 12px; color: #9CA3AF; margin-bottom: 12px;'>Zone de danger</p>", unsafe_allow_html=True)
-        
-        # État de confirmation
-        if st.session_state.get(f"confirm_delete_{pid}", False):
-            st.warning("⚠️ Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible et supprimera toutes les données associées (échantillons, activités, contacts).")
-            
-            dc1, dc2, dc3 = st.columns([1.5, 1.5, 2])
+        if st.session_state.get(f"confirm_del_{pid}"):
+            st.warning("⚠️ Supprimer définitivement ce prospect ?")
+            dc1, dc2 = st.columns(2)
             with dc1:
-                if st.button("🗑️ Confirmer la suppression", key=f"confirm_yes_{pid}", use_container_width=True, type="primary"):
-                    # Supprimer toutes les données liées
-                    get_supabase().table("samples").delete().eq("prospect_id", pid).execute()
-                    get_supabase().table("activities").delete().eq("prospect_id", pid).execute()
-                    get_supabase().table("contacts").delete().eq("prospect_id", pid).execute()
-                    get_supabase().table("prospects").delete().eq("id", pid).execute()
-                    
-                    # Nettoyer le session_state
-                    for key in list(st.session_state.keys()):
-                        if f"_{pid}" in key:
-                            del st.session_state[key]
-                    safe_del(f"confirm_delete_{pid}")
-                    safe_del("active_prospect_id")
-                    reset_pipeline()
+                if st.button("Confirmer la suppression", key="del_confirm", type="primary", use_container_width=True):
+                    delete_prospect(pid)
+                    safe_del(f"confirm_del_{pid}")
+                    safe_del("edit_pid")
                     st.rerun()
             with dc2:
-                if st.button("Annuler", key=f"confirm_no_{pid}", use_container_width=True, type="secondary"):
-                    safe_del(f"confirm_delete_{pid}")
+                if st.button("Annuler", key="del_cancel", use_container_width=True):
+                    safe_del(f"confirm_del_{pid}")
                     st.rerun()
         else:
-            if st.button("Supprimer le projet", key=f"del_{pid}", type="secondary"):
-                st.session_state[f"confirm_delete_{pid}"] = True
+            if st.button("🗑  Supprimer ce prospect", key=f"del_init_{pid}", type="secondary"):
+                st.session_state[f"confirm_del_{pid}"] = True
                 st.rerun()
-# 7. SIDEBAR NAVIGATION - AVEC ICÔNES SVG
-# =============================================================================
 
-# Icônes SVG pour la sidebar
-SIDEBAR_ICONS = {
-    "dashboard": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="8" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/><rect x="13" y="14" width="8" height="7" rx="2"/></svg>""",
-    "pipeline": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 8h-3"/><path d="M3 21c3 0 7-1 7-8"/><circle cx="17.5" cy="15" r="2.5"/><path d="M17.5 17.5V22"/></svg>""",
-    "kanban": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/><path d="M16 3v18"/></svg>""",
-    "samples": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.5L5 21h14l-5-11.5V2h-4z"/><path d="M8.5 15h7"/></svg>""",
-    "contacts": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><circle cx="5" cy="19" r="2"/><line x1="7" y1="7" x2="10" y2="10"/><line x1="14" y1="14" x2="17" y2="17"/><line x1="17" y1="7" x2="14" y2="10"/><line x1="10" y1="14" x2="7" y2="17"/></svg>""",
-    "news": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7V5M12 19v-2M7 12H5M19 12h-2"/></svg>""",
-    "excel": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="m9 12 3 3-3 3"/></svg>""",
-    "webhooks": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="19" r="3"/><circle cx="18" cy="19" r="3"/><path d="M9 19h3.5a3.5 3.5 0 0 0 3.5-3.5V8.5A3.5 3.5 0 0 1 19.5 5H21"/><path d="M6 16v-3.5A3.5 3.5 0 0 1 9.5 9H15"/></svg>""",
-    "alerts": """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>""",
-}
+# =============================================================================
+# SIDEBAR
+# =============================================================================
 
 def render_sidebar():
     with st.sidebar:
-        # Logo & Brand
-        st.markdown(f"""
-            <div style="text-align: center; padding: 16px 0 20px;">
-                {ICON_LOGO}
-                <div style="font-weight: 700; font-size: 18px; color: #111827; margin-top: 12px;">ING Growth</div>
-                <div style="font-size: 11px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 1px;">AI Platform</div>
+        st.markdown("""
+            <div style="text-align:center; padding: 4px 0 24px;">
+                <div style="font-family:'Syne',sans-serif; font-size:19px; font-weight:800; color:white; letter-spacing:-0.3px;">Ingood by Olga</div>
+                <div style="font-size:11px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1.5px; margin-top:4px;">Sulfodyne · BD</div>
             </div>
         """, unsafe_allow_html=True)
-        
-        # ── NOUVEAU PROJET BUTTON ──
-        if st.button("✦  Nouveau Projet", key="btn_new_project", use_container_width=True, type="primary"):
-            try:
-                res = get_supabase().table("prospects").insert({
-                    "company_name": "Nouveau Prospect",
-                    "status": "Prospection",
-                    "last_action_date": datetime.now().isoformat(),
-                }).execute()
-                if res.data:
-                    st.session_state["active_prospect_id"] = res.data[0]["id"]
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Erreur: {e}")
-        
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-        
-        # ── NAVIGATION ──
-        if 'selected_page' not in st.session_state:
-            st.session_state.selected_page = 'Pipeline'
-        
-        alert_count = count_alerts()
-        
-        # Items de navigation avec icônes SVG
-        nav_items = [
-            ("Dashboard", "dashboard", "Tableau de Bord"),
-            ("Pipeline", "pipeline", "Pipeline"),
-            ("Kanban", "kanban", "Kanban"),
-            ("Samples", "samples", "Échantillons"),
-            ("Contacts", "contacts", "Contacts"),
-            ("News", "news", "Veille IA"),
-            ("Excel", "excel", "Import / Export"),
-            ("Webhooks", "webhooks", "Webhooks"),
-            ("Alertes", "alerts", f"À Relancer ({alert_count})" if alert_count > 0 else "À Relancer"),
+
+        if st.button("✦  Nouveau Prospect", key="btn_new", use_container_width=True, type="primary"):
+            st.session_state["open_new"] = True
+            st.rerun()
+
+        st.markdown("<div style='height:20px;'></div>", unsafe_allow_html=True)
+
+        if "nav_page" not in st.session_state:
+            st.session_state.nav_page = "Prospects"
+
+        pages = [
+            ("Prospects",    "🧭"),
+            ("Veille IA",    "🔬"),
+            ("Import/Export","📊"),
         ]
-        
-        for page_key, icon_key, label in nav_items:
-            is_active = st.session_state.selected_page == page_key
-            icon_color = "#1E3F35" if is_active else "#6B7280"
-            bg_color = "#ECFDF5" if is_active else "transparent"
-            text_color = "#1E3F35" if is_active else "#4B5563"
-            font_weight = "600" if is_active else "500"
-            border_left = "3px solid #10B981" if is_active else "3px solid transparent"
-            border_radius = "0 8px 8px 0" if is_active else "8px"
-            
-            # Remplacer currentColor par la bonne couleur
-            icon_svg = SIDEBAR_ICONS.get(icon_key, "").replace("currentColor", icon_color)
-            
-            # Créer le bouton avec icône SVG
-            if st.button(
-                label,
-                key=f"nav_{page_key}",
-                use_container_width=True,
-                type="secondary"
-            ):
-                safe_del("active_prospect_id")
-                st.session_state.selected_page = page_key
+
+        for label, icon in pages:
+            is_active = st.session_state.nav_page == label
+            btn_style = "primary" if is_active else "secondary"
+            if st.button(f"{icon}  {label}", key=f"nav_{label}", use_container_width=True, type="secondary"):
+                st.session_state.nav_page = label
                 st.rerun()
-            
-            # Injecter le style et l'icône via CSS/JS
-            st.markdown(f"""
-                <style>
-                    [data-testid="stSidebar"] button[key="nav_{page_key}"],
-                    [data-testid="stSidebar"] button:has(p:contains("{label}")) {{
-                        background: {bg_color} !important;
-                        border-left: {border_left} !important;
-                        border-radius: {border_radius} !important;
-                    }}
-                </style>
-            """, unsafe_allow_html=True)
-        
-        st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-        st.markdown("---")
-        
-        # ── DATA SECTION ──
-        st.caption("DONNÉES")
-        col_exp, col_imp = st.columns(2)
-        with col_exp:
-            if st.button("Export", key="btn_export", use_container_width=True):
-                st.session_state.selected_page = "Excel"
-                st.rerun()
-        with col_imp:
-            if st.button("Import", key="btn_import", use_container_width=True):
-                st.session_state.selected_page = "Excel"
-                st.rerun()
-        
-        # Footer
-        st.markdown("---")
+
+        # Active state styling hack
         st.markdown(f"""
-            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 0;">
-                {get_icon("user", "#9CA3AF", 16)}
-                <span style="font-size: 12px; color: #9CA3AF;">Utilisateur connecté</span>
+            <style>
+                /* Highlight active nav */
+                section[data-testid="stSidebar"] button[kind="secondary"] {{
+                    color: rgba(255,255,255,0.65) !important;
+                }}
+            </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<div style='flex:1; min-height:60px;'></div>", unsafe_allow_html=True)
+        st.markdown("---")
+        df = load_prospects()
+        total = len(df)
+        high  = len(df[df["priority"]=="High"]) if not df.empty and "priority" in df.columns else 0
+        st.markdown(f"""
+            <div style="font-size:12px; color:rgba(255,255,255,0.4); line-height:1.8;">
+                <div>{total} prospect{'s' if total!=1 else ''}</div>
+                <div style="color:#EF4444;">{high} High priority</div>
             </div>
         """, unsafe_allow_html=True)
-        
-        return st.session_state.selected_page
+
+    return st.session_state.nav_page
 
 # =============================================================================
-# 8. PIPELINE PAGE
+# PAGE: PROSPECTS
 # =============================================================================
 
-def page_pipeline():
+def page_prospects():
+    df = load_prospects()
+
     # Header
-    st.markdown(f"""
-        <div style="margin-bottom: 24px;">
-            <h1 style="font-size: 24px; font-weight: 700; color: #111827; margin: 0; display: flex; align-items: center; gap: 10px;">
-                {get_icon("pipeline", "#1E3F35", 28)} Pipeline Food & Ingrédients
-            </h1>
-            <p style="font-size: 14px; color: #6B7280; margin: 4px 0 0;">Vue complète de tous vos projets en cours</p>
+    st.markdown("""
+        <div class="page-header">
+            <h1 class="page-title">Prospects Sulfodyne</h1>
+            <p class="page-subtitle">Suivi Business Development · Ingood by Olga</p>
         </div>
     """, unsafe_allow_html=True)
-    
-    df_raw = get_prospects()
-    if df_raw.empty:
-        st.info("Aucun prospect. Cliquez sur 'Nouveau Projet' pour commencer.")
-        return
-    
-    # Filters
-    st.markdown('<div class="filter-bar" style="display: flex; gap: 12px; padding: 16px 0; margin-bottom: 16px;">', unsafe_allow_html=True)
-    f1, f2, f3, f4 = st.columns(4)
-    
-    with f1:
-        products = ["Tous Produits"] + sorted(df_raw["product_interest"].dropna().unique().tolist())
-        p_filter = st.selectbox("prod_filter", products, key="pf", label_visibility="collapsed")
-    with f2:
-        statuses = ["Tous Statuts", "Prospection", "Qualification", "Échantillons en test", "Tests en cours", "Négociation", "Contrat", "Client Actif"]
-        s_filter = st.selectbox("stat_filter", statuses, key="sf", label_visibility="collapsed")
-    with f3:
-        salons = ["Tous Salons"] + sorted(df_raw["last_salon"].dropna().unique().tolist())
-        sal_filter = st.selectbox("salon_filter", salons, key="salf", label_visibility="collapsed")
-    with f4:
-        countries = ["Tous Pays"] + sorted(df_raw["country"].dropna().unique().tolist())
-        c_filter = st.selectbox("country_filter", countries, key="cf", label_visibility="collapsed")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+
+    # KPIs
+    if not df.empty:
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Total Prospects", len(df))
+        k2.metric("Priorité High", len(df[df.get("priority","") == "High"]) if "priority" in df.columns else 0)
+        k3.metric("Priorité Middle", len(df[df.get("priority","") == "Middle"]) if "priority" in df.columns else 0)
+        k4.metric("Priorité Low", len(df[df.get("priority","") == "Low"]) if "priority" in df.columns else 0)
+        st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+
+    # Filter bar
+    fc1, fc2, fc3 = st.columns([3, 1.5, 1.5])
+    with fc1:
+        search = st.text_input("search", placeholder="🔍  Rechercher un prospect…", label_visibility="collapsed")
+    with fc2:
+        prio_filter = st.selectbox("pf", ["Toutes Priorités"] + PRIORITY_OPTS, label_visibility="collapsed")
+    with fc3:
+        if df.empty or "product" not in df.columns:
+            products_filter = st.selectbox("prdf", ["Tous Produits"], label_visibility="collapsed")
+        else:
+            prod_list = ["Tous Produits"] + sorted(df["product"].dropna().unique().tolist())
+            products_filter = st.selectbox("prdf", prod_list, label_visibility="collapsed")
+
     # Apply filters
-    df = df_raw.copy()
-    if p_filter != "Tous Produits":
-        df = df[df["product_interest"] == p_filter]
-    if s_filter != "Tous Statuts":
-        df = df[df["status"] == s_filter]
-    if sal_filter != "Tous Salons":
-        df = df[df["last_salon"] == sal_filter]
-    if c_filter != "Tous Pays":
-        df = df[df["country"] == c_filter]
-    
-    # Get samples data
-    try:
-        samples_map = pd.DataFrame(get_supabase().table("samples").select("prospect_id, status").execute().data)
-    except:
-        samples_map = pd.DataFrame()
-    
-    # Table Header
-    st.markdown("""
-        <div class="pipeline-container">
-            <div class="table-header">
-                <span class="table-header-cell">SOCIÉTÉ</span>
-                <span class="table-header-cell">PAYS</span>
-                <span class="table-header-cell">PRODUIT</span>
-                <span class="table-header-cell">STATUT</span>
-                <span class="table-header-cell">CONTACT</span>
-                <span class="table-header-cell">SALON</span>
-                <span class="table-header-cell">SAMPLES</span>
-                <span class="table-header-cell"></span>
+    filtered = df.copy() if not df.empty else pd.DataFrame()
+    if not filtered.empty:
+        if search:
+            mask = (
+                filtered.get("company","").str.contains(search, case=False, na=False) |
+                filtered.get("decision_maker","").str.contains(search, case=False, na=False) |
+                filtered.get("analyse","").str.contains(search, case=False, na=False)
+            )
+            filtered = filtered[mask]
+        if prio_filter != "Toutes Priorités":
+            filtered = filtered[filtered.get("priority","") == prio_filter]
+        if products_filter != "Tous Produits":
+            filtered = filtered[filtered.get("product","") == products_filter]
+
+    st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+
+    # Table
+    st.markdown(f"""
+        <div class="table-wrap">
+            <div class="table-top">
+                <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#1A1F1C;">Base de données</span>
+                <span class="table-count">{len(filtered)} résultat{'s' if len(filtered)!=1 else ''}</span>
+            </div>
+            <div class="th-row">
+                <span class="th-cell">Société</span>
+                <span class="th-cell">Priorité</span>
+                <span class="th-cell">Produit</span>
+                <span class="th-cell">Analyse</span>
+                <span class="th-cell">Decision Maker</span>
+                <span class="th-cell">Email</span>
+                <span class="th-cell">Website</span>
+                <span class="th-cell"></span>
             </div>
     """, unsafe_allow_html=True)
-    
-    # Table Rows
-    for _, row in df.iterrows():
-        # Format date
-        date_str = "—"
-        date_color = "#6B7280"
-        if row.get("last_action_date"):
-            try:
-                dt = datetime.strptime(row["last_action_date"][:10], "%Y-%m-%d")
-                days_ago = (datetime.now() - dt).days
-                date_str = dt.strftime("%d %b %y")
-                date_color = "#DC2626" if days_ago > 45 else "#F59E0B" if days_ago > 30 else "#6B7280"
-            except:
-                pass
-        
-        # Check samples
-        has_samples = False
-        sample_status = "-"
-        if not samples_map.empty and row["id"] in samples_map["prospect_id"].values:
-            has_samples = True
-            sample_row = samples_map[samples_map["prospect_id"] == row["id"]].iloc[0]
-            sample_status = sample_row.get("status", "En test")
-        
-        # Create row with button
-        cols = st.columns([2, 1, 1.2, 1.2, 1, 1.2, 0.8, 0.5])
-        
-        with cols[0]:
-            if st.button(row["company_name"].upper(), key=f"row_{row['id']}", use_container_width=True):
-                st.session_state["active_prospect_id"] = row["id"]
-                st.rerun()
-        
-        with cols[1]:
-            st.markdown(f'<span class="col-country">{row.get("country") or "—"}</span>', unsafe_allow_html=True)
-        
-        with cols[2]:
-            st.markdown(f'<span class="col-product">{clean_prod_name(row.get("product_interest"))}</span>', unsafe_allow_html=True)
-        
-        with cols[3]:
-            st.markdown(get_status_html(row.get("status")), unsafe_allow_html=True)
-        
-        with cols[4]:
-            st.markdown(f'<span class="col-date" style="color: {date_color};">{date_str}</span>', unsafe_allow_html=True)
-        
-        with cols[5]:
-            st.markdown(f'<span class="col-salon">{row.get("last_salon") or "—"}</span>', unsafe_allow_html=True)
-        
-        with cols[6]:
-            if has_samples:
-                st.markdown(f'<span class="sample-badge">{get_icon("flask")} {sample_status}</span>', unsafe_allow_html=True)
-            else:
-                st.markdown('<span style="color: #D1D5DB;">-</span>', unsafe_allow_html=True)
-        
-        with cols[7]:
-            st.markdown(f'<span class="row-chevron">{get_icon("chevron", "#9CA3AF")}</span>', unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    if filtered.empty:
+        st.markdown("""
+            <div class="empty-state">
+                <div class="empty-icon">🌿</div>
+                <div class="empty-title">Aucun prospect</div>
+                <div class="empty-sub">Ajoutez votre premier prospect avec le bouton "Nouveau Prospect"</div>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        for _, row in filtered.iterrows():
+            cols = st.columns([2, 0.7, 1, 1.4, 1.2, 1.3, 1, 0.6])
+
+            with cols[0]:
+                st.markdown(f'<span class="td-company">{row.get("company","—")}</span>', unsafe_allow_html=True)
+            with cols[1]:
+                st.markdown(priority_badge(row.get("priority","Low")), unsafe_allow_html=True)
+            with cols[2]:
+                st.markdown(f'<span class="td-text">{row.get("product","—")}</span>', unsafe_allow_html=True)
+            with cols[3]:
+                analyse_text = row.get("analyse","—") or "—"
+                st.markdown(f'<span class="td-analyse">{analyse_text}</span>', unsafe_allow_html=True)
+            with cols[4]:
+                st.markdown(f'<span class="td-text">{row.get("decision_maker","—")}</span>', unsafe_allow_html=True)
+            with cols[5]:
+                email_val = row.get("email","") or ""
+                if email_val:
+                    st.markdown(f'<a href="mailto:{email_val}" class="td-link">{email_val}</a>', unsafe_allow_html=True)
+                else:
+                    st.markdown('<span class="td-text">—</span>', unsafe_allow_html=True)
+            with cols[6]:
+                website_val = row.get("website","") or ""
+                if website_val:
+                    url_display = website_val.replace("https://","").replace("http://","").rstrip("/")
+                    st.markdown(f'<a href="{website_val}" target="_blank" class="td-link">↗ {url_display[:22]}</a>', unsafe_allow_html=True)
+                else:
+                    st.markdown('<span class="td-text">—</span>', unsafe_allow_html=True)
+            with cols[7]:
+                if st.button("✎", key=f"edit_{row['id']}", help="Modifier", use_container_width=True):
+                    st.session_state["edit_pid"]  = row["id"]
+                    st.session_state["edit_data"] = row.to_dict()
+                    st.rerun()
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Open "new" modal
+    if st.session_state.pop("open_new", False):
+        prospect_modal()
+
+    # Open "edit" modal
+    if "edit_pid" in st.session_state:
+        prospect_modal(pid=st.session_state["edit_pid"], initial_data=st.session_state.get("edit_data",{}))
 
 # =============================================================================
-# 9. OTHER PAGES (Simplified)
+# PAGE: VEILLE IA (GEMINI)
 # =============================================================================
 
-def page_dashboard():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("dashboard", "#1E3F35", 28)} Tableau de Bord</h1>', unsafe_allow_html=True)
-    
-    df = get_prospects()
-    if df.empty:
-        st.info("Aucune donnée")
-        return
-    
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Projets actifs", len(df))
-    m2.metric("Potentiel total", f"{int(df['potential_volume'].sum())} T")
-    signed = len(df[df["status"].isin(["Contrat", "Client Actif"])])
-    m3.metric("Taux conversion", f"{int(signed / max(len(df), 1) * 100)}%")
-    m4.metric("En R&D", len(df[df["status"].isin(["Échantillons en test", "Tests en cours"])]))
-    
-    st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
-    
-    c1, c2 = st.columns(2)
-    
-    # Graphique Mix Ingrédients avec EXPLODE
-    with c1:
-        st.markdown("### Mix Ingrédients")
-        PRODUITS_STRATEGIQUES = ["Sulfodyne", "Prostaphane", "Peptipea", "Isolats végétaux"]
-        
-        products_series = df["product_interest"].dropna()
-        products_series = products_series[products_series != ""]
-        
-        if not products_series.empty:
-            # Explode: séparer les produits multiples
-            exploded = products_series.str.split(", ").explode()
-            exploded = exploded.str.strip()
-            # Filtrer uniquement les produits stratégiques
-            exploded = exploded[exploded.isin(PRODUITS_STRATEGIQUES)]
-            
-            if not exploded.empty:
-                product_counts = exploded.value_counts().reset_index()
-                product_counts.columns = ["Ingrédient", "Nombre"]
-                
-                fig = px.pie(
-                    product_counts, 
-                    values="Nombre", 
-                    names="Ingrédient", 
-                    hole=0.45,
-                    color_discrete_sequence=px.colors.sequential.Greens_r
-                )
-                fig.update_layout(
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font_family="DM Sans"
-                )
-                fig.update_traces(textposition='inside', textinfo='percent+label')
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("Aucun ingrédient stratégique sélectionné")
-        else:
-            st.info("Aucun produit renseigné")
-    
-    # Graphique par Statut avec charte verte
-    with c2:
-        st.markdown("### Pipeline par Statut")
-        bar_df = df.groupby("status").size().reset_index(name="count")
-        if not bar_df.empty:
-            fig = px.bar(
-                bar_df, 
-                x="status", 
-                y="count",
-                color_discrete_sequence=px.colors.sequential.Greens_r
-            )
-            fig.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font_family="DM Sans",
-                xaxis_title="",
-                yaxis_title="Nombre"
-            )
-            fig.update_xaxes(tickangle=45)
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Aucune donnée")
+def page_veille():
+    st.markdown("""
+        <div class="page-header">
+            <h1 class="page-title">Veille Marché IA</h1>
+            <p class="page-subtitle">Monitoring sulforaphane · brocoli · BAD · compléments alimentaires</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-def page_kanban():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("kanban", "#1E3F35", 28)} Kanban Board</h1>', unsafe_allow_html=True)
-    
-    df = get_prospects()
-    if df.empty:
-        st.info("Aucun prospect")
-        return
-    
-    STAGES = ["Prospection", "Qualification", "Échantillons en test", "Tests en cours", "Négociation", "Contrat", "Client Actif"]
-    COLORS = {"Prospection": "#3B82F6", "Qualification": "#6366F1", "Échantillons en test": "#F59E0B", "Tests en cours": "#EA580C", "Négociation": "#8B5CF6", "Contrat": "#10B981", "Client Actif": "#059669"}
-    
-    cols = st.columns(len(STAGES))
-    for i, stage in enumerate(STAGES):
-        with cols[i]:
-            count = len(df[df["status"] == stage])
-            color = COLORS.get(stage, "#6B7280")
-            st.markdown(f"""
-                <div style="border-bottom: 3px solid {color}; padding-bottom: 8px; margin-bottom: 12px;">
-                    <p style="font-size: 11px; font-weight: 700; color: {color}; text-transform: uppercase; margin: 0;">{stage}</p>
-                    <p style="font-size: 11px; color: #9CA3AF; margin: 4px 0 0;">{count} projet{'s' if count != 1 else ''}</p>
-                </div>
+    tab1, tab2 = st.tabs(["🔬 Analyse marché", "📰 Actualités & Tendances"])
+
+    with tab1:
+        st.markdown("""
+            <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:18px 22px;margin-bottom:24px;">
+                <p style="font-size:13px;color:#166534;margin:0;line-height:1.6;">
+                    <strong>Sulfodyne (L-sulforaphane stable · Ingood by Olga)</strong><br>
+                    Posez une question sur le marché, les concurrents, les opportunités ou les tendances BAD/sulforaphane.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+
+        prompt_suggestions = [
+            "Quelles sont les tendances 2024-2025 des BADs à base de sulforaphane en Europe ?",
+            "Quels sont les principaux concurrents sur le marché des ingrédients sulforaphane B2B ?",
+            "Quels segments (sport, senior, femme, beauté) sont les plus porteurs pour les BADs brocoli ?",
+            "Quelle est la réglementation EFSA pour les allégations santé sulforaphane ?",
+        ]
+
+        st.markdown('<span class="form-label">QUESTION / REQUÊTE</span>', unsafe_allow_html=True)
+        
+        col_sug, _ = st.columns([3,1])
+        with col_sug:
+            selected_sug = st.selectbox("sug", ["Choisir une suggestion…"] + prompt_suggestions, label_visibility="collapsed", key="sug_box")
+
+        user_prompt = st.text_area(
+            "prompt",
+            value=selected_sug if selected_sug != "Choisir une suggestion…" else "",
+            height=90,
+            label_visibility="collapsed",
+            placeholder="Posez votre question sur le marché sulforaphane / BAD…",
+            key="veille_prompt"
+        )
+
+        if st.button("🔬 Analyser avec Gemini", type="primary"):
+            if not user_prompt.strip():
+                st.warning("Entrez une question")
+            else:
+                with st.spinner("Analyse en cours…"):
+                    try:
+                        model = genai.GenerativeModel("gemini-1.5-flash")
+                        system_ctx = """Tu es un expert en Business Development dans le secteur des ingrédients nutraceutiques B2B.
+                        Tu travailles pour Ingood by Olga, société française spécialisée dans le Sulfodyne (L-sulforaphane stable issu du brocoli).
+                        Réponds en français, de manière professionnelle, avec des données concrètes et actionnables pour une BizDev.
+                        Focus sur : marché BAD (Biologically Active Dietary supplements), compléments alimentaires, nutraceutique, santé fonctionnelle.
+                        Mentionne des chiffres de marché, des tendances, des opportunités de prospection quand c'est pertinent."""
+                        
+                        response = model.generate_content(f"{system_ctx}\n\nQuestion : {user_prompt}")
+                        
+                        st.markdown("""
+                            <div style="background:white;border:1px solid #E8EAE6;border-radius:12px;padding:24px;margin-top:20px;">
+                                <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#1E3F35;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.5px;">
+                                    🤖 Analyse Gemini
+                                </div>
+                        """, unsafe_allow_html=True)
+                        st.markdown(response.text)
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    except Exception as e:
+                        st.error(f"Erreur Gemini : {e}")
+
+    with tab2:
+        st.markdown("""
+            <div style="margin-bottom:20px;">
+                <p style="font-size:13px;color:#6B7280;">Générez un brief de veille automatique sur les dernières actualités sulforaphane, brocoli et BAD.</p>
+            </div>
+        """, unsafe_allow_html=True)
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            topic_focus = st.selectbox("focus", [
+                "Marché BAD sulforaphane global",
+                "Nouveaux lancements produits brocoli/sulforaphane",
+                "Études cliniques sulforaphane récentes",
+                "Réglementation compléments alimentaires EU",
+                "Opportunités marché Asie (Russie, Chine)",
+                "Concurrents ingrédients brocoli B2B",
+            ], label_visibility="collapsed")
+        with c2:
+            geo_focus = st.selectbox("geo", ["Europe", "Monde entier", "Asie", "Amérique du Nord", "Russie & CEI"], label_visibility="collapsed")
+        with c3:
+            if st.button("📰 Générer la veille", type="primary", use_container_width=True):
+                with st.spinner("Génération du brief de veille…"):
+                    try:
+                        model = genai.GenerativeModel("gemini-1.5-flash")
+                        brief_prompt = f"""En tant qu'expert nutraceutique B2B, génère un brief de veille marché structuré sur : "{topic_focus}" pour la zone géographique : {geo_focus}.
+                        
+                        Contexte : Ingood by Olga commercialise Sulfodyne, un L-sulforaphane stable issu de graines de brocoli, ingrédient premium B2B pour BADs et compléments alimentaires.
+                        
+                        Format souhaité :
+                        ## 📊 Tendances clés
+                        ## 🌟 Opportunités de marché
+                        ## ⚠️ Points de vigilance
+                        ## 🎯 Recommandations BizDev
+                        
+                        Sois précis, factuel, orienté action commerciale B2B. Réponds en français."""
+                        
+                        response = model.generate_content(brief_prompt)
+                        st.session_state["veille_brief"] = response.text
+                    except Exception as e:
+                        st.error(f"Erreur : {e}")
+
+        if "veille_brief" in st.session_state:
+            st.markdown("""
+                <div style="background:white;border:1px solid #E8EAE6;border-radius:12px;padding:24px;margin-top:20px;">
+                    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#1E3F35;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.5px;">
+                        📰 Brief de Veille
+                    </div>
             """, unsafe_allow_html=True)
-            
-            for _, row in df[df["status"] == stage].iterrows():
-                with st.container(border=True):
-                    st.markdown(f"**{row['company_name']}**")
-                    st.markdown(f'<span style="font-size: 12px; color: #6B7280;">{get_icon("globe", "#9CA3AF", 14)} {row.get("country", "N/A")} · {int(row.get("potential_volume", 0))} T</span>', unsafe_allow_html=True)
-                    
-                    bc1, bc2, bc3 = st.columns([1, 2, 1])
-                    with bc1:
-                        if i > 0 and st.button("←", key=f"p_{row['id']}"):
-                            get_supabase().table("prospects").update({"status": STAGES[i-1]}).eq("id", row["id"]).execute()
-                            st.rerun()
-                    with bc2:
-                        if st.button("Ouvrir", key=f"o_{row['id']}", use_container_width=True):
-                            st.session_state["active_prospect_id"] = row["id"]
-                            st.rerun()
-                    with bc3:
-                        if i < len(STAGES)-1 and st.button("→", key=f"n_{row['id']}"):
-                            get_supabase().table("prospects").update({"status": STAGES[i+1]}).eq("id", row["id"]).execute()
-                            st.rerun()
+            st.markdown(st.session_state["veille_brief"])
+            st.markdown("</div>", unsafe_allow_html=True)
 
-def page_samples():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("flask", "#1E3F35", 28)} Échantillons</h1>', unsafe_allow_html=True)
-    
-    try:
-        samp = pd.DataFrame(get_supabase().table("samples").select("*, prospects(company_name)").execute().data)
-        if not samp.empty:
-            samp["Client"] = samp["prospects"].apply(lambda x: x["company_name"] if x else "—")
-            st.dataframe(samp[["date_sent", "product_name", "reference", "status", "Client", "feedback"]], use_container_width=True)
-        else:
-            st.info("Aucun échantillon")
-    except:
-        st.info("Aucun échantillon")
-
-def page_contacts():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("contacts", "#1E3F35", 28)} Contacts</h1>', unsafe_allow_html=True)
-    
-    try:
-        cons = pd.DataFrame(get_supabase().table("contacts").select("*, prospects(company_name)").execute().data)
-        if not cons.empty:
-            cons["Entreprise"] = cons["prospects"].apply(lambda x: x["company_name"] if x else "—")
-            st.dataframe(cons[["name", "role", "email", "phone", "Entreprise"]], use_container_width=True)
-        else:
-            st.info("Aucun contact")
-    except:
-        st.info("Aucun contact")
-
-def page_news():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("news", "#1E3F35", 28)} Veille IA</h1>', unsafe_allow_html=True)
-    st.info("Veille stratégique via Perplexity AI - Configuration requise")
+# =============================================================================
+# PAGE: IMPORT / EXPORT
+# =============================================================================
 
 def page_excel():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("export", "#1E3F35", 28)} Import / Export</h1>', unsafe_allow_html=True)
-    
-    c1, c2 = st.columns(2)
-    with c1:
+    st.markdown("""
+        <div class="page-header">
+            <h1 class="page-title">Import · Export</h1>
+            <p class="page-subtitle">Gérez votre base de données prospects</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    df = load_prospects()
+
+    col_ex, col_im = st.columns(2, gap="large")
+
+    # ── EXPORT ──
+    with col_ex:
         with st.container(border=True):
-            st.markdown(f'<p style="font-weight: 600; display: flex; align-items: center; gap: 8px;">{get_icon("export", "#1E3F35", 18)} Export</p>', unsafe_allow_html=True)
-            df = get_prospects()
-            if not df.empty:
-                buffer = BytesIO()
-                df.to_excel(buffer, index=False, engine="openpyxl")
-                buffer.seek(0)
-                st.download_button("Télécharger Excel", buffer, f"prospects_{datetime.now().strftime('%Y%m%d')}.xlsx", type="primary", use_container_width=True)
+            st.markdown("""
+                <p style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#1A1F1C;margin:0 0 6px;">
+                    📤  Export Excel
+                </p>
+                <p style="font-size:13px;color:#8A9490;margin:0 0 20px;">
+                    Téléchargez toute votre base de données en format .xlsx
+                </p>
+            """, unsafe_allow_html=True)
+
+            if df.empty:
+                st.info("Aucun prospect à exporter")
             else:
-                st.info("Aucune donnée")
-    
-    with c2:
+                # Clean export columns
+                export_cols = ["company","priority","product","analyse","decision_maker","email","website","created_at","updated_at"]
+                export_df = df[[c for c in export_cols if c in df.columns]].copy()
+                export_df.columns = [c.replace("_"," ").title() for c in export_df.columns]
+
+                buffer = BytesIO()
+                with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+                    export_df.to_excel(writer, index=False, sheet_name="Prospects Sulfodyne")
+
+                    # Style header
+                    wb = writer.book
+                    ws = writer.sheets["Prospects Sulfodyne"]
+                    from openpyxl.styles import PatternFill, Font
+                    green_fill = PatternFill("solid", fgColor="1E3F35")
+                    for cell in ws[1]:
+                        cell.fill = green_fill
+                        cell.font = Font(color="FFFFFF", bold=True)
+                    for col in ws.columns:
+                        ws.column_dimensions[col[0].column_letter].width = 22
+
+                buffer.seek(0)
+                today = datetime.now().strftime("%Y%m%d")
+                st.download_button(
+                    f"⬇  Télécharger Excel ({len(df)} lignes)",
+                    data=buffer,
+                    file_name=f"sulfodyne_prospects_{today}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    type="primary",
+                    use_container_width=True
+                )
+
+    # ── IMPORT ──
+    with col_im:
         with st.container(border=True):
-            st.markdown(f'<p style="font-weight: 600; display: flex; align-items: center; gap: 8px;">{get_icon("import", "#1E3F35", 18)} Import</p>', unsafe_allow_html=True)
+            st.markdown("""
+                <p style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#1A1F1C;margin:0 0 6px;">
+                    📥  Import Excel
+                </p>
+                <p style="font-size:13px;color:#8A9490;margin:0 0 20px;">
+                    Importez un fichier .xlsx. Les colonnes attendues :<br>
+                    <code style="font-size:11px;">company, priority, product, analyse, decision_maker, email, website</code>
+                </p>
+            """, unsafe_allow_html=True)
+
             uploaded = st.file_uploader("Fichier Excel", type=["xlsx"], label_visibility="collapsed")
-            if uploaded and st.button("Importer", type="primary"):
-                st.success("Import réussi")
+            if uploaded:
+                try:
+                    import_df = pd.read_excel(uploaded)
+                    import_df.columns = [c.strip().lower().replace(" ","_") for c in import_df.columns]
 
-def page_webhooks():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("webhook", "#1E3F35", 28)} Webhooks</h1>', unsafe_allow_html=True)
-    st.code("https://your-app.streamlit.io/api/webhook/leads")
-    st.info("Configurez ce webhook dans Make.com pour recevoir des leads automatiquement")
+                    st.markdown(f"**{len(import_df)} lignes** détectées :")
+                    st.dataframe(import_df.head(5), use_container_width=True)
 
-def page_alertes():
-    st.markdown(f'<h1 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{get_icon("alert", "#1E3F35", 28)} Alertes</h1>', unsafe_allow_html=True)
-    
-    # Retention alerts
-    st.markdown(f'<p style="font-weight: 600; display: flex; align-items: center; gap: 8px; margin-top: 16px;">{get_icon("warning", "#F59E0B", 18)} Clients sans contact (45+ jours)</p>', unsafe_allow_html=True)
-    try:
-        threshold = (datetime.now() - timedelta(days=45)).isoformat()
-        alerts = pd.DataFrame(get_supabase().table("prospects").select("*").eq("status", "Client Actif").lte("last_action_date", threshold).execute().data)
-        if not alerts.empty:
-            for _, a in alerts.iterrows():
-                with st.container(border=True):
-                    st.markdown(f"**{a['company_name']}** - Dernier contact: {a.get('last_action_date', '')[:10]}")
-                    if st.button("Ouvrir", key=f"alert_{a['id']}"):
-                        st.session_state["active_prospect_id"] = a["id"]
+                    if st.button("✓ Importer dans la base", type="primary", use_container_width=True, key="do_import"):
+                        ok = err = 0
+                        for _, r in import_df.iterrows():
+                            try:
+                                payload = {
+                                    "company":        str(r.get("company","")).upper().strip(),
+                                    "priority":       str(r.get("priority","Low")).strip(),
+                                    "product":        str(r.get("product","")).strip(),
+                                    "analyse":        str(r.get("analyse","")).strip(),
+                                    "decision_maker": str(r.get("decision_maker","")).strip(),
+                                    "email":          str(r.get("email","")).strip(),
+                                    "website":        str(r.get("website","")).strip(),
+                                    "created_at":     datetime.now().isoformat(),
+                                    "updated_at":     datetime.now().isoformat(),
+                                }
+                                if payload["priority"] not in PRIORITY_OPTS:
+                                    payload["priority"] = "Low"
+                                if payload["company"]:
+                                    db().table("sulfodyne_prospects").insert(payload).execute()
+                                    ok += 1
+                            except:
+                                err += 1
+                        refresh()
+                        st.success(f"✓ {ok} prospects importés · {err} erreurs")
                         st.rerun()
-        else:
-            st.markdown(f'<p style="color: #10B981; display: flex; align-items: center; gap: 8px;">{get_icon("check_circle", "#10B981", 18)} Tous les clients sont à jour</p>', unsafe_allow_html=True)
-    except:
-        st.info("Aucune alerte")
+                except Exception as e:
+                    st.error(f"Erreur lecture fichier : {e}")
+
+    # Preview table
+    st.markdown("<div style='height:32px;'></div>", unsafe_allow_html=True)
+    if not df.empty:
+        st.markdown("""
+            <p style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#1A1F1C;margin-bottom:12px;">
+                Aperçu de la base complète
+            </p>
+        """, unsafe_allow_html=True)
+        preview_cols = ["company","priority","product","decision_maker","email","website"]
+        st.dataframe(
+            df[[c for c in preview_cols if c in df.columns]].rename(
+                columns={"company":"Société","priority":"Priorité","product":"Produit",
+                         "decision_maker":"Decision Maker","email":"Email","website":"Website"}
+            ),
+            use_container_width=True,
+            height=320
+        )
 
 # =============================================================================
-# 10. MAIN
+# MAIN
 # =============================================================================
 
 def main():
-    if not check_auth():
-        return
-    
-    if not get_supabase():
-        st.error("Connexion base de données échouée")
+    # Auth simple
+    if not st.session_state.get("auth"):
+        pwd_ok = st.secrets.get("ACCESS_PASSWORD","")
+        token_ok = st.secrets.get("ACCESS_TOKEN","")
+
+        if st.query_params.get("token") == token_ok and token_ok:
+            st.session_state["auth"] = True
+        else:
+            _, col, _ = st.columns([1,1,1])
+            with col:
+                st.markdown("<div style='height:80px;'></div>", unsafe_allow_html=True)
+                st.markdown("""
+                    <div style="text-align:center;padding:40px 32px;background:white;border-radius:16px;border:1px solid #E8EAE6;box-shadow:0 8px 32px rgba(0,0,0,0.08);">
+                        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#1E3F35;margin-bottom:4px;">Ingood by Olga</div>
+                        <div style="font-size:13px;color:#8A9490;margin-bottom:28px;">Sulfodyne · Business Development</div>
+                    </div>
+                """, unsafe_allow_html=True)
+                pwd = st.text_input("", type="password", placeholder="Mot de passe", label_visibility="collapsed")
+                if st.button("Accéder →", type="primary", use_container_width=True):
+                    if pwd == pwd_ok:
+                        st.session_state["auth"] = True
+                        st.rerun()
+                    else:
+                        st.error("Mot de passe incorrect")
+            return
+
+    if not db():
+        st.error("Connexion base de données impossible. Vérifiez vos secrets Supabase.")
         st.stop()
-    
-    selected_page = render_sidebar()
-    
-    # Handle modal
-    if "active_prospect_id" in st.session_state:
-        try:
-            data = get_supabase().table("prospects").select("*").eq("id", st.session_state["active_prospect_id"]).execute().data[0]
-            show_prospect_modal(st.session_state["active_prospect_id"], data)
-        except:
-            safe_del("active_prospect_id")
-    
-    # Route pages
-    pages = {
-        "Dashboard": page_dashboard,
-        "Pipeline": page_pipeline,
-        "Kanban": page_kanban,
-        "Samples": page_samples,
-        "Contacts": page_contacts,
-        "News": page_news,
-        "Excel": page_excel,
-        "Webhooks": page_webhooks,
-        "Alertes": page_alertes,
-    }
-    
-    pages.get(selected_page, page_pipeline)()
+
+    page = render_sidebar()
+
+    if page == "Prospects":
+        page_prospects()
+    elif page == "Veille IA":
+        page_veille()
+    elif page == "Import/Export":
+        page_excel()
 
 if __name__ == "__main__":
     main()
