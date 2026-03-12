@@ -610,7 +610,7 @@ def page_excel():
                         "produit": "product",
                         "analyse": "analysis",
                         "site": "website",
-                        "swot": "analysis",
+                        "swot": "swot_notes",
                     }
                     new_cols = []
                     for c in import_df.columns:
@@ -622,6 +622,7 @@ def page_excel():
 
                     import_df = import_df.loc[:, ~import_df.columns.str.startswith("unnamed")]
                     import_df = import_df.dropna(how="all")
+                    import_df = import_df.loc[:, ~import_df.columns.duplicated()]
 
                     st.success(f"✓ Fichier lu : **{len(import_df)} lignes**")
                     st.markdown("**Colonnes :** " + ", ".join(import_df.columns.tolist()))
