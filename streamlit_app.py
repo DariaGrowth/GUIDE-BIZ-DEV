@@ -557,14 +557,15 @@ def render_sidebar():
         if "nav_page" not in st.session_state:
             st.session_state.nav_page = "Prospects"
 
-pages = [
-            ("Prospects",    ""),
-            ("Veille IA",    ""),
-            ("Import/Export",""),
-        ]
+    pages = [
+        ("Prospects", ""),
+        ("Veille IA", ""),
+        ("Import/Export", ""),
+    ]
 
     for label, icon in pages:
         is_active = st.session_state.nav_page == label
+        btn_style = "primary" if is_active else "secondary"
         if st.button(f"{label}", key=f"nav_{label}", use_container_width=True, type="secondary"):
             st.session_state.nav_page = label
             st.rerun()
