@@ -595,32 +595,34 @@ def page_excel():
 
             if uploaded is not None:
                 try:
-                    import_df = pd.read_excel(uploaded, engine="openpyxl", header=None)
+import_df = pd.read_excel(uploaded, engine="openpyxl", header=None)
                     header_row = 0
                     for i, row in import_df.iterrows():
                         row_vals = [str(v).lower().strip() for v in row.values]
                         if any(v in ("company","société","societe") for v in row_vals):
                             header_row = i
                             break
-    col_map = {
-        "société": "company", "societe": "company",
-        "priorité": "priority", "priorite": "priority",
-        "produit": "product",
-        "analyse": "analysis",
-        "site": "website",
-        "swot": "analysis",
-}
-    new_cols = []
-    for c in import_df.columns:
-        clean = str(c).strip().lower().replace(" ", "_")
-        clean = clean.replace("é","e").replace("è","e").replace("ê","e")
-        clean = col_map.get(clean, clean)
-        new_cols.append(clean)
-    import_df.columns = new_cols
+                    import_df = pd.read_excel(uploaded, engine="openpyxl", header=header_row)
 
-    # Supprimer les colonnes vides ou "unnamed"
-    import_df = import_df.loc[:, ~import_df.columns.str.startswith("unnamed")]
-    import_df = import_df.dropna(how="all")
+                    col_map = {
+                        "société": "company", "societe": "company",
+                        "priorité": "priority", "priorite": "priority",
+                        "produit": "product",
+                        "analyse": "analysis",
+                        "site": "website",
+                        "swot": "analysis",
+                    }
+                    new_cols = []
+                    for c in import_df.columns:
+                        clean = str(c).strip().lower().replace(" ", "_")
+                        clean = clean.replace("é","e").replace("è","e").replace("ê","e")
+                        clean = col_map.get(clean, clean)
+                        new_cols.append(clean)
+                    import_df.columns = new_cols
+
+                    import_df = import_df.loc[:, ~import_df.columns.str.startswith("unnamed")]
+                    import_df = import_df.dropna(how="all")
+
                     st.success(f"✓ Fichier lu : **{len(import_df)} lignes**")
                     st.markdown("**Colonnes :** " + ", ".join(import_df.columns.tolist()))
                     st.dataframe(import_df.head(5), use_container_width=True)
