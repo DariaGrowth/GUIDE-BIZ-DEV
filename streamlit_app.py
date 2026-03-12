@@ -623,7 +623,7 @@ def page_excel():
                     import_df = import_df.loc[:, ~import_df.columns.duplicated()]
                     import_df = import_df.dropna(how="all")
 
-                    st.session_state["import_df"] = import_df
+                    st.session_state["import_df"] = import_df.to_dict("records")
                     st.success(f"✓ Fichier lu : **{len(import_df)} lignes**")
                     st.markdown("**Colonnes :** " + ", ".join(import_df.columns.tolist()))
                     st.dataframe(import_df.head(5), use_container_width=True)
@@ -636,7 +636,7 @@ def page_excel():
                 if st.button("✓ Importer dans la base", type="primary", use_container_width=True, key="do_import"):
                     import_df = st.session_state["import_df"]
                     ok = err = 0
-                    for _, r in import_df.iterrows():
+                    for r in records:
                         try:
                             company_val = str(r.get("company", "")).upper().strip()
                             if not company_val or company_val in ("NAN", "NONE", ""):
