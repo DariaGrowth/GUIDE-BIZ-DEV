@@ -663,16 +663,17 @@ def page_excel():
                             payload = {k: ("" if str(v).lower() in ("nan","none","nat") else v) for k, v in payload.items()}
                             db().table("sulfodyne_prospects").insert(payload).execute()
                             ok += 1
-                        except Exception:
+                       except Exception:
                             err += 1
                     refresh()
                     del st.session_state["import_df"]
                     st.success(f"✓ {ok} prospects importés · {err} lignes ignorées")
                     time.sleep(1)
                     st.rerun()
-                except Exception as e:
-                    st.error(f"Erreur lecture fichier : {e}")
-                    st.info("Vérifiez que le fichier est au format .xlsx")
+
+            except Exception as e:
+                st.error(f"Erreur lecture fichier : {e}")
+                st.info("Vérifiez que le fichier est au format .xlsx")
 
     st.markdown("<div style='height:32px;'></div>", unsafe_allow_html=True)
     if not df.empty:
