@@ -609,7 +609,6 @@ def page_excel():
                         "priorité": "priority", "priorite": "priority",
                         "produit": "product",
                         "analyse": "analysis",
-                        "site": "website",
                         "swot": "swot_notes",
                     }
                     new_cols = []
@@ -621,50 +620,56 @@ def page_excel():
                     import_df.columns = new_cols
 
                     import_df = import_df.loc[:, ~import_df.columns.str.startswith("unnamed")]
-                    import_df = import_df.dropna(how="all")
                     import_df = import_df.loc[:, ~import_df.columns.duplicated()]
+                    import_df = import_df.dropna(how="all")
 
+                    # Sauvegarder dans session_state pour survivre au rerun
+                    st.session_state["import_df"] = import_df
                     st.success(f"✓ Fichier lu : **{len(import_df)} lignes**")
                     st.markdown("**Colonnes :** " + ", ".join(import_df.columns.tolist()))
                     st.dataframe(import_df.head(5), use_container_width=True)
 
-                    if st.button("✓ Importer dans la base", type="primary", use_container_width=True, key="do_import"):
-                        ok = err = 0
-                        for _, r in import_df.iterrows():
-                            try:
-                                company_val = str(r.get("company", "")).upper().strip()
-                                if not company_val or company_val in ("NAN", "NONE", ""):
-                                    err += 1
-                                    continue
-                                pri = str(r.get("priority", "Low")).strip()
-                                if pri.lower() in ("middle", "medium", "moyen"):
-                                    pri = "Middle"
-                                elif pri.lower() in ("high", "haute", "haut"):
-                                    pri = "High"
-                                elif pri.lower() in ("low", "bas", "faible"):
-                                    pri = "Low"
-                                if pri not in PRIORITY_OPTS:
-                                    pri = "Low"
-                                payload = {
-                                    "company":        company_val,
-                                    "priority":       pri,
-                                    "product":        str(r.get("product", "") or "").strip(),
-                                    "analysis":       str(r.get("analysis", "") or "").strip(),
-                                    "decision_maker": str(r.get("decision_maker", "") or "").strip(),
-                                    "email":          str(r.get("email", "") or "").strip(),
-                                    "website":        str(r.get("website", "") or "").strip(),
-                                    "created_at":     datetime.now().isoformat(),
-                                    "updated_at":     datetime.now().isoformat(),
-                                }
-                                payload = {k: ("" if str(v).lower() in ("nan","none","nat") else v) for k, v in payload.items()}
-                                db().table("sulfodyne_prospects").insert(payload).execute()
-                                ok += 1
-                            except Exception:
+                except Exception as e:
+                    st.error(f"Erreur lecture fichier : {e}")
+                    st.info("Vérifiez que le fichier est au format .xlsx")
+
+            # Bouton HORS du bloc if uploaded — persiste grâce au session_state
+            if "import_df" in st.session_state:
+                if st.button("✓ Importer dans la base", type="primary", use_container_width=True, key="do_import"):
+                    import_df = st.session_state["import_df"]
+                    ok = err = 0
+                    for _, r in import_df.iterrows():
+                        try:
+                            company_val = str(r.get("company", "")).upper().strip()
+                            if not company_val or company_val in ("NAN", "NONE", ""):
                                 err += 1
-                        refresh()
-                        st.success(f"✓ {ok} prospects importés · {err} lignes ignorées")
-                        time.sleep(1)
-                        st.rerun()
+                                continue
+                            pri = str(r.get("priority", "Low")).strip()
+                            if pri.lower() in ("middle", "medium", "moyen"): pri = "Middle"
+                            elif pri.lower() in ("high", "haute", "haut"):   pri = "High"
+                            elif pri.lower() in ("low", "bas", "faible"):    pri = "Low"
+                            if pri not in PRIORITY_OPTS: pri = "Low"
+                            payload = {
+                                "company":        company_val,
+                                "priority":       pri,
+                                "product":        str(r.get("product", "") or "").strip(),
+                                "analysis":       str(r.get("analysis", "") or "").strip(),
+                                "decision_maker": str(r.get("decision_maker", "") or "").strip(),
+                                "email":          str(r.get("email", "") or "").strip(),
+                                "website":        str(r.get("website", "") or "").strip(),
+                                "created_at":     datetime.now().isoformat(),
+                                "updated_at":     datetime.now().isoformat(),
+                            }
+                            payload = {k: ("" if str(v).lower() in ("nan","none","nat") else v) for k, v in payload.items()}
+                            db().table("sulfodyne_prospects").insert(payload).execute()
+                            ok += 1
+                        except Exception:
+                            err += 1
+                    refresh()
+                    del st.session_state["import_df"]
+                    st.success(f"✓ {ok} prospects importés · {err} lignes ignorées")
+                    time.sleep(1)
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Erreur lecture fichier : {e}")
                     st.info("Vérifiez que le fichier est au format .xlsx")
