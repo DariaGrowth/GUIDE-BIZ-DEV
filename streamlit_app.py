@@ -934,7 +934,7 @@ def page_excel():
 
             uploaded = st.file_uploader("Fichier Excel", type=["xlsx"], label_visibility="collapsed")
             if uploaded:
-    try:
+                try:
         import_df = pd.read_excel(uploaded, engine="openpyxl")
         # Нормализация колонок
         import_df.columns = [
