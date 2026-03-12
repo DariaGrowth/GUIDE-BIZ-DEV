@@ -933,65 +933,57 @@ def page_excel():
             """, unsafe_allow_html=True)
 
             uploaded = st.file_uploader("Fichier Excel", type=["xlsx"], label_visibility="collapsed")
-            if uploaded:
+if uploaded:
                 try:
-        import_df = pd.read_excel(uploaded, engine="openpyxl")
-        # Нормализация колонок
-        import_df.columns = [
-            c.strip().lower()
-             .replace(" ","_")
-             .replace("é","e").replace("è","e").replace("ê","e")
-             .replace("analyse","analysis")
-             .replace("société","company")
-             .replace("priorité","priority")
-             .replace("produit","product")
-             .replace("site","website")
-            for c in import_df.columns
-        ]
+                    import_df = pd.read_excel(uploaded, engine="openpyxl")
+                    import_df.columns = [
+                        c.strip().lower()
+                         .replace(" ","_")
+                         .replace("é","e").replace("è","e").replace("ê","e")
+                         .replace("analyse","analysis")
+                         .replace("société","company")
+                         .replace("priorité","priority")
+                         .replace("produit","product")
+                         .replace("site","website")
+                        for c in import_df.columns
+                    ]
+                    st.markdown(f"**{len(import_df)} lignes** détectées :")
+                    st.dataframe(import_df.head(5), use_container_width=True)
+                    st.markdown("**Colonnes :** " + ", ".join(import_df.columns.tolist()))
 
-        st.markdown(f"**{len(import_df)} lignes** détectées :")
-        st.dataframe(import_df.head(5), use_container_width=True)
-        st.markdown("**Colonnes détectées :** " + ", ".join(import_df.columns.tolist()))
-
-        if st.button("✓ Importer dans la base", type="primary", use_container_width=True, key="do_import"):
-            ok = err = 0
-            for _, r in import_df.iterrows():
-                try:
-                    company_val = str(r.get("company", r.get("société", r.get("societe","")))).upper().strip()
-                    if not company_val or company_val == "NAN":
-                        err += 1
-                        continue
-                    
-                    pri = str(r.get("priority", r.get("priorité","Low"))).strip()
-                    if pri not in PRIORITY_OPTS:
-                        pri = "Low"
-
-                    payload = {
-                        "company":        company_val,
-                        "priority":       pri,
-                        "product":        str(r.get("product", r.get("produit",""))).strip(),
-                        "analysis":       str(r.get("analysis", r.get("analyse",""))).strip(),
-                        "decision_maker": str(r.get("decision_maker","")).strip(),
-                        "email":          str(r.get("email","")).strip(),
-                        "website":        str(r.get("website", r.get("site",""))).strip(),
-                        "created_at":     datetime.now().isoformat(),
-                        "updated_at":     datetime.now().isoformat(),
-                    }
-                    # Nettoyer les "nan"
-                    payload = {k: ("" if v == "nan" or v == "None" else v) for k, v in payload.items()}
-                    
-                    db().table("sulfodyne_prospects").insert(payload).execute()
-                    ok += 1
-                except Exception as row_err:
-                    err += 1
-                    st.warning(f"Ligne ignorée : {row_err}")
-            
-            refresh()
-            st.success(f"✓ {ok} prospects importés · {err} erreurs")
-            time.sleep(1)
-            st.rerun()
-    except Exception as e:
-        st.error(f"Erreur lecture fichier : {e}")
+                    if st.button("✓ Importer", type="primary", use_container_width=True, key="do_import"):
+                        ok = err = 0
+                        for _, r in import_df.iterrows():
+                            try:
+                                company_val = str(r.get("company","")).upper().strip()
+                                if not company_val or company_val == "NAN":
+                                    err += 1
+                                    continue
+                                pri = str(r.get("priority","Low")).strip()
+                                if pri not in PRIORITY_OPTS:
+                                    pri = "Low"
+                                payload = {
+                                    "company":        company_val,
+                                    "priority":       pri,
+                                    "product":        str(r.get("product","")).strip(),
+                                    "analysis":       str(r.get("analysis","")).strip(),
+                                    "decision_maker": str(r.get("decision_maker","")).strip(),
+                                    "email":          str(r.get("email","")).strip(),
+                                    "website":        str(r.get("website","")).strip(),
+                                    "created_at":     datetime.now().isoformat(),
+                                    "updated_at":     datetime.now().isoformat(),
+                                }
+                                payload = {k: ("" if v in ("nan","None","NAN") else v) for k, v in payload.items()}
+                                db().table("sulfodyne_prospects").insert(payload).execute()
+                                ok += 1
+                            except Exception as row_err:
+                                err += 1
+                        refresh()
+                        st.success(f"✓ {ok} importés · {err} erreurs")
+                        time.sleep(1)
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Erreur : {e}")
         st.info("Vérifiez que le fichier est bien au format .xlsx (pas .xls ou .csv)")
 
     # Preview table
