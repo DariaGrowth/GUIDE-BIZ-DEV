@@ -634,7 +634,7 @@ def page_excel():
 
             if "import_df" in st.session_state:
                 if st.button("✓ Importer dans la base", type="primary", use_container_width=True, key="do_import"):
-                    import_df = st.session_state["import_df"]
+                    records = st.session_state["import_df"]
                     ok = err = 0
                     for r in records:
                         try:
