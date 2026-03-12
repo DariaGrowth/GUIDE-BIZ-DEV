@@ -68,50 +68,35 @@ CSS = """
     [data-testid="stVerticalBlock"] { gap: 0 !important; }
     button:focus, button:focus-visible { outline: none !important; box-shadow: none !important; }
 
- /* ── SIDEBAR ── */
-    section[data-testid="stSidebar"] {
-        background: var(--forest) !important;
-        border-right: none !important;
-        min-width: 240px !important;
-        max-width: 240px !important;
+section[data-testid="stSidebar"] {
+        background: #FFFFFF !important;
+        border-right: 1px solid #E5E7EB !important;
     }
-    section[data-testid="stSidebar"] > div {
-        padding: 28px 20px !important;
-    }
-    section[data-testid="stSidebar"] * {
-        color: rgba(255,255,255,0.85) !important;
-    }
+    section[data-testid="stSidebar"] > div { padding: 24px 16px !important; }
+    section[data-testid="stSidebar"] * { color: inherit !important; }
     section[data-testid="stSidebar"] div[data-testid="stVerticalBlockBorderWrapper"],
     section[data-testid="stSidebar"] .stButton {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
+        background: transparent !important; border: none !important; box-shadow: none !important;
     }
-    /* Nouveau Prospect button */
     section[data-testid="stSidebar"] .stButton > button[kind="primary"] {
         width: 100% !important;
-        background: #10B981 !important;
+        background: #1E3F35 !important;
         color: white !important;
         border: none !important;
         border-radius: 10px !important;
-        padding: 14px 16px !important;
-        font-family: 'Syne', sans-serif !important;
-        font-weight: 700 !important;
+        padding: 14px 20px !important;
+        font-weight: 600 !important;
         font-size: 14px !important;
-        letter-spacing: 0.3px !important;
-        box-shadow: 0 4px 12px rgba(16,185,129,0.3) !important;
+        box-shadow: 0 2px 4px rgba(30,63,53,0.15) !important;
         transition: all 0.15s ease !important;
     }
     section[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
-        background: #059669 !important;
-        box-shadow: 0 6px 16px rgba(16,185,129,0.4) !important;
-        transform: translateY(-1px) !important;
+        background: #2A5548 !important;
     }
-    /* Nav buttons */
     section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
         width: 100% !important;
         background: transparent !important;
-        color: rgba(255,255,255,0.6) !important;
+        color: #4B5563 !important;
         border: none !important;
         border-left: 3px solid transparent !important;
         border-radius: 0 8px 8px 0 !important;
@@ -124,9 +109,9 @@ CSS = """
         margin: 2px 0 !important;
     }
     section[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
-        background: rgba(255,255,255,0.1) !important;
-        color: white !important;
-        border-left: 3px solid rgba(16,185,129,0.5) !important;
+        background: #F3F4F6 !important;
+        color: #1E3F35 !important;
+        border-left: 3px solid #10B981 !important;
     }
 
     /* ── MAIN CONTENT ── */
@@ -572,16 +557,16 @@ def render_sidebar():
         if "nav_page" not in st.session_state:
             st.session_state.nav_page = "Prospects"
 
-        pages = [
-            ("Prospects",    "🧭"),
-            ("Veille IA",    "🔬"),
-            ("Import/Export","📊"),
+pages = [
+            ("Prospects",    ""),
+            ("Veille IA",    ""),
+            ("Import/Export",""),
         ]
 
         for label, icon in pages:
             is_active = st.session_state.nav_page == label
             btn_style = "primary" if is_active else "secondary"
-            if st.button(f"{icon}  {label}", key=f"nav_{label}", use_container_width=True, type="secondary"):
+            if st.button(f"{label}", key=f"nav_{label}", use_container_width=True, type="secondary"):
                 st.session_state.nav_page = label
                 st.rerun()
 
