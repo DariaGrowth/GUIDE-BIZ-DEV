@@ -596,13 +596,13 @@ def page_excel():
             if uploaded is not None:
                 try:
                     import_df = pd.read_excel(uploaded, engine="openpyxl", header=None)
-header_row = 0
-for i, row in import_df.iterrows():
-    row_vals = [str(v).lower().strip() for v in row.values]
-    if any(v in ("company","société","societe") for v in row_vals):
-        header_row = i
-        break
-import_df = pd.read_excel(uploaded, engine="openpyxl", header=header_row)
+                    header_row = 0
+                    for i, row in import_df.iterrows():
+                        row_vals = [str(v).lower().strip() for v in row.values]
+                        if any(v in ("company","société","societe") for v in row_vals):
+                            header_row = i
+                            break
+                    import_df = pd.read_excel(uploaded, engine="openpyxl", header=header_row)
                     import_df.columns = [
                         c.strip().lower()
                          .replace(" ", "_")
