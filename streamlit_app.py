@@ -223,7 +223,7 @@ CSS = """
         font-size: 12px !important;
         color: var(--text-2) !important;
     }
-    .td-analyse {
+    .td-analysis {
         font-size: 12px !important;
         color: var(--text-2) !important;
         line-height: 1.4 !important;
@@ -499,8 +499,8 @@ def prospect_modal(pid=None, initial_data=None):
 
     st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
 
-    st.markdown('<span class="form-label">ANALYSE / NOTES</span>', unsafe_allow_html=True)
-    analyse = st.text_area("analyse", value=d.get("analyse",""), height=100, label_visibility="collapsed",
+    st.markdown('<span class="form-label">analysis / NOTES</span>', unsafe_allow_html=True)
+    analysis = st.text_area("analysis", value=d.get("analysis",""), height=100, label_visibility="collapsed",
                            placeholder="Contexte, opportunité, pain points, historique des échanges...")
 
     st.markdown("<hr>", unsafe_allow_html=True)
@@ -521,7 +521,7 @@ def prospect_modal(pid=None, initial_data=None):
                     "decision_maker": dm,
                     "email": email,
                     "website": website,
-                    "analyse": analyse,
+                    "analysis": analysis,
                 }
                 upsert_prospect(payload, pid)
                 st.success("✓ Enregistré !")
@@ -653,7 +653,7 @@ def page_prospects():
             mask = (
                 filtered.get("company","").str.contains(search, case=False, na=False) |
                 filtered.get("decision_maker","").str.contains(search, case=False, na=False) |
-                filtered.get("analyse","").str.contains(search, case=False, na=False)
+                filtered.get("analysis","").str.contains(search, case=False, na=False)
             )
             filtered = filtered[mask]
         if prio_filter != "Toutes Priorités":
@@ -674,7 +674,7 @@ def page_prospects():
                 <span class="th-cell">Société</span>
                 <span class="th-cell">Priorité</span>
                 <span class="th-cell">Produit</span>
-                <span class="th-cell">Analyse</span>
+                <span class="th-cell">analysis</span>
                 <span class="th-cell">Decision Maker</span>
                 <span class="th-cell">Email</span>
                 <span class="th-cell">Website</span>
@@ -701,8 +701,8 @@ def page_prospects():
             with cols[2]:
                 st.markdown(f'<span class="td-text">{row.get("product","—")}</span>', unsafe_allow_html=True)
             with cols[3]:
-                analyse_text = row.get("analyse","—") or "—"
-                st.markdown(f'<span class="td-analyse">{analyse_text}</span>', unsafe_allow_html=True)
+                analysis_text = row.get("analysis","—") or "—"
+                st.markdown(f'<span class="td-analysis">{analysis_text}</span>', unsafe_allow_html=True)
             with cols[4]:
                 st.markdown(f'<span class="td-text">{row.get("decision_maker","—")}</span>', unsafe_allow_html=True)
             with cols[5]:
@@ -746,7 +746,7 @@ def page_veille():
         </div>
     """, unsafe_allow_html=True)
 
-    tab1, tab2 = st.tabs(["🔬 Analyse marché", "📰 Actualités & Tendances"])
+    tab1, tab2 = st.tabs(["🔬 analysis marché", "📰 Actualités & Tendances"])
 
     with tab1:
         st.markdown("""
@@ -780,11 +780,11 @@ def page_veille():
             key="veille_prompt"
         )
 
-        if st.button("🔬 Analyser avec Gemini", type="primary"):
+        if st.button("🔬 analysisr avec Gemini", type="primary"):
             if not user_prompt.strip():
                 st.warning("Entrez une question")
             else:
-                with st.spinner("Analyse en cours…"):
+                with st.spinner("analysis en cours…"):
                     try:
                         model = genai.GenerativeModel("gemini-1.5-flash")
                         system_ctx = """Tu es un expert en Business Development dans le secteur des ingrédients nutraceutiques B2B.
@@ -798,7 +798,7 @@ def page_veille():
                         st.markdown("""
                             <div style="background:white;border:1px solid #E8EAE6;border-radius:12px;padding:24px;margin-top:20px;">
                                 <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#1E3F35;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.5px;">
-                                    🤖 Analyse Gemini
+                                    🤖 analysis Gemini
                                 </div>
                         """, unsafe_allow_html=True)
                         st.markdown(response.text)
@@ -889,7 +889,7 @@ def page_excel():
                 st.info("Aucun prospect à exporter")
             else:
                 # Clean export columns
-                export_cols = ["company","priority","product","analyse","decision_maker","email","website","created_at","updated_at"]
+                export_cols = ["company","priority","product","analysis","decision_maker","email","website","created_at","updated_at"]
                 export_df = df[[c for c in export_cols if c in df.columns]].copy()
                 export_df.columns = [c.replace("_"," ").title() for c in export_df.columns]
 
@@ -928,7 +928,7 @@ def page_excel():
                 </p>
                 <p style="font-size:13px;color:#8A9490;margin:0 0 20px;">
                     Importez un fichier .xlsx. Les colonnes attendues :<br>
-                    <code style="font-size:11px;">company, priority, product, analyse, decision_maker, email, website</code>
+                    <code style="font-size:11px;">company, priority, product, analysis, decision_maker, email, website</code>
                 </p>
             """, unsafe_allow_html=True)
 
@@ -949,7 +949,7 @@ def page_excel():
                                     "company":        str(r.get("company","")).upper().strip(),
                                     "priority":       str(r.get("priority","Low")).strip(),
                                     "product":        str(r.get("product","")).strip(),
-                                    "analyse":        str(r.get("analyse","")).strip(),
+                                    "analysis":        str(r.get("analysis","")).strip(),
                                     "decision_maker": str(r.get("decision_maker","")).strip(),
                                     "email":          str(r.get("email","")).strip(),
                                     "website":        str(r.get("website","")).strip(),
