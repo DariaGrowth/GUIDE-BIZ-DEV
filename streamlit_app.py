@@ -592,7 +592,7 @@ for label, icon in pages:
             </div>
         """, unsafe_allow_html=True)
 
-    return st.session_state.nav_page
+return st.session_state.nav_page
 
 # =============================================================================
 # PAGE: PROSPECTS
