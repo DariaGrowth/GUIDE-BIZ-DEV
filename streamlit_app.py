@@ -971,8 +971,8 @@ if uploaded:
                     st.error(f"Erreur : {e}")
                     st.info("Vérifiez que le fichier est bien au format .xlsx (pas .xls ou .csv)")
 
-    # Preview table
-    st.markdown("<div style='height:32px;'></div>", unsafe_allow_html=True)
+# Preview table
+st.markdown("<div style='height:32px;'></div>", unsafe_allow_html=True)
     if not df.empty:
         st.markdown("""
             <p style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#1A1F1C;margin-bottom:12px;">
